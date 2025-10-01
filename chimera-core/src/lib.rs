@@ -25,7 +25,7 @@ pub struct SimulationOutput {
 
 /// Execute an end-to-end simulation with the provided configuration set.
 pub fn run_simulation(
-    sim: &SimulationConfig,
+    _sim: &SimulationConfig,
     protocol: &ProtocolConfig,
     ldpc: &LDPCConfig,
 ) -> SimulationOutput {
