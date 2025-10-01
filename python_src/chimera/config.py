@@ -78,3 +78,4 @@ class SimulationConfig:
         "message."
     )
     rng_seed: int | None = None
+    generate_plots: bool = False

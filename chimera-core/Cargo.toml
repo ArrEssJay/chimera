@@ -1,0 +1,20 @@
+[package]
+name = "chimera-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core modulation and decoding library for the Chimera project"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_with = "3"
+ndarray = { version = "0.15", features = ["serde"] }
+num-complex = "0.4"
+thiserror = "1"
+rand = "0.8"
+approx = "0.5"
+# TODO: integrate an LDPC implementation once we settle on a crate (e.g. `ldpc` or `sparse-ldpc`).
+# ldpc-backend = { package = "sparse-ldpc", version = "0.4", optional = true }
+
+[dev-dependencies]
+proptest = "1"

@@ -278,14 +278,12 @@ def _timing_and_carrier_recovery_impl(
     baseband_signal: np.ndarray,
     samples_per_symbol: float,
     sample_rate: int,
+    kp_carrier: float = 0.000005,
+    ki_carrier: float = 0.000005**2 / 4.0,
+    kp_timing: float = 0.0001,
+    ki_timing: float = 0.000001,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Pure Python implementation of the joint timing/carrier loop."""
-
-    Kp_carrier = 0.000005
-    Ki_carrier = Kp_carrier**2 / 4.0
-
-    Kp_timing = 0.0001
-    Ki_timing = 0.000001
 
     nco_phase = 0.0
     nco_freq_rad = 0.0
@@ -311,7 +309,7 @@ def _timing_and_carrier_recovery_impl(
 
         half_idx = int(np.floor(i_in - samples_per_symbol / 2))
         half_frac = i_in - samples_per_symbol / 2 - half_idx
-        if half_idx < 0 or half_idx + 1 >= signal_len:
+        if half_idx < 1 or half_idx + 1 >= signal_len:
             break
         half_interp = baseband_signal[half_idx] + half_frac * (baseband_signal[half_idx + 1] - baseband_signal[half_idx])
 
@@ -325,15 +323,15 @@ def _timing_and_carrier_recovery_impl(
                 np.imag(corrected_mid) - np.imag(prev_mid)
             )
 
-        integrator_timing += Ki_timing * timing_error
-        i_in += samples_per_symbol - (Kp_timing * timing_error + integrator_timing)
+        integrator_timing += ki_timing * timing_error
+        i_in += samples_per_symbol - (kp_timing * timing_error + integrator_timing)
 
         i_corrected = np.real(corrected_mid)
         q_corrected = np.imag(corrected_mid)
-        phase_error = np.sign(i_corrected) * q_corrected - np.sign(q_corrected) * i_corrected
+        phase_error = np.arctan2(q_corrected, i_corrected)
 
-        integrator_carrier += Ki_carrier * phase_error
-        nco_freq_rad += Kp_carrier * phase_error + integrator_carrier
+        integrator_carrier += ki_carrier * phase_error
+        nco_freq_rad += kp_carrier * phase_error + integrator_carrier
         nco_phase += nco_freq_rad
 
         out_symbols.append(corrected_mid)
@@ -418,7 +416,12 @@ def demodulate_and_decode(
         symbol_index = int(np.argmin(np.abs(phase_diff)))
         demodulated_bits.extend(qpsk_reverse_bit_map[symbol_index])
 
-    demodulated_bitstream = np.array(demodulated_bits, dtype=np.uint8)[: len(encoding.qpsk_bitstream)]
+    demodulated_bitstream = np.array(demodulated_bits, dtype=np.uint8)
+    if len(demodulated_bitstream) < len(encoding.qpsk_bitstream):
+        padding = len(encoding.qpsk_bitstream) - len(demodulated_bitstream)
+        demodulated_bitstream = np.pad(demodulated_bitstream, (0, padding), 'constant')
+    else:
+        demodulated_bitstream = demodulated_bitstream[:len(encoding.qpsk_bitstream)]
 
     pre_fec_errors = int(np.sum(encoding.qpsk_bitstream != demodulated_bitstream))
     pre_fec_ber = pre_fec_errors / len(encoding.qpsk_bitstream)
@@ -498,62 +501,20 @@ def plot_demodulator_diagnostics(
 ) -> None:
     """Visualize demodulator diagnostics using matplotlib."""
 
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError as exc:  # pragma: no cover - plotting is optional
-        raise ImportError("matplotlib is required for plotting diagnostics.") from exc
-
-    fig, axs = plt.subplots(2, 2, figsize=(16, 12))
-    fig.suptitle("Demodulator Diagnostics", fontsize=16)
-
-    ax = axs[0, 0]
-    ax.scatter(diag.received_symbols_i, diag.received_symbols_q, s=10, alpha=0.3, label="Received Symbols")
-    ideal_i, ideal_q = np.cos(ideal_phases), np.sin(ideal_phases)
-    ax.scatter(ideal_i, ideal_q, s=200, c="red", marker="x", linewidth=2, label="Ideal Symbols")
-    ax.set_title(f"QPSK Constellation (SNR = {snr_db} dB)")
-    ax.set_xlabel("In-Phase (I)")
-    ax.set_ylabel("Quadrature (Q)")
-    ax.grid(True)
-    ax.axhline(0, color="grey", lw=0.5)
-    ax.axvline(0, color="grey", lw=0.5)
-    max_val = np.max(np.abs(np.concatenate((diag.received_symbols_i, diag.received_symbols_q)))) * 1.5 if len(diag.received_symbols_i) else 1.5
-    ax.set_xlim([-max_val, max_val])
-    ax.set_ylim([-max_val, max_val])
-    ax.set_aspect("equal", adjustable="box")
-    ax.legend()
-
+    print("\n--- DEMODULATOR DIAGNOSTICS ---")
     slice_len = min(200, len(diag.nco_freq_offset))
-    t_axis = np.arange(slice_len)
 
-    ax = axs[0, 1]
-    ax.plot(t_axis, diag.nco_freq_offset[:slice_len])
-    ax.axhline(protocol.fsk_freq_deviation_hz, color="r", linestyle="--", label="FSK +Δ Hz")
-    ax.axhline(-protocol.fsk_freq_deviation_hz, color="g", linestyle="--", label="FSK -Δ Hz")
-    ax.set_title("Tracked NCO Frequency Offset (First 200 Symbols)")
-    ax.set_xlabel("Symbol Index")
-    ax.set_ylabel("Frequency Offset (Hz)")
-    ax.grid(True)
-    ax.legend()
+    print("\n--- Corrected Baseband I/Q Symbols (First 200) ---")
+    for i in range(slice_len):
+        print(f"Symbol {i:3d}: I={diag.received_symbols_i[i]:.4f}, Q={diag.received_symbols_q[i]:.4f}")
 
-    ax = axs[1, 0]
-    ax.plot(t_axis, diag.timing_error[:slice_len])
-    ax.axhline(0, color="red", linestyle="--", alpha=0.7)
-    ax.set_title("Gardner Timing Error (First 200 Symbols)")
-    ax.set_xlabel("Symbol Index")
-    ax.set_ylabel("Error Signal")
-    ax.grid(True)
+    print("\n--- Gardner Timing Error (First 200 Symbols) ---")
+    for i in range(slice_len):
+        print(f"Symbol {i:3d}: Error={diag.timing_error[i]:.4f}")
 
-    ax = axs[1, 1]
-    ax.plot(t_axis, diag.received_symbols_i[:slice_len], label="I branch", alpha=0.7)
-    ax.plot(t_axis, diag.received_symbols_q[:slice_len], label="Q branch", alpha=0.7)
-    ax.set_title("Corrected Baseband I/Q Symbols (First 200)")
-    ax.set_xlabel("Symbol Index")
-    ax.set_ylabel("Amplitude")
-    ax.grid(True)
-    ax.legend()
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
+    print("\n--- Tracked NCO Frequency Offset (First 200 Symbols) ---")
+    for i in range(slice_len):
+        print(f"Symbol {i:3d}: Offset={diag.nco_freq_offset[i]:.4f} Hz")
 
 
 def run_simulation(
@@ -562,7 +523,6 @@ def run_simulation(
     ldpc_config: Optional[LDPCConfig] = None,
     *,
     plaintext: Optional[str] = None,
-    plot: bool = False,
     verbose: bool = False,
     rng: Optional[np.random.Generator] = None,
 ) -> SimulationResult:
@@ -574,8 +534,44 @@ def run_simulation(
 
     matrices = create_ldpc_matrices(protocol, ldpc_config, verbose=verbose)
     encoding = generate_modulated_signal(sim_config, protocol, matrices, plaintext=plaintext, rng=rng, verbose=verbose)
-    demodulation = demodulate_and_decode(encoding, matrices, sim_config, protocol, plot=plot, verbose=verbose)
+    demodulation = demodulate_and_decode(
+        encoding,
+        matrices,
+        sim_config,
+        protocol,
+        plot=sim_config.generate_plots,
+        verbose=verbose,
+    )
 
     combined_logs = encoding.logs + demodulation.logs
 
     return SimulationResult(encoding=encoding, demodulation=demodulation, matrices=matrices, logs=combined_logs)
+
+</final_file_content>
+
+Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
+(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
+</error><environment_details>
+# VSCode Visible Files
+chimera/pipeline.py
+
+# VSCode Open Tabs
+README.md
+.git/COMMIT_EDITMSG
+chimera/utils.py
+../../Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+chimera/config.py
+pyproject.toml
+tune_gains.py
+chimera/pipeline.py
+main.py
+
+# Current Time
+02/10/2025, 8:08:09 am (Australia/Melbourne, UTC+10:00)
+
+# Context Window Usage
+345,666 / 1,048.576K tokens used (33%)
+
+# Current Mode
+ACT MODE
+</environment_details>

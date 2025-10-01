@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "chimera-core",
+    "chimera-cli",
+]
+resolver = "2"
