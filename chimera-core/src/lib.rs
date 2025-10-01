@@ -25,14 +25,16 @@ pub struct SimulationOutput {
 
 /// Execute an end-to-end simulation with the provided configuration set.
 pub fn run_simulation(
-    _sim: &SimulationConfig,
-    _protocol: &ProtocolConfig,
-    _ldpc: &LDPCConfig,
+    sim: &SimulationConfig,
+    protocol: &ProtocolConfig,
+    ldpc: &LDPCConfig,
 ) -> SimulationOutput {
-    // TODO: implement orchestration once encoder/decoder are ready.
+    let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, ldpc);
+
+    // TODO: call encoder / decoder pipeline once implemented.
     SimulationOutput {
         report: SimulationReport::default(),
         diagnostics: DiagnosticsBundle::default(),
-        ldpc: LDPCSuite::default_stub(),
+        ldpc: ldpc_suite,
     }
 }

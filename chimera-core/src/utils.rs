@@ -70,7 +70,10 @@ pub fn int_to_bitstream(value: u64, bits: usize) -> Vec<u8> {
 }
 
 pub fn hex_to_bitstream(hex: &str, expected_bits: usize) -> Vec<u8> {
-    assert!(expected_bits.is_multiple_of(8), "expected_bits must be byte aligned");
+    assert!(
+        expected_bits.is_multiple_of(8),
+        "expected_bits must be byte aligned"
+    );
     let padded = if hex.len() * 4 < expected_bits {
         format!("{:0>width$}", hex, width = expected_bits / 4)
     } else {
@@ -111,4 +114,48 @@ pub fn interleaved_from_complex(data: &[Complex64]) -> Vec<f64> {
 
 pub fn array_from_bits(bits: &[u8]) -> Array1<u8> {
     Array1::from_vec(bits.to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn string_bitstream_roundtrip() {
+        let text = "Chimera";
+        let bits = string_to_bitstream(text);
+        assert_eq!(bits.len(), text.len() * 8);
+        let packed = pack_bits(&bits);
+        assert_eq!(String::from_utf8(packed).unwrap(), text);
+    }
+
+    #[test]
+    fn int_to_bitstream_width() {
+        let bits = int_to_bitstream(0xAB, 12);
+        assert_eq!(bits, vec![0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1]);
+    }
+
+    #[test]
+    fn hex_to_bitstream_expected_width() {
+        let bits = hex_to_bitstream("A5A5", 16);
+        assert_eq!(bits.len(), 16);
+        assert_eq!(&bits[..8], &[1, 0, 1, 0, 0, 1, 0, 1]);
+    }
+
+    #[test]
+    fn complex_conversion_roundtrip() {
+        let samples = [Complex64::new(0.5, -0.25), Complex64::new(-1.0, 2.0)];
+        let interleaved = interleaved_from_complex(&samples);
+        assert_eq!(interleaved, vec![0.5, -0.25, -1.0, 2.0]);
+        let reconstructed = complex_from_interleaved(&interleaved);
+        assert_eq!(reconstructed, samples);
+    }
+
+    #[test]
+    fn array_from_bits_copies() {
+        let bits = vec![1_u8, 0, 1, 1];
+        let arr = array_from_bits(&bits);
+        assert_eq!(arr.len(), bits.len());
+        assert_eq!(arr.to_vec(), bits);
+    }
 }
