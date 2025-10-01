@@ -27,15 +27,26 @@ fn given_small_payload_when_build_frames_then_single_frame_is_emitted() {
     let command_len = layout.command_type_symbols * 2;
 
     let sync_bits = hex_to_bitstream(&protocol.sync_sequence_hex, sync_len);
-    assert_eq!(&frame_stream.frames_bitstream[..sync_len], sync_bits.as_slice());
+    assert_eq!(
+        &frame_stream.frames_bitstream[..sync_len],
+        sync_bits.as_slice()
+    );
 
     let command_start = sync_len + target_len;
     let command_end = command_start + command_len;
-    let expected_command = protocol.command_opcode | (0 << protocol.current_frame_shift) | (1 << protocol.total_frames_shift);
+    let expected_command = protocol.command_opcode
+        | (0 << protocol.current_frame_shift)
+        | (1 << protocol.total_frames_shift);
     let expected_command_bits = int_to_bitstream(expected_command as u64, command_len);
-    assert_eq!(&frame_stream.frames_bitstream[command_start..command_end], expected_command_bits.as_slice());
+    assert_eq!(
+        &frame_stream.frames_bitstream[command_start..command_end],
+        expected_command_bits.as_slice()
+    );
 
-    assert!(!frame_stream.logs.is_empty(), "frame builder should emit trace logs");
+    assert!(
+        !frame_stream.logs.is_empty(),
+        "frame builder should emit trace logs"
+    );
 }
 
 #[test]
@@ -51,7 +62,10 @@ fn given_large_payload_when_build_frames_then_metadata_tracks_frame_progression(
 
     let expected_frames = (payload_bits.len() + message_bits - 1) / message_bits;
     assert_eq!(frame_stream.frame_count, expected_frames);
-    assert_eq!(frame_stream.frames_bitstream.len(), expected_frames * protocol.frame_layout.frame_bits());
+    assert_eq!(
+        frame_stream.frames_bitstream.len(),
+        expected_frames * protocol.frame_layout.frame_bits()
+    );
 
     let sync_len = protocol.frame_layout.sync_symbols * 2;
     let target_len = protocol.frame_layout.target_id_symbols * 2;
@@ -70,7 +84,11 @@ fn given_large_payload_when_build_frames_then_metadata_tracks_frame_progression(
             | ((frame_idx as u32) << protocol.current_frame_shift)
             | ((expected_frames as u32) << protocol.total_frames_shift);
         let expected_command_bits = int_to_bitstream(expected_command as u64, command_len);
-        assert_eq!(command_bits, expected_command_bits.as_slice(), "frame {frame_idx} command word mismatch");
+        assert_eq!(
+            command_bits,
+            expected_command_bits.as_slice(),
+            "frame {frame_idx} command word mismatch"
+        );
     }
 
     assert!(logger.entries().len() >= expected_frames);
