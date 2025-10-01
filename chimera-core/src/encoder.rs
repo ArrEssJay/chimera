@@ -5,6 +5,22 @@ use crate::config::{ProtocolConfig, SimulationConfig};
 use crate::ldpc::LDPCMatrices;
 use crate::utils::LogCollector;
 
+pub struct FrameStream {
+    pub frames_bitstream: Vec<u8>,
+    pub frame_count: usize,
+    pub logs: Vec<String>,
+}
+
+impl FrameStream {
+    pub fn empty() -> Self {
+        Self {
+            frames_bitstream: Vec::new(),
+            frame_count: 0,
+            logs: Vec::new(),
+        }
+    }
+}
+
 pub struct EncodingResult {
     pub noisy_signal: Array1<f64>,
     pub clean_signal: Array1<f64>,
@@ -45,4 +61,13 @@ pub fn generate_modulated_signal(
         logs: logger.entries().to_vec(),
         ..EncodingResult::default()
     }
+}
+
+pub fn build_frame_stream(
+    _payload_bits: &[u8],
+    _protocol: &ProtocolConfig,
+    _matrices: &LDPCMatrices,
+    _logger: &mut LogCollector,
+) -> FrameStream {
+    todo!("frame construction not yet implemented")
 }
