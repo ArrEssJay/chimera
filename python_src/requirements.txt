@@ -1,6 +1,0 @@
-numpy
-scipy
-pyldpc
-matplotlib
-numba
-pytest

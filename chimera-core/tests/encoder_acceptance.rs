@@ -1,5 +1,6 @@
-use chimera_core::config::{LDPCConfig, ProtocolConfig};
-use chimera_core::encoder::build_frame_stream;
+use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
+use chimera_core::decoder::demodulate_and_decode;
+use chimera_core::encoder::{build_frame_stream, generate_modulated_signal};
 use chimera_core::ldpc::LDPCSuite;
 use chimera_core::utils::{hex_to_bitstream, int_to_bitstream, string_to_bitstream, LogCollector};
 
@@ -92,4 +93,27 @@ fn given_large_payload_when_build_frames_then_metadata_tracks_frame_progression(
     }
 
     assert!(logger.entries().len() >= expected_frames);
+}
+
+#[test]
+fn given_high_snr_when_pipeline_runs_then_plaintext_roundtrips() {
+    let protocol = ProtocolConfig::default();
+
+    let mut sim = SimulationConfig::default();
+    sim.sample_rate = protocol.qpsk_symbol_rate;
+    sim.snr_db = 30.0;
+    sim.plaintext_source = "Hello Chimera".into();
+    sim.rng_seed = Some(1337);
+
+    let ldpc_cfg = LDPCConfig::default();
+    let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
+
+    let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
+    let demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
+
+    assert_eq!(encoding.total_frames, 1);
+    assert_eq!(demodulation.report.post_fec_errors, 0);
+    assert!(demodulation.report.post_fec_ber <= 1e-9);
+    assert_eq!(demodulation.recovered_message, sim.plaintext_source);
+    assert_eq!(demodulation.demodulated_bitstream.len(), encoding.qpsk_bitstream.len());
 }

@@ -1,9 +1,15 @@
 //! Encoding and modulation stage.
+use std::f64::consts::FRAC_1_SQRT_2;
+
 use ndarray::Array1;
+use num_complex::Complex64;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use rand_distr::StandardNormal;
 
 use crate::config::{ProtocolConfig, SimulationConfig};
 use crate::ldpc::LDPCMatrices;
-use crate::utils::{hex_to_bitstream, int_to_bitstream, LogCollector};
+use crate::utils::{hex_to_bitstream, int_to_bitstream, string_to_bitstream, LogCollector};
 
 pub struct FrameStream {
     pub frames_bitstream: Vec<u8>,
@@ -24,9 +30,11 @@ impl FrameStream {
 pub struct EncodingResult {
     pub noisy_signal: Array1<f64>,
     pub clean_signal: Array1<f64>,
+    pub qpsk_symbols: Vec<Complex64>,
     pub qpsk_bitstream: Vec<u8>,
     pub payload_bits: Vec<u8>,
     pub total_frames: usize,
+    pub samples_per_symbol: usize,
     pub logs: Vec<String>,
 }
 
@@ -35,9 +43,11 @@ impl EncodingResult {
         Self {
             noisy_signal: Array1::from_vec(vec![]),
             clean_signal: Array1::from_vec(vec![]),
+            qpsk_symbols: Vec::new(),
             qpsk_bitstream: Vec::new(),
             payload_bits: Vec::new(),
             total_frames: 0,
+            samples_per_symbol: 1,
             logs: Vec::new(),
         }
     }
@@ -55,11 +65,89 @@ pub fn generate_modulated_signal(
     matrices: &LDPCMatrices,
 ) -> EncodingResult {
     let mut logger = LogCollector::new();
-    logger.log("generate_modulated_signal: unimplemented");
-    let _ = (sim, protocol, matrices);
+
+    let plaintext = &sim.plaintext_source;
+    let payload_bits = string_to_bitstream(plaintext);
+    logger.log(format!(
+        "Source plaintext length: {} characters ({} bits).",
+        plaintext.len(),
+        payload_bits.len()
+    ));
+
+    let frame_stream = build_frame_stream(&payload_bits, protocol, matrices, &mut logger);
+
+    let qpsk_bitstream = frame_stream.frames_bitstream.clone();
+    assert!(
+        qpsk_bitstream.len() % 2 == 0,
+        "QPSK bitstream must have even length"
+    );
+
+    let samples_per_symbol = usize::max(1, sim.sample_rate / protocol.qpsk_symbol_rate);
+    let mut qpsk_symbols = Vec::with_capacity(qpsk_bitstream.len() / 2);
+
+    for bits in qpsk_bitstream.chunks_exact(2) {
+        let symbol = match (bits[0], bits[1]) {
+            (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+            (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+            (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+            (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+            _ => unreachable!("bits are constrained to 0/1"),
+        };
+        qpsk_symbols.push(symbol);
+    }
+
+    let mut clean_iq = Vec::with_capacity(qpsk_symbols.len() * 2 * samples_per_symbol);
+    for symbol in &qpsk_symbols {
+        for _ in 0..samples_per_symbol {
+            clean_iq.push(symbol.re);
+            clean_iq.push(symbol.im);
+        }
+    }
+
+    let mut rng = match sim.rng_seed {
+        Some(seed) => StdRng::seed_from_u64(seed),
+        None => StdRng::from_entropy(),
+    };
+
+    let signal_power: f64 = qpsk_symbols
+        .iter()
+        .map(|c| c.norm_sqr())
+        .sum::<f64>()
+        / qpsk_symbols.len().max(1) as f64;
+
+    let snr_linear = 10f64.powf(sim.snr_db / 10.0);
+    let noise_variance = if snr_linear > 0.0 {
+        signal_power / snr_linear
+    } else {
+        0.0
+    };
+    let noise_std = (noise_variance / 2.0).sqrt();
+
+    let mut noisy_iq = Vec::with_capacity(clean_iq.len());
+    let normal = StandardNormal;
+    for chunk in clean_iq.chunks_exact(2) {
+        let noise_i: f64 = rng.sample::<f64, _>(normal) * noise_std;
+        let noise_q: f64 = rng.sample::<f64, _>(normal) * noise_std;
+        noisy_iq.push(chunk[0] + noise_i);
+        noisy_iq.push(chunk[1] + noise_q);
+    }
+
+    logger.log(format!(
+        "Generated {} QPSK symbols across {} frame(s).",
+        qpsk_symbols.len(),
+        frame_stream.frame_count
+    ));
+    logger.log(format!("Applied AWGN channel with SNR = {:.2} dB.", sim.snr_db));
+
     EncodingResult {
+        noisy_signal: Array1::from_vec(noisy_iq),
+        clean_signal: Array1::from_vec(clean_iq),
+        qpsk_symbols,
+        qpsk_bitstream,
+        payload_bits,
+        total_frames: frame_stream.frame_count,
+        samples_per_symbol,
         logs: logger.entries().to_vec(),
-        ..EncodingResult::default()
     }
 }
 

@@ -15,6 +15,8 @@ pub mod utils;
 use config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use diagnostics::{DiagnosticsBundle, SimulationReport};
 use ldpc::LDPCSuite;
+use decoder::demodulate_and_decode;
+use encoder::generate_modulated_signal;
 
 /// High-level handle returned by `run_simulation`.
 pub struct SimulationOutput {
@@ -25,16 +27,23 @@ pub struct SimulationOutput {
 
 /// Execute an end-to-end simulation with the provided configuration set.
 pub fn run_simulation(
-    _sim: &SimulationConfig,
+    sim: &SimulationConfig,
     protocol: &ProtocolConfig,
     ldpc: &LDPCConfig,
 ) -> SimulationOutput {
     let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, ldpc);
+    let encoding = generate_modulated_signal(sim, protocol, &ldpc_suite.matrices);
+    let demodulation = demodulate_and_decode(&encoding, &ldpc_suite.matrices, sim, protocol);
 
-    // TODO: call encoder / decoder pipeline once implemented.
+    let diagnostics = DiagnosticsBundle {
+        encoding_logs: encoding.logs.clone(),
+        decoding_logs: demodulation.logs.clone(),
+        demodulation: demodulation.diagnostics.clone(),
+    };
+
     SimulationOutput {
-        report: SimulationReport::default(),
-        diagnostics: DiagnosticsBundle::default(),
+        report: demodulation.report.clone(),
+        diagnostics,
         ldpc: ldpc_suite,
     }
 }
