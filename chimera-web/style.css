@@ -575,3 +575,35 @@ input[type="range"]::-moz-range-thumb {
     padding: 32px 20px 60px;
   }
 }
+
+.app-footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 40px;
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.footer-separator {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.app-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.app-footer a:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
