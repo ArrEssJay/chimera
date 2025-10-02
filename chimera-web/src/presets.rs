@@ -95,7 +95,7 @@ impl FramePreset {
                 protocol.total_frames_shift = 18;
 
                 simulation.sample_rate = 96_000;
-                simulation.snr_db = 6.0;
+                simulation.snr_db = -2.0;
                 simulation.bit_depth = BitDepth::Pcm24;
                 simulation.plaintext_source =
                     "Telemetry burst payload with accelerated downlink cadence.".into();
@@ -125,7 +125,7 @@ impl FramePreset {
                 protocol.total_frames_shift = 28;
 
                 simulation.sample_rate = 48_000;
-                simulation.snr_db = 1.5;
+                simulation.snr_db = -4.0;
                 simulation.bit_depth = BitDepth::Float32;
                 simulation.plaintext_source =
                     "Deep-space probe telemetry with reinforced parity blocks.".into();
