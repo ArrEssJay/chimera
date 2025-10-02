@@ -55,11 +55,23 @@ jobs:
           rustc --version
           cargo --version
           cargo clippy --version
+          echo "Working directory: $(pwd)"
+          echo "Files present:"
+          ls -la
 
-      - name: Check compilation
-        run: cargo check --workspace --all-targets --all-features
+      - name: Run clippy on lib
+        run: cargo clippy --lib --all-features -- -D warnings
+        continue-on-error: false
 
-      - name: Run clippy
+      - name: Run clippy on bins
+        run: cargo clippy --bins --all-features -- -D warnings
+        continue-on-error: false
+
+      - name: Run clippy on tests
+        run: cargo clippy --tests --all-features -- -D warnings
+        continue-on-error: false
+
+      - name: Run clippy on workspace (full check)
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   build-web:
