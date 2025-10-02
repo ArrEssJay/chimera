@@ -504,6 +504,17 @@ pub fn app() -> Html {
                     </div>
                 </section>
             </div>
+            <footer class="app-footer">
+                <div class="footer-content">
+                    <a href="https://github.com/ArrEssJay/chimera/" target="_blank" rel="noopener noreferrer">
+                        {"GitHub"}
+                    </a>
+                    <span class="footer-separator">{"•"}</span>
+                    <a href="mailto:rowan@impermanent.io">
+                        {"Contact"}
+                    </a>
+                </div>
+            </footer>
         </main>
     }
 }
