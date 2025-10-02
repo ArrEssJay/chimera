@@ -98,6 +98,20 @@ button.primary:hover:enabled {
   background: linear-gradient(130deg, #5ed6ff 0%, #88a8ff 50%, #b678ff 100%);
 }
 
+button.primary.highlight {
+  animation: pulse-highlight 1.5s ease-in-out infinite;
+  box-shadow: 0 14px 42px var(--accent-glow), 0 0 30px lch(70% 50 60 / 0.4);
+}
+
+@keyframes pulse-highlight {
+  0%, 100% {
+    box-shadow: 0 14px 42px var(--accent-glow), 0 0 30px lch(70% 50 60 / 0.4);
+  }
+  50% {
+    box-shadow: 0 14px 48px var(--accent-glow), 0 0 40px lch(70% 50 60 / 0.6);
+  }
+}
+
 button.ghost {
   border: 1px solid var(--border-color);
   background: transparent;
@@ -248,6 +262,14 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid var(--panel-border);
   background: lch(58% 40 260 / 0.35);
   color: lch(85% 15 260);
+}
+
+.badge-pending {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid lch(70% 50 60 / 0.5);
+  background: lch(60% 50 60 / 0.35);
+  color: lch(90% 30 60);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
