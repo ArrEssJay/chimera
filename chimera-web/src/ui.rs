@@ -100,8 +100,8 @@ pub fn app() -> Html {
     let is_running_now = *is_running;
 
     let results_view = if let Some(output) = current_output.as_ref() {
-    let diagnostics = output.diagnostics.clone();
-    let modulation_audio = diagnostics.modulation_audio.clone();
+        let diagnostics = output.diagnostics.clone();
+        let modulation_audio = diagnostics.modulation_audio.clone();
         let symbol_decisions = diagnostics.demodulation.symbol_decisions.clone();
         let encoder_logs = diagnostics.encoding_logs.clone();
         let decoder_logs = diagnostics.decoding_logs.clone();
@@ -524,7 +524,10 @@ fn draw_spectrum(canvas: &HtmlCanvasElement, spectrum: &[(f32, f32)]) {
 
     let path: Vec<(f32, f32)> = spectrum.to_vec();
     chart
-        .draw_series(std::iter::once(PathElement::new(path, &RGBColor(91, 200, 255))))
+        .draw_series(std::iter::once(PathElement::new(
+            path,
+            &RGBColor(91, 200, 255),
+        )))
         .ok();
 }
 
@@ -717,7 +720,7 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
             }
 
             if let Some(source) = (*active_source).clone() {
-                let _ = source.stop();
+                let _ = source.stop_with_when(0.0);
                 active_source.set(None);
             }
 
@@ -751,7 +754,10 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
 
     if *include_noise {
         sources_active += 1;
-        for (dst, (&noisy, &clean)) in mix.iter_mut().zip(audio.noisy.iter().zip(audio.clean.iter())) {
+        for (dst, (&noisy, &clean)) in mix
+            .iter_mut()
+            .zip(audio.noisy.iter().zip(audio.clean.iter()))
+        {
             *dst += noisy - clean;
         }
     }
@@ -869,10 +875,16 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                                 Ok(promise) => {
                                                     match JsFuture::from(promise).await {
                                                         Ok(decoded) => {
-                                                            if let Ok(audio_buffer) = decoded.dyn_into::<AudioBuffer>() {
-                                                                match mixdown_audio_buffer(&audio_buffer) {
+                                                            if let Ok(audio_buffer) =
+                                                                decoded.dyn_into::<AudioBuffer>()
+                                                            {
+                                                                match mixdown_audio_buffer(
+                                                                    &audio_buffer,
+                                                                ) {
                                                                     Ok(mut samples) => {
-                                                                        normalize_samples(&mut samples);
+                                                                        normalize_samples(
+                                                                            &mut samples,
+                                                                        );
                                                                         external_audio.set(Some(ExternalAudio {
                                                                             name: file_name.clone(),
                                                                             sample_rate: audio_buffer.sample_rate(),
@@ -886,28 +898,37 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                                                         ).into());
                                                                     }
                                                                     Err(err) => {
-                                                                        unsafe { console::error_1(&err); }
+                                                                        
+                                                                            console::error_1(&err);
+                                                                        
                                                                         status.set("Failed to mix channels from uploaded audio".into());
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                         Err(err) => {
-                                                            unsafe { console::error_1(&err); }
-                                                            status.set("Unable to decode uploaded audio".into());
+                                                                console::error_1(&err);
+                                                            
+                                                            status.set(
+                                                                "Unable to decode uploaded audio"
+                                                                    .into(),
+                                                            );
                                                         }
                                                     }
                                                 }
                                                 Err(err) => {
-                                                    unsafe { console::error_1(&err); }
-                                                    status.set("Audio decode promise failed".into());
+                                                        console::error_1(&err);
+                                                    
+                                                    status
+                                                        .set("Audio decode promise failed".into());
                                                 }
                                             }
                                         }
                                     }
                                 }
                                 Err(err) => {
-                                    unsafe { console::error_1(&err); }
+                                        console::error_1(&err);
+                                    
                                     status.set("Audio context unavailable".into());
                                 }
                             }
@@ -929,7 +950,9 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
         let audio = audio.clone();
         Callback::from(move |_| {
             if mix_samples.iter().all(|v| v.abs() < 1.0e-5) {
-                status.set(AttrValue::from("Enable at least one source before playback"));
+                status.set(AttrValue::from(
+                    "Enable at least one source before playback",
+                ));
                 return;
             }
 
@@ -951,22 +974,31 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                     Ok(ctx) => {
                         resume_context(&ctx).await;
                         if let Some(existing) = (*active_source).clone() {
-                            let _ = existing.stop();
+                            let _ = existing.stop_with_when(0.0);
                         }
 
-                        match play_samples(&ctx, mix_for_playback.as_ref(), audio.sample_rate as f32, gain) {
+                        match play_samples(
+                            &ctx,
+                            mix_for_playback.as_ref(),
+                            audio.sample_rate as f32,
+                            gain,
+                        ) {
                             Ok(source) => {
                                 active_source.set(Some(source));
                                 status.set(AttrValue::from("Playback active"));
                             }
                             Err(err) => {
-                                unsafe { console::error_1(&err); }
+            
+                                    console::error_1(&err);
+                                
                                 status.set(AttrValue::from("Unable to play audio"));
                             }
                         }
                     }
                     Err(err) => {
-                        unsafe { console::error_1(&err); }
+                       
+                            console::error_1(&err);
+                        
                         status.set(AttrValue::from("Audio context unavailable"));
                     }
                 }
@@ -979,7 +1011,7 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
         let status = status.clone();
         Callback::from(move |_| {
             if let Some(source) = (*active_source).clone() {
-                let _ = source.stop();
+                let _ = source.stop_with_when(0.0);
                 status.set(AttrValue::from("Playback stopped"));
             } else {
                 status.set(AttrValue::from("No playback active"));

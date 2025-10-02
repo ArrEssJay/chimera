@@ -1,4 +1,3 @@
-//! Diagnostic data structures for reporting.
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
