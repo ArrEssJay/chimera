@@ -195,7 +195,9 @@ mod tests {
             if bit == 0 {
                 continue;
             }
-            for (col_idx, codeword_bit) in codeword.iter_mut().enumerate().take(layout.codeword_bits()) {
+            for (col_idx, codeword_bit) in
+                codeword.iter_mut().enumerate().take(layout.codeword_bits())
+            {
                 *codeword_bit ^= matrices.generator[(row_idx, col_idx)] & 1;
             }
         }
