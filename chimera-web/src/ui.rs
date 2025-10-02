@@ -553,7 +553,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
             move |(i_samples, q_samples, variant, title)| {
                 if !i_samples.is_empty() && !q_samples.is_empty() {
                     if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_constellation(&canvas, i_samples, q_samples, &title, variant.clone());
+                        draw_constellation(&canvas, i_samples, q_samples, title, variant.clone());
                     }
                 }
                 || ()
@@ -598,7 +598,7 @@ fn line_chart(props: &LineChartProps) -> Html {
             move |(values, accent, title)| {
                 if !values.is_empty() {
                     if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_line_chart(&canvas, values, &title, *accent);
+                        draw_line_chart(&canvas, values, title, *accent);
                     }
                 }
                 || ()
@@ -740,8 +740,8 @@ fn draw_line_chart(
 
         chart
             .configure_mesh()
-            .bold_line_style(&RGBColor(40, 60, 90).mix(0.4))
-            .light_line_style(&RGBColor(40, 60, 90).mix(0.2))
+            .bold_line_style(RGBColor(40, 60, 90).mix(0.4))
+            .light_line_style(RGBColor(40, 60, 90).mix(0.2))
             .x_labels(5)
             .y_labels(5)
             .draw()?;
@@ -804,12 +804,7 @@ fn compute_psd(samples: &[f64], _sample_rate: usize) -> Vec<f64> {
     }
 
     let mut fft_len = sample_count.next_power_of_two();
-    if fft_len < 1_024 {
-        fft_len = 1_024;
-    }
-    if fft_len > 32_768 {
-        fft_len = 32_768;
-    }
+    fft_len = fft_len.clamp(1_024, 32_768);
 
     let mut planner = FftPlanner::<f64>::new();
     let fft = planner.plan_fft_forward(fft_len);

@@ -10,7 +10,7 @@ pub use presets::{FramePreset, PresetBundle};
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
-    let _ = wasm_logger::init(wasm_logger::Config::default());
+    wasm_logger::init(wasm_logger::Config::default());
     ui::mount_app();
     Ok(())
 }

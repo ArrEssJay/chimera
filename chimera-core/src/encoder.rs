@@ -224,7 +224,7 @@ pub fn build_frame_stream(
     let total_frames = if payload_bits.is_empty() {
         1
     } else {
-        (payload_bits.len() + message_bits - 1) / message_bits
+        payload_bits.len().div_ceil(message_bits)
     };
     logger.log(format!("Payload requires {total_frames} frame(s)."));
 
@@ -236,7 +236,7 @@ pub fn build_frame_stream(
     let mut frames = Vec::with_capacity(total_frames);
 
     for frame_idx in 0..total_frames {
-        let command_value = (protocol.command_opcode as u32)
+        let command_value = protocol.command_opcode
             | ((frame_idx as u32) << protocol.current_frame_shift)
             | ((total_frames as u32) << protocol.total_frames_shift);
         let command_bits = int_to_bitstream(command_value as u64, command_bits_len);
@@ -294,7 +294,7 @@ pub fn build_frame_stream(
         frames.push(FrameDescriptor {
             frame_index: frame_idx,
             total_frames,
-            command_opcode: protocol.command_opcode as u32,
+            command_opcode: protocol.command_opcode,
             command_value,
             frame_label: format!("Frame {} of {}", frame_idx + 1, total_frames),
             payload_preview,
