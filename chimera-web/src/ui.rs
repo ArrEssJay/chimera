@@ -561,18 +561,17 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         );
     }
 
-    if props.i_samples.is_empty() || props.q_samples.is_empty() {
-        html! {
-            <div class="constellation-panel panel">
-                <div class="chart-empty">{"No constellation samples."}</div>
-            </div>
-        }
-    } else {
-        html! {
-            <div class="constellation-panel panel">
-                <canvas ref={canvas_ref} width="260" height="260" />
-            </div>
-        }
+    let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
+    html! {
+        <div class="constellation-panel panel">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No constellation samples."}</div> }
+                } else {
+                    html! { <canvas ref={canvas_ref} width="260" height="260" /> }
+                }
+            }
+        </div>
     }
 }
 
@@ -606,18 +605,17 @@ fn line_chart(props: &LineChartProps) -> Html {
         );
     }
 
-    if props.values.is_empty() {
-        html! {
-            <div class="chart-panel panel">
-                <div class="chart-empty">{"No samples available."}</div>
-            </div>
-        }
-    } else {
-        html! {
-            <div class="chart-panel panel">
-                <canvas ref={canvas_ref} width="320" height="220" />
-            </div>
-        }
+    let is_empty = props.values.is_empty();
+    html! {
+        <div class="chart-panel panel">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No samples available."}</div> }
+                } else {
+                    html! { <canvas ref={canvas_ref} width="320" height="220" /> }
+                }
+            }
+        </div>
     }
 }
 
