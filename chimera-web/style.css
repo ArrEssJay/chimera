@@ -43,6 +43,61 @@
   font-size: 0.75rem;
   color: #666;
 }
+
+.audio-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.audio-controls button {
+  flex: 1 1 150px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #3949ab;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.audio-controls button:hover:enabled {
+  background: #283593;
+}
+
+.audio-controls button:disabled {
+  background: #b0bec5;
+  cursor: not-allowed;
+}
+
+.audio-upload,
+.audio-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.audio-slider span {
+  font-weight: 600;
+}
+
+.audio-status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #444;
+}
 .app-container {
   max-width: 960px;
   margin: 0 auto;

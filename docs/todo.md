@@ -2,6 +2,11 @@
 
 Track upcoming work items for the Raman Whisper visualization stack. Use the checkbox status to manage progress during implementation cycles.
 
+## ✅ Recently Completed
+- [x] Configure continuous deployment to GitHub Pages via Trunk build artifact.
+- [x] Surface modulation audio playback with clean/noisy previews inside the web dashboard.
+- [x] Support vocoder-style mixing with uploaded audio and wet/dry control.
+
 ## 🛰️ Preset & Configuration UX
 - [ ] Persist the active preset and custom overrides in browser storage to survive reloads.
 - [ ] Allow cloning a preset into an editable "Custom" profile with per-field overrides.

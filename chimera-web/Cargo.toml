@@ -21,12 +21,22 @@ plotters = { version = "0.3", default-features = false }
 plotters-canvas = "0.3"
 chimera-core = { path = "../chimera-core" }
 console_error_panic_hook = "0.1"
+js-sys = "0.3"
 web-sys = { version = "0.3", features = [
 	"Document",
+	"AudioBuffer",
+	"AudioBufferSourceNode",
+	"AudioContext",
+	"AudioContextState",
+	"AudioDestinationNode",
+	"AudioNode",
 	"HtmlCanvasElement",
 	"HtmlInputElement",
 	"HtmlSelectElement",
 	"HtmlTextAreaElement",
+	"File",
+	"FileList",
+	"Blob",
 	"Window"
 ] }
 

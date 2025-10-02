@@ -3,7 +3,7 @@
 [![CI](https://github.com/arressjay/chimera/actions/workflows/ci.yml/badge.svg)](https://github.com/arressjay/chimera/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/chimera-core.svg)](https://crates.io/crates/chimera-core)
 
-Chimera is a Rust-native implementation of the Raman Whisper modulation and decoding pipeline. This project provides a high-performance, type-safe, and thoroughly tested library for signal processing tasks related to this protocol.
+CHIMERA is a Rust-native implementation of the Raman Whisper modulation and decoding pipeline. This project provides a high-performance, type-safe, and thoroughly tested library for signal processing tasks related to this protocol.
 
 ## Overview
 The purpose of this library is to provide a robust, high-performance, and validated software implementation of the Raman Whisper communication protocol. This protocol is designed for specialized optical communication systems where signals are transmitted at very low power levels, often below the noise floor, making them difficult to detect or intercept.

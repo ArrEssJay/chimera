@@ -2,6 +2,7 @@ use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use chimera_core::decoder::demodulate_and_decode;
 use chimera_core::encoder::{build_frame_stream, generate_modulated_signal};
 use chimera_core::ldpc::LDPCSuite;
+use chimera_core::run_simulation;
 use chimera_core::utils::{hex_to_bitstream, int_to_bitstream, string_to_bitstream, LogCollector};
 
 fn default_suite() -> (ProtocolConfig, LDPCConfig, LDPCSuite) {
@@ -118,5 +119,28 @@ fn given_high_snr_when_pipeline_runs_then_plaintext_roundtrips() {
     assert_eq!(
         demodulation.demodulated_bitstream.len(),
         encoding.qpsk_bitstream.len()
+    );
+}
+
+#[test]
+fn run_simulation_emits_audio_waveforms() {
+    let protocol = ProtocolConfig::default();
+    let sim = SimulationConfig::default();
+    let ldpc_cfg = LDPCConfig::default();
+
+    let output = run_simulation(&sim, &protocol, &ldpc_cfg);
+    let audio = output
+        .diagnostics
+        .modulation_audio
+        .expect("modulation audio should be present");
+
+    assert_eq!(audio.sample_rate, sim.sample_rate);
+    assert!(
+        !audio.clean.is_empty(),
+        "clean waveform should contain samples"
+    );
+    assert!(
+        !audio.noisy.is_empty(),
+        "noisy waveform should contain samples"
     );
 }

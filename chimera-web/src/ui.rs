@@ -1,7 +1,7 @@
 use crate::model::{run_pipeline, SimulationInput, SimulationOutput};
 use crate::presets::FramePreset;
 use chimera_core::diagnostics::{DiagnosticsBundle, ModulationAudio, SymbolDecision};
-use js_sys::{ArrayBuffer, Float32Array};
+use js_sys::ArrayBuffer;
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
 use wasm_bindgen::JsCast;
@@ -9,8 +9,8 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 use web_sys::console;
 use web_sys::{
-    AudioBuffer, AudioBufferSourceNode, AudioContext, AudioContextState, Document,
-    HtmlCanvasElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement,
+    AudioBuffer, AudioContext, AudioContextState, Document, HtmlCanvasElement, HtmlInputElement,
+    HtmlSelectElement, HtmlTextAreaElement,
 };
 use yew::events::Event;
 use yew::prelude::*;
@@ -152,6 +152,127 @@ pub fn app() -> Html {
     }
 }
 
+async fn resume_context(ctx: &AudioContext) {
+    if ctx.state() == AudioContextState::Suspended {
+        if let Ok(promise) = ctx.resume() {
+            let _ = JsFuture::from(promise).await;
+        }
+    }
+}
+
+fn ensure_audio_context(
+    handle: &UseStateHandle<Option<AudioContext>>,
+) -> Result<AudioContext, JsValue> {
+    if let Some(ctx) = handle.as_ref() {
+        Ok(ctx.clone())
+    } else {
+        let ctx = AudioContext::new()?;
+        handle.set(Some(ctx.clone()));
+        Ok(ctx)
+    }
+}
+
+fn play_samples(ctx: &AudioContext, samples: &[f32], sample_rate: f32) -> Result<(), JsValue> {
+    if samples.is_empty() {
+        return Ok(());
+    }
+
+    let buffer = ctx.create_buffer(1, samples.len() as u32, sample_rate)?;
+    let mut data = samples.to_vec();
+    buffer.copy_to_channel(&mut data, 0)?;
+
+    let source = ctx.create_buffer_source()?;
+    source.set_buffer(Some(&buffer));
+    source.connect_with_audio_node(&ctx.destination())?;
+    source.start()?;
+    Ok(())
+}
+
+fn mixdown_audio_buffer(buffer: &AudioBuffer) -> Result<Vec<f32>, JsValue> {
+    let channels = buffer.number_of_channels();
+    let length = buffer.length() as usize;
+    if length == 0 {
+        return Ok(Vec::new());
+    }
+
+    let mut mixdown = vec![0.0_f32; length];
+    for channel in 0..channels {
+        let mut data = vec![0.0_f32; length];
+        buffer.copy_from_channel(&mut data, channel as i32)?;
+        for (idx, sample) in data.iter().enumerate() {
+            mixdown[idx] += *sample;
+        }
+    }
+
+    if channels > 0 {
+        let scale = 1.0 / channels as f32;
+        for sample in mixdown.iter_mut() {
+            *sample *= scale;
+        }
+    }
+
+    Ok(mixdown)
+}
+
+fn normalize_samples(samples: &mut [f32]) {
+    let mut max_amp = 0.0_f32;
+    for &value in samples.iter() {
+        max_amp = max_amp.max(value.abs());
+    }
+
+    if max_amp > 1.0 {
+        let scale = 0.98_f32 / max_amp;
+        for sample in samples.iter_mut() {
+            *sample *= scale;
+        }
+    }
+}
+
+fn resample_external(
+    samples: &[f32],
+    source_rate: f32,
+    target_rate: f32,
+    target_len: usize,
+) -> Vec<f32> {
+    if target_len == 0 {
+        return Vec::new();
+    }
+    if samples.is_empty() {
+        return vec![0.0; target_len];
+    }
+    if source_rate <= 0.0 || target_rate <= 0.0 {
+        return samples.iter().cycle().take(target_len).copied().collect();
+    }
+
+    let ratio = source_rate / target_rate;
+    let src_len = samples.len();
+    let mut output = Vec::with_capacity(target_len);
+
+    for i in 0..target_len {
+        let src_pos = (i as f32 * ratio) % src_len as f32;
+        let idx = src_pos.floor() as usize;
+        let frac = src_pos - idx as f32;
+        let next_idx = (idx + 1) % src_len;
+        let sample = samples[idx] * (1.0 - frac) + samples[next_idx] * frac;
+        output.push(sample);
+    }
+
+    output
+}
+
+fn nonlinear_mix(mod_signal: &[f32], carrier: &[f32], wet: f32) -> Vec<f32> {
+    let mut output = Vec::with_capacity(mod_signal.len());
+    let wet = wet.clamp(0.0, 1.0);
+    let dry = 1.0 - wet;
+
+    for (&mod_sample, &carrier_sample) in mod_signal.iter().zip(carrier.iter()) {
+        let vocoded = (mod_sample * carrier_sample).tanh();
+        output.push(wet * vocoded + dry * mod_sample);
+    }
+
+    output
+}
+
 #[derive(Properties, PartialEq)]
 pub struct StatsPanelProps {
     pub input: SimulationInput,
@@ -263,6 +384,305 @@ fn draw_constellation(canvas: &HtmlCanvasElement, symbols_i: &[f64], symbols_q: 
 
             let _ = chart.draw_series(symbols.map(|(i, q)| Circle::new((i, q), 3, RED.filled())));
         }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+struct ExternalAudio {
+    name: String,
+    sample_rate: f32,
+    samples: Vec<f32>,
+}
+
+#[derive(Properties, PartialEq)]
+pub struct AudioPanelProps {
+    pub audio: Option<ModulationAudio>,
+}
+
+#[function_component(AudioPanel)]
+pub fn audio_panel(props: &AudioPanelProps) -> Html {
+    let context = use_state(|| None::<AudioContext>);
+    let external_audio = use_state(|| None::<ExternalAudio>);
+    let wet_mix = use_state(|| 0.5_f32);
+    let status = use_state(|| AttrValue::from("Run the pipeline to generate audio"));
+
+    {
+        let status = status.clone();
+        let external_audio = external_audio.clone();
+        use_effect_with(
+            props.audio.clone(),
+            move |audio: &Option<ModulationAudio>| {
+                if audio.is_some() {
+                    status.set(AttrValue::from("Ready to play modulation audio"));
+                } else {
+                    status.set(AttrValue::from("Run the pipeline to generate audio"));
+                    external_audio.set(None);
+                }
+            },
+        );
+    }
+
+    let audio_opt = props.audio.clone();
+    if audio_opt.is_none() {
+        return html! {
+            <div class="audio-panel">
+                <h2>{"Modulated Audio"}</h2>
+                <p>{"Audio playback is unavailable until a simulation has been run."}</p>
+            </div>
+        };
+    }
+
+    let audio = audio_opt.unwrap();
+    let carrier_summary = format!(
+        "Carrier {:.1} Hz · Sample rate {} Hz",
+        audio.carrier_freq_hz, audio.sample_rate
+    );
+    let wet_value = *wet_mix;
+    let wet_percent = format!("{:.0}%", wet_value * 100.0);
+    let external_summary = (*external_audio).clone();
+    let status_message = (*status).clone();
+
+    let on_wet_change = {
+        let wet_mix = wet_mix.clone();
+        Callback::from(move |e: InputEvent| {
+            if let Some(target) = e.target_dyn_into::<HtmlInputElement>() {
+                if let Ok(value) = target.value().parse::<f32>() {
+                    wet_mix.set(value.clamp(0.0, 1.0));
+                }
+            }
+        })
+    };
+
+    let on_audio_upload = {
+        let context = context.clone();
+        let external_audio = external_audio.clone();
+        let status = status.clone();
+        Callback::from(move |e: Event| {
+            if let Some(target) = e.target_dyn_into::<HtmlInputElement>() {
+                if let Some(files) = target.files() {
+                    if let Some(file) = files.get(0) {
+                        let file_name = file.name();
+                        let context = context.clone();
+                        let external_audio = external_audio.clone();
+                        let status = status.clone();
+                        spawn_local(async move {
+                            status.set(AttrValue::from("Decoding uploaded audio…"));
+                            match ensure_audio_context(&context) {
+                                Ok(ctx) => {
+                                    if let Ok(buffer) = JsFuture::from(file.array_buffer()).await {
+                                        if let Ok(array_buffer) = buffer.dyn_into::<ArrayBuffer>() {
+                                            match ctx.decode_audio_data(&array_buffer) {
+                                                Ok(promise) => {
+                                                    match JsFuture::from(promise).await {
+                                                        Ok(decoded) => {
+                                                            if let Ok(audio_buffer) =
+                                                                decoded.dyn_into::<AudioBuffer>()
+                                                            {
+                                                                match mixdown_audio_buffer(
+                                                                    &audio_buffer,
+                                                                ) {
+                                                                    Ok(mut samples) => {
+                                                                        normalize_samples(
+                                                                            &mut samples,
+                                                                        );
+                                                                        external_audio.set(Some(ExternalAudio {
+                                                                            name: file_name.clone(),
+                                                                            sample_rate: audio_buffer.sample_rate(),
+                                                                            samples,
+                                                                        }));
+                                                                        status.set(format!(
+                                                                            "Loaded {} ({:.1} kHz)",
+                                                                            file_name,
+                                                                            audio_buffer.sample_rate() / 1000.0
+                                                                        ).into());
+                                                                    }
+                                                                    Err(err) => {
+                                                                        console::error_1(&err);
+                                                                        status.set("Failed to mix channels from uploaded audio".into());
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        Err(err) => {
+                                                            console::error_1(&err);
+                                                            status.set(
+                                                                "Unable to decode uploaded audio"
+                                                                    .into(),
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                                Err(err) => {
+                                                    console::error_1(&err);
+                                                    status
+                                                        .set("Audio decode promise failed".into());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                Err(err) => {
+                                    console::error_1(&err);
+                                    status.set("Audio context unavailable".into());
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        })
+    };
+
+    let play_clean = {
+        let context = context.clone();
+        let status = status.clone();
+        let audio = audio.clone();
+        Callback::from(move |_| {
+            let context = context.clone();
+            let status = status.clone();
+            let audio = audio.clone();
+            spawn_local(async move {
+                status.set(AttrValue::from("Playing clean carrier…"));
+                match ensure_audio_context(&context) {
+                    Ok(ctx) => {
+                        resume_context(&ctx).await;
+                        if let Err(err) = play_samples(&ctx, &audio.clean, audio.sample_rate as f32)
+                        {
+                            console::error_1(&err);
+                            status.set("Error playing clean carrier".into());
+                        } else {
+                            status.set("Clean carrier playback started".into());
+                        }
+                    }
+                    Err(err) => {
+                        console::error_1(&err);
+                        status.set("Audio context unavailable".into());
+                    }
+                }
+            });
+        })
+    };
+
+    let play_noisy = {
+        let context = context.clone();
+        let status = status.clone();
+        let audio = audio.clone();
+        Callback::from(move |_| {
+            let context = context.clone();
+            let status = status.clone();
+            let audio = audio.clone();
+            spawn_local(async move {
+                status.set(AttrValue::from("Playing noisy channel…"));
+                match ensure_audio_context(&context) {
+                    Ok(ctx) => {
+                        resume_context(&ctx).await;
+                        if let Err(err) = play_samples(&ctx, &audio.noisy, audio.sample_rate as f32)
+                        {
+                            console::error_1(&err);
+                            status.set("Error playing noisy channel".into());
+                        } else {
+                            status.set("Noisy channel playback started".into());
+                        }
+                    }
+                    Err(err) => {
+                        console::error_1(&err);
+                        status.set("Audio context unavailable".into());
+                    }
+                }
+            });
+        })
+    };
+
+    let play_mixed = {
+        let context = context.clone();
+        let status = status.clone();
+        let external_audio_handle = external_audio.clone();
+        let wet_mix = wet_mix.clone();
+        let audio = audio.clone();
+        Callback::from(move |_| {
+            let maybe_external = (*external_audio_handle).clone();
+            if maybe_external.is_none() {
+                status.set("Upload an audio file to enable mixing".into());
+                return;
+            }
+
+            let external = maybe_external.unwrap();
+            let wet_value = *wet_mix;
+            let context = context.clone();
+            let status = status.clone();
+            let audio = audio.clone();
+            spawn_local(async move {
+                status.set(AttrValue::from("Playing vocoder mix…"));
+                match ensure_audio_context(&context) {
+                    Ok(ctx) => {
+                        resume_context(&ctx).await;
+                        let resampled = resample_external(
+                            &external.samples,
+                            external.sample_rate,
+                            audio.sample_rate as f32,
+                            audio.noisy.len(),
+                        );
+                        let mut mixed = nonlinear_mix(&audio.noisy, &resampled, wet_value);
+                        normalize_samples(&mut mixed);
+                        if let Err(err) = play_samples(&ctx, &mixed, audio.sample_rate as f32) {
+                            console::error_1(&err);
+                            status.set("Error playing vocoder mix".into());
+                        } else {
+                            status.set(
+                                format!(
+                                    "Vocoder mix playback started (wet {}%)",
+                                    (wet_value * 100.0).round() as i32
+                                )
+                                .into(),
+                            );
+                        }
+                    }
+                    Err(err) => {
+                        console::error_1(&err);
+                        status.set("Audio context unavailable".into());
+                    }
+                }
+            });
+        })
+    };
+
+    let has_external = external_summary.is_some();
+    let external_display = external_summary.clone();
+
+    html! {
+        <div class="audio-panel">
+            <h2>{"Modulated Audio"}</h2>
+            <p>{carrier_summary}</p>
+            <div class="audio-controls">
+                <button type="button" onclick={play_clean.clone()}>{"Play Clean Carrier"}</button>
+                <button type="button" onclick={play_noisy.clone()}>{"Play Noisy Channel"}</button>
+                <button type="button" onclick={play_mixed.clone()} disabled={!has_external}>{"Play Vocoder Mix"}</button>
+            </div>
+            <label class="audio-upload">
+                {"Upload audio (mp3/wav)"}
+                <input type="file" accept="audio/*" onchange={on_audio_upload} />
+            </label>
+            <label class="audio-slider">
+                {"Wet/Dry Mix"}
+                <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={format!("{:.2}", wet_value)}
+                    oninput={on_wet_change}
+                />
+                <span>{wet_percent}</span>
+            </label>
+            {
+                if let Some(external) = external_display {
+                    html! { <p class="audio-status">{format!("External source: {} ({:.1} kHz)", external.name, external.sample_rate / 1000.0)}</p> }
+                } else {
+                    Html::default()
+                }
+            }
+            <p class="audio-status">{status_message}</p>
+        </div>
     }
 }
 

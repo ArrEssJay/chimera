@@ -37,11 +37,8 @@ pub fn run_simulation(
     let encoding = generate_modulated_signal(sim, protocol, &ldpc_suite.matrices);
     let demodulation = demodulate_and_decode(&encoding, &ldpc_suite.matrices, sim, protocol);
 
-    let modulation_audio = build_modulation_audio(
-        &encoding,
-        sim.sample_rate,
-        protocol.carrier_freq_hz,
-    );
+    let modulation_audio =
+        build_modulation_audio(&encoding, sim.sample_rate, protocol.carrier_freq_hz);
 
     let diagnostics = DiagnosticsBundle {
         encoding_logs: encoding.logs.clone(),

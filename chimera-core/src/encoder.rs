@@ -1,4 +1,30 @@
-//! Encoding and modulation stage.
+/// Encodes a message vector using an LDPC generator matrix.
+///
+/// This function performs the core LDPC encoding operation by multiplying the
+/// message vector with the generator matrix over the Galois Field GF(2). In this
+/// field, addition is equivalent to the XOR operation. The resulting vector is
+/// the codeword, which includes the original message bits and the appended
+/// parity check bits.
+///
+/// The operation is equivalent to `codeword = message * G`, where `G` is the
+/// generator matrix.
+///
+/// # Arguments
+///
+/// * `generator` - A 2D array representing the generator matrix (`G`). Its
+///   dimensions should be `k x n`, where `k` is the message length and `n` is
+///   the codeword length.
+/// * `message` - A slice of `u8` representing the message bits to be encoded.
+///   Its length must be equal to the number of rows in the `generator` matrix.
+///
+/// # Returns
+///
+/// A `Vec<u8>` containing the encoded codeword of length `n`.
+///
+/// # Panics
+///
+/// This function will panic if the length of the `message` does not match the
+/// number of rows in the `generator` matrix.
 use std::f64::consts::FRAC_1_SQRT_2;
 
 use ndarray::Array1;
@@ -39,6 +65,24 @@ pub struct EncodingResult {
     pub logs: Vec<String>,
 }
 
+/// Creates a new `EncodingResult` with default values.
+///
+/// All vector and array fields are initialized as empty. Numerical fields
+/// are set to their default state (e.g., 0 or 1). This is useful for
+/// creating a placeholder result before the encoding process begins.
+///
+/// # Examples
+///
+/// ```
+/// # use ndarray::Array1;
+/// # use chimera_core::encoder::EncodingResult;
+/// let result = EncodingResult::new();
+///
+/// assert!(result.noisy_signal.is_empty());
+/// assert!(result.clean_signal.is_empty());
+/// assert_eq!(result.total_frames, 0);
+/// assert_eq!(result.samples_per_symbol, 1);
+/// ```
 impl EncodingResult {
     pub fn new() -> Self {
         Self {
@@ -84,6 +128,10 @@ pub fn generate_modulated_signal(
         "QPSK bitstream must have even length"
     );
 
+    assert!(
+        protocol.qpsk_symbol_rate > 0,
+        "QPSK symbol rate must be non-zero"
+    );
     let samples_per_symbol = usize::max(1, sim.sample_rate / protocol.qpsk_symbol_rate);
     let mut qpsk_symbols = Vec::with_capacity(qpsk_bitstream.len() / 2);
 
