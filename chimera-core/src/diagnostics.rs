@@ -12,6 +12,16 @@ pub struct SymbolDecision {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct FrameDescriptor {
+    pub frame_index: usize,
+    pub total_frames: usize,
+    pub command_opcode: u32,
+    pub command_value: u32,
+    pub frame_label: String,
+    pub payload_preview: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct ModulationAudio {
     pub sample_rate: usize,
     pub carrier_freq_hz: f64,
@@ -43,4 +53,9 @@ pub struct DiagnosticsBundle {
     pub decoding_logs: Vec<String>,
     pub demodulation: DemodulationDiagnostics,
     pub modulation_audio: Option<ModulationAudio>,
+    pub tx_symbols_i: Vec<f64>,
+    pub tx_symbols_q: Vec<f64>,
+    pub clean_baseband: Vec<f64>,
+    pub noisy_baseband: Vec<f64>,
+    pub frames: Vec<FrameDescriptor>,
 }

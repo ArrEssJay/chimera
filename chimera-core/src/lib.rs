@@ -46,6 +46,11 @@ pub fn run_simulation(
         decoding_logs: demodulation.logs.clone(),
         demodulation: demodulation.diagnostics.clone(),
         modulation_audio,
+        tx_symbols_i: encoding.qpsk_symbols.iter().map(|c| c.re).collect(),
+        tx_symbols_q: encoding.qpsk_symbols.iter().map(|c| c.im).collect(),
+        clean_baseband: encoding.clean_signal.to_vec(),
+        noisy_baseband: encoding.noisy_signal.to_vec(),
+        frames: encoding.frame_descriptors.clone(),
     };
 
     SimulationOutput {

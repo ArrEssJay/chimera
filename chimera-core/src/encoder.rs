@@ -34,13 +34,17 @@ use rand::{Rng, SeedableRng};
 use rand_distr::StandardNormal;
 
 use crate::config::{ProtocolConfig, SimulationConfig};
+use crate::diagnostics::FrameDescriptor;
 use crate::ldpc::LDPCMatrices;
-use crate::utils::{hex_to_bitstream, int_to_bitstream, string_to_bitstream, LogCollector};
+use crate::utils::{
+    hex_to_bitstream, int_to_bitstream, pack_bits, string_to_bitstream, LogCollector,
+};
 
 pub struct FrameStream {
     pub frames_bitstream: Vec<u8>,
     pub frame_count: usize,
     pub logs: Vec<String>,
+    pub frames: Vec<FrameDescriptor>,
 }
 
 impl FrameStream {
@@ -49,6 +53,7 @@ impl FrameStream {
             frames_bitstream: Vec::new(),
             frame_count: 0,
             logs: Vec::new(),
+            frames: Vec::new(),
         }
     }
 }
@@ -63,6 +68,7 @@ pub struct EncodingResult {
     pub samples_per_symbol: usize,
     pub sample_rate: usize,
     pub logs: Vec<String>,
+    pub frame_descriptors: Vec<FrameDescriptor>,
 }
 
 /// Creates a new `EncodingResult` with default values.
@@ -95,6 +101,7 @@ impl EncodingResult {
             samples_per_symbol: 1,
             sample_rate: 0,
             logs: Vec::new(),
+            frame_descriptors: Vec::new(),
         }
     }
 }
@@ -121,6 +128,7 @@ pub fn generate_modulated_signal(
     ));
 
     let frame_stream = build_frame_stream(&payload_bits, protocol, matrices, &mut logger);
+    let frame_descriptors = frame_stream.frames.clone();
 
     let qpsk_bitstream = frame_stream.frames_bitstream.clone();
     assert!(
@@ -199,6 +207,7 @@ pub fn generate_modulated_signal(
         samples_per_symbol,
         sample_rate: sim.sample_rate,
         logs: logger.entries().to_vec(),
+        frame_descriptors,
     }
 }
 
@@ -224,6 +233,7 @@ pub fn build_frame_stream(
     let command_bits_len = layout.command_type_symbols * 2;
 
     let mut frames_bitstream = Vec::with_capacity(total_frames * frame_bits);
+    let mut frames = Vec::with_capacity(total_frames);
 
     for frame_idx in 0..total_frames {
         let command_value = (protocol.command_opcode as u32)
@@ -237,6 +247,32 @@ pub fn build_frame_stream(
         if start < end {
             message_chunk[..(end - start)].copy_from_slice(&payload_bits[start..end]);
         }
+
+        let payload_window = if start < end {
+            &payload_bits[start..end]
+        } else {
+            &[] as &[u8]
+        };
+
+        let payload_preview = if !payload_window.is_empty() {
+            let mut preview_bits = payload_window.to_vec();
+            while preview_bits.len() % 8 != 0 {
+                preview_bits.push(0);
+            }
+            let preview_bytes = pack_bits(&preview_bits);
+            let mut preview = preview_bytes
+                .iter()
+                .take(8)
+                .map(|byte| format!("{:02X}", byte))
+                .collect::<Vec<_>>()
+                .join(" ");
+            if preview_bytes.len() > 8 {
+                preview.push_str(" …");
+            }
+            preview
+        } else {
+            String::from("(padding)")
+        };
 
         let codeword = encode_with_generator(&matrices.generator, &message_chunk);
         let payload_section = &codeword[..message_bits];
@@ -254,12 +290,22 @@ pub fn build_frame_stream(
         frames_bitstream.extend_from_slice(&command_bits);
         frames_bitstream.extend_from_slice(payload_section);
         frames_bitstream.extend_from_slice(ecc_section);
+
+        frames.push(FrameDescriptor {
+            frame_index: frame_idx,
+            total_frames,
+            command_opcode: protocol.command_opcode as u32,
+            command_value,
+            frame_label: format!("Frame {} of {}", frame_idx + 1, total_frames),
+            payload_preview,
+        });
     }
 
     FrameStream {
         frames_bitstream,
         frame_count: total_frames,
         logs: logger.entries().to_vec(),
+        frames,
     }
 }
 
