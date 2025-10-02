@@ -31,11 +31,17 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  min-height: 100vh;
   background: var(--gradient-bg);
   color: var(--text-primary);
   font-family: var(--font-body);
   letter-spacing: 0.01em;
+}
+
+main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
@@ -214,13 +220,81 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-soft);
 }
 
+.app-header {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 40px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.header-content {
+  flex: 1;
+  min-width: 280px;
+}
+
+.logo-title {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px var(--accent-glow);
+}
+
+.logo-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  color: var(--text-soft);
+  letter-spacing: 0.03em;
+}
+
+.help-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--accent-highlight);
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.help-icon {
+  font-size: 1.25rem;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px 20px;
+  }
+  
+  .logo-title {
+    font-size: 2rem;
+  }
+  
+  .help-hint {
+    width: 100%;
+  }
+}
+
 .main-grid {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 48px 40px 80px;
+  padding: 16px 40px 60px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 20px;
 }
 
 .panel {
@@ -228,7 +302,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 16px;
   border: 1px solid var(--panel-border);
   box-shadow: 0 20px 55px lch(0% 0 0 / 0.25);
-  padding: 24px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
 }
@@ -248,7 +322,7 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .run-controls {
   display: flex;
@@ -391,16 +465,16 @@ input[type="range"]::-moz-range-thumb {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px;
-  margin-top: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
 }
 
 .chart-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 200px;
   background: radial-gradient(circle at top, lch(74% 42 260 / 0.12), transparent 65%), var(--panel);
 }
 
@@ -408,7 +482,7 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 260px;
+  min-height: 220px;
   background: radial-gradient(circle at center, lch(74% 42 260 / 0.08), transparent 65%), var(--panel);
 }
 
@@ -429,8 +503,8 @@ input[type="range"]::-moz-range-thumb {
 .log-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-top: 32px;
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .log-pane {
@@ -445,13 +519,13 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .log-viewer {
-  max-height: 220px;
-  padding: 16px;
+  max-height: 180px;
+  padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
   background: lch(12% 6 250 / 0.65);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   overflow-y: auto;
   white-space: pre-wrap;
 }
@@ -500,15 +574,15 @@ input[type="range"]::-moz-range-thumb {
 .node-graph {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 32px;
-  align-items: center;
+  gap: 20px;
+  align-items: start;
   position: relative;
 }
 
 .node-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   position: relative;
   z-index: 1;
 }
@@ -534,7 +608,7 @@ input[type="range"]::-moz-range-thumb {
 .node {
   background-color: var(--panel);
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid var(--border-color);
   box-shadow: 0 10px 30px lch(0% 0 0 / 0.2);
 }
@@ -571,14 +645,14 @@ input[type="range"]::-moz-range-thumb {
 
 @media (max-width: 720px) {
   .main-grid {
-    padding: 32px 20px 60px;
+    padding: 16px 20px 48px;
   }
 }
 
 .app-footer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 40px;
+  padding: 16px 40px 24px;
   text-align: center;
 }
 

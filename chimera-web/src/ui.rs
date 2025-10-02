@@ -225,6 +225,16 @@ pub fn app() -> Html {
 
     html! {
         <main>
+            <header class="app-header">
+                <div class="header-content">
+                    <h1 class="logo-title">{"🔮 CHIMERA"}</h1>
+                    <p class="logo-subtitle">{"Advanced Signal Processing & Modulation Pipeline"}</p>
+                </div>
+                <div class="help-hint">
+                    <span class="help-icon">{"ℹ️"}</span>
+                    <span>{"Configure parameters below, then click \"Run Now\" to execute the simulation"}</span>
+                </div>
+            </header>
             <div class="main-grid">
                 <section class="panel controls-panel">
                     <header class="panel-header">
@@ -544,7 +554,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
                 } else {
-                    html! { <canvas ref={canvas_ref} width="260" height="260" /> }
+                    html! { <canvas ref={canvas_ref} width="220" height="220" /> }
                 }
             }
         </div>
