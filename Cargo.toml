@@ -2,5 +2,6 @@
 members = [
     "chimera-core",
     "chimera-cli",
+    "chimera-web",
 ]
 resolver = "2"

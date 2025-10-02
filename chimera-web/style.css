@@ -1,0 +1,38 @@
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  font-family: inherit;
+  margin-bottom: 1rem;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background-color: #0a7cff;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stats-panel,
+.constellation-panel {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #fdfdfd;
+}

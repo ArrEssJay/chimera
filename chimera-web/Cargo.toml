@@ -1,0 +1,32 @@
+[package]
+name = "chimera-web"
+version = "0.1.0"
+edition = "2021"
+authors = ["Chimera Project <chimera@example.com>"]
+description = "WebAssembly-based visualization dashboard for the Chimera modulation pipeline"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+yew = { version = "0.21", features = ["csr"] }
+wasm-bindgen = "0.2"
+wasm-logger = "0.2"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wasm-bindgen-futures = "0.4"
+plotters = { version = "0.3", features = ["wasm_backend"] }
+plotters-canvas = "0.3"
+chimera-core = { path = "../chimera-core" }
+console_error_panic_hook = "0.1"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "z"
+codegen-units = 1
