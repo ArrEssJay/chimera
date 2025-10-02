@@ -228,7 +228,7 @@ pub fn app() -> Html {
             <header class="app-header">
                 <div class="header-content">
                     <h1 class="logo-title">{"🔮 CHIMERA"}</h1>
-                    <p class="logo-subtitle">{"Advanced Signal Processing & Modulation Pipeline"}</p>
+                    <p class="logo-subtitle">{"Advanced Low Probability of Intercept & Detection Signal Processing Training"}</p>
                 </div>
                 <div class="help-hint">
                     <span class="help-icon">{"ℹ️"}</span>
@@ -353,14 +353,20 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Input"}</h3>
-                                <p>{format!("Plaintext: {} chars", plaintext_len)}</p>
-                                <p>{format!("Eb/N₀: {:.1} dB", current_input.snr_db)}</p>
+                                <p>{format!("Payload: {} chars", plaintext_len)}</p>
+                                <p>
+                                    <span title="Energy per symbol to noise power spectral density ratio">{"Es/N₀"}</span>
+                                    {format!(": {:.1} dB", current_input.snr_db)}
+                                </p>
                             </div>
                         </div>
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Encoder"}</h3>
-                                <p>{format!("Total symbols: {}", frame_layout.total_symbols)}</p>
+                                <p>
+                                    {format!("Total symbols: {}", frame_layout.total_symbols)}
+                                    <span class="info-bubble" title="Each symbol represents 2 bits (QPSK). Total symbols = Payload + ECC.">{"?"}</span>
+                                </p>
                                 <p>{format!("Payload symbols: {}", frame_layout.data_payload_symbols)}</p>
                                 <p>{format!("ECC symbols: {}", frame_layout.ecc_symbols)}</p>
                             </div>
