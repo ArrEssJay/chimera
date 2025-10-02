@@ -286,7 +286,10 @@ pub fn app() -> Html {
                         <label class="field">
                             <span>{"Channel SNR (dB)"}</span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
-                            <p class="muted small">{"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR."}</p>
+                            <p class="muted small">
+                                {"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
+                                <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#energy-ratios-esn0-and-ebn0" target="_blank" rel="noopener noreferrer">{"Learn about Es/N₀"}</a>
+                            </p>
                         </label>
 
                         <div class="field">
@@ -313,7 +316,12 @@ pub fn app() -> Html {
                 <section class="panel telemetry-panel">
                     <header>
                         <h2>{"Frame Telemetry"}</h2>
-                        <p class="muted">{"Live metrics from the most recent pipeline execution."}</p>
+                        <p class="muted">
+                            {"Live metrics from the most recent pipeline execution. "}
+                            <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#bit-error-rate-ber" target="_blank" rel="noopener noreferrer">{"Learn about BER"}</a>
+                            {" | "}
+                            <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#forward-error-correction-fec" target="_blank" rel="noopener noreferrer">{"Learn about FEC"}</a>
+                        </p>
                     </header>
                     {
                         if let Some(ref report) = report {
@@ -363,11 +371,19 @@ pub fn app() -> Html {
                                 <p>{format!("Total symbols: {}", frame_layout.total_symbols)}</p>
                                 <p>{format!("Payload symbols: {}", frame_layout.data_payload_symbols)}</p>
                                 <p>{format!("ECC symbols: {}", frame_layout.ecc_symbols)}</p>
+                                <p class="muted small">
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#symbols" target="_blank" rel="noopener noreferrer">{"What are symbols?"}</a>
+                                </p>
                             </div>
                             <div class="node">
                                 <h3>{"Transmitter"}</h3>
                                 <ConstellationChart title="TX Symbols" i_samples={tx_i.clone()} q_samples={tx_q.clone()} variant={ConstellationVariant::Tx} />
-                                <p class="muted small">{"Ideal QPSK constellation produced by the framing encoder."}</p>
+                                <p class="muted small">
+                                    {"Ideal QPSK constellation produced by the framing encoder. "}
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
+                                    {" | "}
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#qpsk-modulation" target="_blank" rel="noopener noreferrer">{"Learn about QPSK"}</a>
+                                </p>
                             </div>
                         </div>
                         <div class="node-column">
@@ -376,13 +392,19 @@ pub fn app() -> Html {
                                 <p>{format!("Carrier: {:.1} Hz", preset_bundle.protocol.carrier_freq_hz)}</p>
                                 <p>{format!("QPSK rate: {} sym/s", preset_bundle.protocol.qpsk_symbol_rate)}</p>
                                 <p>{format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}</p>
+                                <p class="muted small">
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#additive-white-gaussian-noise-awgn" target="_blank" rel="noopener noreferrer">{"Learn about AWGN channel"}</a>
+                                </p>
                             </div>
                         </div>
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Receiver"}</h3>
                                 <ConstellationChart title="RX Symbols" i_samples={rx_i.clone()} q_samples={rx_q.clone()} variant={ConstellationVariant::Rx} />
-                                <p class="muted small">{"Recovered constellation after timing/frequency correction."}</p>
+                                <p class="muted small">
+                                    {"Recovered constellation after timing/frequency correction. "}
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
+                                </p>
                             </div>
                             <div class="node">
                                 <h3>{"Decoder"}</h3>
@@ -459,7 +481,10 @@ pub fn app() -> Html {
                 <section class="panel diagnostics-panel">
                     <header>
                         <h2>{"Diagnostics"}</h2>
-                        <p class="muted">{"Analyzer outputs from the demodulation loop."}</p>
+                        <p class="muted">
+                            {"Analyzer outputs from the demodulation loop. "}
+                            <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md" target="_blank" rel="noopener noreferrer">{"Signal Processing Concepts Guide"}</a>
+                        </p>
                     </header>
                     <div class="chart-grid">
                         <LineChart title="Timing Error" values={timing_error.clone()} accent_rgb={Some((94, 214, 255))} />
