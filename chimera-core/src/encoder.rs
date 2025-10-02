@@ -170,6 +170,9 @@ pub fn generate_modulated_signal(
     let signal_power: f64 =
         qpsk_symbols.iter().map(|c| c.norm_sqr()).sum::<f64>() / qpsk_symbols.len().max(1) as f64;
 
+    // Note: sim.snr_db represents Es/N0 (symbol energy to noise density ratio), not Eb/N0.
+    // For QPSK with 2 bits/symbol: Eb/N0 = Es/N0 - 3.01 dB.
+    // Processing gain from oversampling: ~34.77 dB with sample_rate=48kHz, symbol_rate=16.
     let snr_linear = 10f64.powf(sim.snr_db / 10.0);
     let noise_variance = if snr_linear > 0.0 {
         signal_power / snr_linear

@@ -297,9 +297,9 @@ pub fn app() -> Html {
                         </label>
 
                         <label class="field">
-                            <span>{"Eb/N₀ (dB)"}</span>
-                            <input type="number" min="-5" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
-                            <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values (closer to 0 dB) reduce pre-FEC BER under AWGN. Values below -5 dB cause LDPC failure."}</p>
+                            <span>{"Channel SNR (dB)"}</span>
+                            <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
+                            <p class="muted small">{"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR."}</p>
                         </label>
 
                         <div class="field">
