@@ -11,7 +11,7 @@
 
 ---
 
-### 🌐 **[Try the Live Web Dashboard →](https://arressjay.github.io/chimera/)**
+### 🌐 **[Try the Live Web Dashboard →](https://impermanent.io/)**
 
 *WebAssembly-powered visualization running in your browser*
 
@@ -78,13 +78,13 @@ fn main() {
 This repository is a Cargo workspace containing several crates:
 
 -   **`chimera-core`**: The core library implementing the modulation/demodulation pipeline, LDPC codes, and simulation logic.
--   **`chimera-web`**: 🌐 WebAssembly-based interactive dashboard for visualizing the pipeline ([Live Demo](https://arressjay.github.io/chimera/))
+-   **`chimera-web`**: 🌐 WebAssembly-based interactive dashboard for visualizing the pipeline ([Live Demo](https://impermanent.io/))
 -   **`chimera-cli`**: 🔧 (Planned) A command-line interface for running simulations and processing signals.
 
 ## 📚 Documentation
 
 -   📖 [Chimera Technical Overview](docs/chimera_technical_overview.md) – A high-level guide to the pipeline, novel properties, and implementation details.
--   🌐 [Live Web Dashboard](https://arressjay.github.io/chimera/) – Interactive WASM-based visualization
+-   🌐 [Live Web Dashboard](https://impermanent.io/) – Interactive WASM-based visualization
 
 ## 🔬 Core Concepts
 
