@@ -296,21 +296,11 @@ pub fn app() -> Html {
                             <p class="muted">{format!("{} chars", plaintext_len)}</p>
                         </label>
 
-                        <div class="field-inline">
-                            <label class="field">
-                                <span>{"Eb/N₀ (dB)"}</span>
-                                <input type="number" min="-10" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
-                                <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values (closer to 0 dB) reduce pre-FEC BER under AWGN. Values below ~7 dB cause LDPC failure."}</p>
-                            </label>
-                            <div class="field locked">
-                                <span>{"Sample Rate"}</span>
-                                <div class="locked-field">
-                                    <span class="value">{format!("{} Hz", FIXED_SAMPLE_RATE)}</span>
-                                    <span class="tag compact">{"Locked"}</span>
-                                </div>
-                                <p class="muted small">{"All presets render at 48 kHz for deterministic diagnostics."}</p>
-                            </div>
-                        </div>
+                        <label class="field">
+                            <span>{"Eb/N₀ (dB)"}</span>
+                            <input type="number" min="-10" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
+                            <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values (closer to 0 dB) reduce pre-FEC BER under AWGN. Values below ~7 dB cause LDPC failure."}</p>
+                        </label>
 
                         <div class="field">
                             <span>{"External Audio Payload"}</span>
@@ -377,7 +367,6 @@ pub fn app() -> Html {
                             <div class="node">
                                 <h3>{"Input"}</h3>
                                 <p>{format!("Plaintext: {} chars", plaintext_len)}</p>
-                                <p>{format!("Sample rate: {} Hz", FIXED_SAMPLE_RATE)}</p>
                                 <p>{format!("Eb/N₀: {:.1} dB", current_input.snr_db)}</p>
                             </div>
                         </div>
