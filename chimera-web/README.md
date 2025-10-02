@@ -7,7 +7,7 @@ WebAssembly-based visualization for the Chimera modulation/demodulation pipeline
 
 - Configure plaintext, sample rate, and SNR for frame generation.
 - Run the full encode → modulate → AWGN → demodulate pipeline in the browser.
-- Inspect constellation plots of received symbols and key BER statistics.
+- Inspect constellation plots alongside encoder/decoder logs and key BER statistics.
 
 ## Prerequisites
 
@@ -20,6 +20,11 @@ Install requirements:
 rustup target add wasm32-unknown-unknown
 cargo install trunk
 ```
+
+> **Tip for macOS/Homebrew users**: if your default toolchain comes from Homebrew,
+> install the Rust toolchain via `rustup` and run `cargo` from that toolchain when
+> building for `wasm32-unknown-unknown`, otherwise the standard library for that
+> target will be missing.
 
 ## Running locally
 

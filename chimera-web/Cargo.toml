@@ -17,16 +17,18 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 wasm-bindgen-futures = "0.4"
-plotters = { version = "0.3", features = ["wasm_backend"] }
+plotters = { version = "0.3", default-features = false }
 plotters-canvas = "0.3"
 chimera-core = { path = "../chimera-core" }
 console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = [
+	"Document",
+	"HtmlCanvasElement",
+	"HtmlInputElement",
+	"HtmlTextAreaElement",
+	"Window"
+] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
-[profile.release]
-panic = "abort"
-lto = true
-opt-level = "z"
-codegen-units = 1

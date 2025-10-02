@@ -5,3 +5,6 @@ members = [
     "chimera-web",
 ]
 resolver = "2"
+
+[profile.release.package.chimera-web]
+opt-level = "z"

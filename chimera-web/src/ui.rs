@@ -2,7 +2,6 @@ use crate::model::{run_pipeline, SimulationInput, SimulationOutput};
 use chimera_core::diagnostics::DiagnosticsBundle;
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
-use wasm_bindgen::JsCast;
 use web_sys::{Document, HtmlCanvasElement, HtmlInputElement, HtmlTextAreaElement};
 use yew::prelude::*;
 
@@ -94,8 +93,10 @@ pub fn app() -> Html {
             </form>
 
             <div class="dashboard">
-                <StatsPanel output={current_output.clone()} />
+                <StatsPanel input={current_input.clone()} output={current_output.clone()} />
                 <ConstellationChart diagnostics={current_output.diagnostics.clone()} />
+                <LogsPanel title={AttrValue::from("Encoder Logs")} entries={current_output.diagnostics.encoding_logs.clone()} />
+                <LogsPanel title={AttrValue::from("Decoder Logs")} entries={current_output.diagnostics.decoding_logs.clone()} />
             </div>
         </div>
     }
@@ -103,6 +104,7 @@ pub fn app() -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct StatsPanelProps {
+    pub input: SimulationInput,
     pub output: SimulationOutput,
 }
 
@@ -114,6 +116,8 @@ pub fn stats_panel(props: &StatsPanelProps) -> Html {
         <div class="stats-panel">
             <h2>{"Simulation Results"}</h2>
             <ul>
+                <li>{format!("SNR configured: {:.1} dB", props.input.snr_db)}</li>
+                <li>{format!("Sample rate: {} Hz", props.input.sample_rate)}</li>
                 <li>{format!("Pre-FEC errors: {} (BER {:.6})", report.pre_fec_errors, report.pre_fec_ber)}</li>
                 <li>{format!("Post-FEC errors: {} (BER {:.6})", report.post_fec_errors, report.post_fec_ber)}</li>
                 <li>{format!("Recovered message: {}", report.recovered_message)}</li>
@@ -135,14 +139,14 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         let symbols_i = props.diagnostics.demodulation.received_symbols_i.clone();
         let symbols_q = props.diagnostics.demodulation.received_symbols_q.clone();
 
-        use_effect_with_deps(
+        use_effect_with(
+            (symbols_i.clone(), symbols_q.clone()),
             move |(i_samples, q_samples): &(Vec<f64>, Vec<f64>)| {
                 if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
                     draw_constellation(&canvas, i_samples, q_samples);
                 }
                 || ()
             },
-            (symbols_i, symbols_q),
         );
     }
 
@@ -155,7 +159,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
 }
 
 fn draw_constellation(canvas: &HtmlCanvasElement, symbols_i: &[f64], symbols_q: &[f64]) {
-    if let Some(mut backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
+    if let Some(backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
         let root = backend.into_drawing_area();
         if root.fill(&WHITE).is_err() {
             return;
@@ -176,6 +180,24 @@ fn draw_constellation(canvas: &HtmlCanvasElement, symbols_i: &[f64], symbols_q: 
 
             let _ = chart.draw_series(symbols.map(|(i, q)| Circle::new((i, q), 3, RED.filled())));
         }
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct LogsPanelProps {
+    pub title: AttrValue,
+    pub entries: Vec<String>,
+}
+
+#[function_component(LogsPanel)]
+pub fn logs_panel(props: &LogsPanelProps) -> Html {
+    html! {
+        <div class="logs-panel">
+            <h2>{props.title.clone()}</h2>
+            <ol>
+                {for props.entries.iter().map(|entry| html! { <li>{entry}</li> })}
+            </ol>
+        </div>
     }
 }
 
