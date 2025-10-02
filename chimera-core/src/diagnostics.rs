@@ -53,6 +53,7 @@ pub struct DiagnosticsBundle {
     pub decoding_logs: Vec<String>,
     pub demodulation: DemodulationDiagnostics,
     pub modulation_audio: Option<ModulationAudio>,
+    pub tx_bits: Vec<u8>,
     pub tx_symbols_i: Vec<f64>,
     pub tx_symbols_q: Vec<f64>,
     pub clean_baseband: Vec<f64>,

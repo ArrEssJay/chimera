@@ -3,11 +3,12 @@ use chimera_core::diagnostics::{DiagnosticsBundle, SimulationReport};
 use chimera_core::run_simulation;
 use serde::{Deserialize, Serialize};
 
+pub const FIXED_SAMPLE_RATE: usize = 48_000;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SimulationInput {
     pub plaintext: String,
     pub snr_db: f64,
-    pub sample_rate: usize,
     pub preset: FramePreset,
 }
 
@@ -23,7 +24,6 @@ impl SimulationInput {
         Self {
             plaintext: defaults.plaintext_source,
             snr_db: defaults.snr_db,
-            sample_rate: defaults.sample_rate,
             preset,
         }
     }
@@ -45,7 +45,7 @@ pub fn run_pipeline(input: SimulationInput) -> SimulationOutput {
     let mut sim = simulation;
     sim.plaintext_source = input.plaintext;
     sim.snr_db = input.snr_db;
-    sim.sample_rate = input.sample_rate;
+    sim.sample_rate = FIXED_SAMPLE_RATE;
 
     let output = run_simulation(&sim, &protocol, &ldpc);
     SimulationOutput {

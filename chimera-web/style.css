@@ -236,6 +236,28 @@ input[type="range"]::-moz-range-thumb {
   gap: 1.5rem;
   margin-bottom: 24px;
 }
+.run-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge-live {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: lch(58% 40 260 / 0.35);
+  color: lch(85% 15 260);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badge-live.idle {
+  background: lch(16% 12 260 / 0.85);
+  color: lch(70% 18 260);
+  border-color: lch(40% 10 260 / 0.5);
+}
 
 .panel-header h1,
 .panel-header h2 {
@@ -250,6 +272,11 @@ input[type="range"]::-moz-range-thumb {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+}
+.control-hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
 }
 
 .field {
@@ -275,6 +302,46 @@ input[type="range"]::-moz-range-thumb {
 
 .field-inline input[type="number"] {
   width: 100%;
+}
+.field.locked {
+  gap: 12px;
+}
+
+.locked-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  border: 1px dashed var(--panel-border);
+  background: lch(16% 10 255 / 0.6);
+}
+
+.locked-field .value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag.compact {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
+}
+
+.muted.small {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.audio-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.audio-actions .muted {
+  font-size: 0.75rem;
 }
 
 .telemetry-panel .metrics-grid {
@@ -325,7 +392,7 @@ input[type="range"]::-moz-range-thumb {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin-top: 16px;
 }
@@ -388,6 +455,47 @@ input[type="range"]::-moz-range-thumb {
   font-size: 0.8rem;
   overflow-y: auto;
   white-space: pre-wrap;
+}
+
+.frame-panel header {
+  margin-bottom: 12px;
+}
+
+.frame-table-wrapper {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.frame-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.frame-table th,
+.frame-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--panel-border);
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.frame-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.frame-table tbody tr:hover {
+  background: lch(14% 9 255 / 0.45);
+}
+
+.frame-table .payload-cell {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  white-space: nowrap;
 }
 
 .node-graph {

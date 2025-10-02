@@ -43,6 +43,8 @@ web-sys = { version = "0.3", features = [
 	"Window"
 ] }
 rustfft = "6"
+gloo-timers = { version = "0.2", features = ["futures"] }
+gloo-file = "0.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

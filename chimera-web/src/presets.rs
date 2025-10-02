@@ -136,6 +136,8 @@ impl FramePreset {
             }
         }
 
+        simulation.sample_rate = 48_000;
+
         PresetBundle {
             protocol,
             simulation,
