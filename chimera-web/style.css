@@ -474,7 +474,7 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 280px;
   background: radial-gradient(circle at top, lch(74% 42 260 / 0.12), transparent 65%), var(--panel);
 }
 
@@ -482,8 +482,12 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 400px;
   background: radial-gradient(circle at center, lch(74% 42 260 / 0.08), transparent 65%), var(--panel);
+}
+
+.constellation-panel.constellation-combined {
+  min-height: 450px;
 }
 
 .chart-panel canvas,
@@ -492,6 +496,21 @@ input[type="range"]::-moz-range-thumb {
   max-width: 100%;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
+  background: var(--bg);
+}
+
+.svg-chart-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.svg-chart-container svg {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 12px;
   background: var(--bg);
 }
 
