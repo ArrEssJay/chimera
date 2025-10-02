@@ -544,14 +544,17 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         let variant = props.variant.clone();
 
         use_effect_with(
-            (i_samples.clone(), q_samples.clone(), variant.clone()),
-            move |(i_samples, q_samples, variant)| {
-                if i_samples.is_empty() || q_samples.is_empty() {
-                    return || ();
-                }
-
-                if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                    draw_constellation(&canvas, i_samples, q_samples, &title, variant.clone());
+            (
+                i_samples.clone(),
+                q_samples.clone(),
+                variant.clone(),
+                title.clone(),
+            ),
+            move |(i_samples, q_samples, variant, title)| {
+                if !i_samples.is_empty() && !q_samples.is_empty() {
+                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
+                        draw_constellation(&canvas, i_samples, q_samples, &title, variant.clone());
+                    }
                 }
                 || ()
             },
@@ -590,15 +593,17 @@ fn line_chart(props: &LineChartProps) -> Html {
         let title = props.title.clone();
         let accent = props.accent_rgb;
 
-        use_effect_with((values.clone(), accent), move |(values, accent)| {
-            if values.is_empty() {
-                return || ();
-            }
-            if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                draw_line_chart(&canvas, values, &title, *accent);
-            }
-            || ()
-        });
+        use_effect_with(
+            (values.clone(), accent, title.clone()),
+            move |(values, accent, title)| {
+                if !values.is_empty() {
+                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
+                        draw_line_chart(&canvas, values, &title, *accent);
+                    }
+                }
+                || ()
+            },
+        );
     }
 
     if props.values.is_empty() {
