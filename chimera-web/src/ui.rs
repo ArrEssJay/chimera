@@ -467,8 +467,8 @@ pub fn app() -> Html {
                                                     <tr>
                                                         <td>{format!("{}/{}", desc.frame_index + 1, desc.total_frames)}</td>
                                                         <td><span class="tag">{desc.frame_label.clone()}</span></td>
-                                                        <td>{format!("0x{:04X}", desc.command_opcode)}</td>
-                                                        <td>{format!("0x{:08X}", desc.command_value)}</td>
+                                                        <td>{format_opcode_label(desc.command_opcode)}</td>
+                                                        <td>{format_command_word_label(desc)}</td>
                                                         <td class="payload-cell">{desc.payload_preview.clone()}</td>
                                                     </tr>
                                                 }
@@ -859,6 +859,30 @@ fn compute_ber_trend(tx_bits: &[u8], decisions: &[SymbolDecision]) -> Vec<f64> {
     }
 
     decimate_series(&trend, 512)
+}
+
+fn format_opcode_label(opcode: u32) -> String {
+    let label = match opcode {
+        0x0001 => "Baseline Telemetry",
+        0x00F1 => "Burst Telemetry Control",
+        0x0D11 => "Deep-Space Probe Command",
+        _ => "Custom Opcode",
+    };
+
+    format!("{label} · 0x{opcode:04X}")
+}
+
+fn format_command_word_label(desc: &FrameDescriptor) -> String {
+    let frame_number = desc.frame_index + 1;
+    let total_frames = desc.total_frames;
+
+    let sequence = if total_frames > 0 {
+        format!("Frame {frame_number} of {total_frames}")
+    } else {
+        format!("Frame {frame_number}")
+    };
+
+    format!("{sequence} · 0x{:08X}", desc.command_value)
 }
 
 fn format_sci(value: f64) -> String {
