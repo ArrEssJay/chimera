@@ -146,3 +146,45 @@ fn run_simulation_emits_audio_waveforms() {
         "noisy waveform should contain samples"
     );
 }
+
+#[test]
+fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
+    let protocol = ProtocolConfig::default();
+
+    let mut sim = SimulationConfig::default();
+    sim.sample_rate = protocol.qpsk_symbol_rate; // No oversampling (samples_per_symbol = 1)
+    sim.snr_db = -5.0; // Without processing gain, LDPC fails at this Es/N0
+    sim.plaintext_source = "Hello Chimera".into();
+    sim.rng_seed = Some(1337);
+
+    let ldpc_cfg = LDPCConfig::default();
+    let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
+
+    let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
+    let demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
+
+    // At -5 dB SNR, LDPC should fail to recover the message
+    assert!(demodulation.report.pre_fec_errors > 0, "Expected pre-FEC errors at low SNR");
+    assert_ne!(demodulation.recovered_message, sim.plaintext_source, 
+        "LDPC should fail to recover message at -5 dB SNR");
+}
+
+#[test]
+fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
+    let protocol = ProtocolConfig::default();
+
+    let mut sim = SimulationConfig::default();
+    sim.sample_rate = protocol.qpsk_symbol_rate; // No oversampling (samples_per_symbol = 1)
+    sim.snr_db = -1.0; // Without processing gain, marginal Es/N0 but LDPC succeeds
+    sim.plaintext_source = "Hello Chimera".into();
+    sim.rng_seed = Some(1337);
+
+    let ldpc_cfg = LDPCConfig::default();
+    let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
+
+    let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
+    let demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
+
+    // At -1 dB SNR, some pre-FEC errors are expected but LDPC should still recover
+    assert!(demodulation.report.pre_fec_errors > 0, "Expected pre-FEC errors at -1 dB SNR");
+}

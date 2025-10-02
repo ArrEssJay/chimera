@@ -5,7 +5,6 @@ use crate::presets::FramePreset;
 use chimera_core::diagnostics::{FrameDescriptor, SymbolDecision};
 use gloo_file::callbacks::{read_as_data_url, FileReader};
 use gloo_file::Blob;
-use gloo_timers::callback::Timeout;
 use plotters::prelude::*;
 use plotters::style::colors::TRANSPARENT;
 use plotters::style::RGBAColor;
@@ -28,46 +27,14 @@ pub fn app() -> Html {
     let is_running = use_state(|| false);
     let external_audio_name = use_state(|| None::<String>);
     let reader_handle = use_mut_ref(|| None::<FileReader>);
+    let last_run_input = use_state(|| None::<SimulationInput>);
 
     let current_input = (*simulation).clone();
     let preset_bundle = current_input.preset.bundle();
     let frame_layout = preset_bundle.protocol.frame_layout;
 
-    {
-        let output_state = output.clone();
-        let running_state = is_running.clone();
-        use_effect_with((*simulation).clone(), move |input| {
-            let maybe_timeout = if *running_state {
-                None
-            } else {
-                let snapshot = input.clone();
-                let output_handle = output_state.clone();
-                let running_handle = running_state.clone();
-                Some(Timeout::new(300, move || {
-                    if *running_handle {
-                        return;
-                    }
-
-                    running_handle.set(true);
-                    let output_handle = output_handle.clone();
-                    let running_handle_inner = running_handle.clone();
-                    let sim_to_run = snapshot.clone();
-
-                    spawn_local(async move {
-                        let result = run_pipeline(sim_to_run);
-                        output_handle.set(Some(result));
-                        running_handle_inner.set(false);
-                    });
-                }))
-            };
-
-            move || {
-                if let Some(timeout) = maybe_timeout {
-                    timeout.cancel();
-                }
-            }
-        });
-    }
+    // Check if there are pending changes (simulation input differs from last run)
+    let has_pending_changes = (*last_run_input).as_ref() != Some(&current_input);
 
     let on_preset_change = {
         let simulation = simulation.clone();
@@ -171,6 +138,7 @@ pub fn app() -> Html {
         let simulation_handle = simulation.clone();
         let output_handle = output.clone();
         let running_handle = is_running.clone();
+        let last_run_handle = last_run_input.clone();
         Callback::from(move |_event: MouseEvent| {
             if *running_handle {
                 return;
@@ -179,10 +147,13 @@ pub fn app() -> Html {
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
             let running_state = running_handle.clone();
+            let last_run_state = last_run_handle.clone();
+            let input_clone = input.clone();
             spawn_local(async move {
                 let result = run_pipeline(input);
                 output_state.set(Some(result));
                 running_state.set(false);
+                last_run_state.set(Some(input_clone));
             });
         })
     };
@@ -254,28 +225,44 @@ pub fn app() -> Html {
 
     html! {
         <main>
+            <header class="app-header">
+                <div class="header-content">
+                    <h1 class="logo-title">{"🔮 CHIMERA"}</h1>
+                    <p class="logo-subtitle">{"Advanced Low Probability of Intercept & Detection Signal Processing Training"}</p>
+                </div>
+                <div class="help-hint">
+                    <span class="help-icon">{"ℹ️"}</span>
+                    <span>{"Configure parameters below, then click \"Run Now\" to execute the simulation"}</span>
+                </div>
+            </header>
             <div class="main-grid">
                 <section class="panel controls-panel">
                     <header class="panel-header">
                         <div>
                             <h1>{"Simulation Controls"}</h1>
-                            <p class="muted">{"Configure presets and channel parameters; the dashboard re-runs automatically after edits."}</p>
+                            <p class="muted">{"Configure presets and channel parameters, then click \"Run Now\" to execute the simulation."}</p>
                         </div>
                         <div class="run-controls">
                             {
                                 if *is_running {
-                                    html! { <span class="badge badge-live">{"Updating…"}</span> }
+                                    html! { <span class="badge badge-live">{"Running…"}</span> }
+                                } else if has_pending_changes {
+                                    html! { <span class="badge badge-pending">{"Changes pending"}</span> }
                                 } else {
-                                    html! { <span class="badge badge-live idle">{"Live preview"}</span> }
+                                    html! { <span class="badge badge-live idle">{"Up to date"}</span> }
                                 }
                             }
-                            <button class="primary" onclick={on_run.clone()} disabled={*is_running}>
+                            <button 
+                                class={if has_pending_changes && !*is_running { "primary highlight" } else { "primary" }}
+                                onclick={on_run.clone()} 
+                                disabled={*is_running}
+                            >
                                 { if *is_running { "Running…" } else { "Run Now" } }
                             </button>
                         </div>
                     </header>
 
-                    <p class="control-hint">{"Changes trigger an auto-preview after 300 ms. Use \"Run Now\" to force an immediate rebuild."}</p>
+                    <p class="control-hint">{"Click \"Run Now\" to execute the simulation with the current parameters."}</p>
 
                     <div class="control-grid">
                         <label class="field">
@@ -296,22 +283,11 @@ pub fn app() -> Html {
                             <p class="muted">{format!("{} chars", plaintext_len)}</p>
                         </label>
 
-                        <div class="field-inline">
-                            <label class="field">
-                                <span>{"Eb/N₀ (dB)"}</span>
-                                    <input type="range" min="-10" max="20" step="0.5" value={current_input.snr_db.to_string()} oninput={on_snr_change.clone()} />
-                                <input type="number" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
-                                <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values generally reduce pre-FEC BER under AWGN."}</p>
-                            </label>
-                            <div class="field locked">
-                                <span>{"Sample Rate"}</span>
-                                <div class="locked-field">
-                                    <span class="value">{format!("{} Hz", FIXED_SAMPLE_RATE)}</span>
-                                    <span class="tag compact">{"Locked"}</span>
-                                </div>
-                                <p class="muted small">{"All presets render at 48 kHz for deterministic diagnostics."}</p>
-                            </div>
-                        </div>
+                        <label class="field">
+                            <span>{"Channel SNR (dB)"}</span>
+                            <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
+                            <p class="muted small">{"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR."}</p>
+                        </label>
 
                         <div class="field">
                             <span>{"External Audio Payload"}</span>
@@ -367,7 +343,7 @@ pub fn app() -> Html {
                                 </div>
                             }
                         } else {
-                            html! { <p class="muted">{"Auto-preview will populate telemetry after the first run."}</p> }
+                            html! { <p class="muted">{"Run the simulation to populate telemetry data."}</p> }
                         }
                     }
                 </section>
@@ -377,15 +353,20 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Input"}</h3>
-                                <p>{format!("Plaintext: {} chars", plaintext_len)}</p>
-                                <p>{format!("Sample rate: {} Hz", FIXED_SAMPLE_RATE)}</p>
-                                <p>{format!("Eb/N₀: {:.1} dB", current_input.snr_db)}</p>
+                                <p>{format!("Payload: {} chars", plaintext_len)}</p>
+                                <p>
+                                    <span title="Energy per symbol to noise power spectral density ratio">{"Es/N₀"}</span>
+                                    {format!(": {:.1} dB", current_input.snr_db)}
+                                </p>
                             </div>
                         </div>
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Encoder"}</h3>
-                                <p>{format!("Total symbols: {}", frame_layout.total_symbols)}</p>
+                                <p>
+                                    {format!("Total symbols: {}", frame_layout.total_symbols)}
+                                    <span class="info-bubble" title="Each symbol represents 2 bits (QPSK). Total symbols = Payload + ECC.">{"?"}</span>
+                                </p>
                                 <p>{format!("Payload symbols: {}", frame_layout.data_payload_symbols)}</p>
                                 <p>{format!("ECC symbols: {}", frame_layout.ecc_symbols)}</p>
                             </div>
@@ -505,6 +486,17 @@ pub fn app() -> Html {
                     </div>
                 </section>
             </div>
+            <footer class="app-footer">
+                <div class="footer-content">
+                    <a href="https://github.com/ArrEssJay/chimera/" target="_blank" rel="noopener noreferrer">
+                        {"GitHub"}
+                    </a>
+                    <span class="footer-separator">{"•"}</span>
+                    <a href="mailto:rowan@impermanent.io">
+                        {"Contact"}
+                    </a>
+                </div>
+            </footer>
         </main>
     }
 }
@@ -561,18 +553,17 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         );
     }
 
-    if props.i_samples.is_empty() || props.q_samples.is_empty() {
-        html! {
-            <div class="constellation-panel panel">
-                <div class="chart-empty">{"No constellation samples."}</div>
-            </div>
-        }
-    } else {
-        html! {
-            <div class="constellation-panel panel">
-                <canvas ref={canvas_ref} width="260" height="260" />
-            </div>
-        }
+    let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
+    html! {
+        <div class="constellation-panel panel">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No constellation samples."}</div> }
+                } else {
+                    html! { <canvas ref={canvas_ref} width="220" height="220" /> }
+                }
+            }
+        </div>
     }
 }
 
@@ -606,18 +597,17 @@ fn line_chart(props: &LineChartProps) -> Html {
         );
     }
 
-    if props.values.is_empty() {
-        html! {
-            <div class="chart-panel panel">
-                <div class="chart-empty">{"No samples available."}</div>
-            </div>
-        }
-    } else {
-        html! {
-            <div class="chart-panel panel">
-                <canvas ref={canvas_ref} width="320" height="220" />
-            </div>
-        }
+    let is_empty = props.values.is_empty();
+    html! {
+        <div class="chart-panel panel">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No samples available."}</div> }
+                } else {
+                    html! { <canvas ref={canvas_ref} width="320" height="220" /> }
+                }
+            }
+        </div>
     }
 }
 
