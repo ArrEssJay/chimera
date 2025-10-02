@@ -4,22 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chimera Visualizer</title>
-    <link rel="stylesheet" href="./style.css" />
+    <link data-trunk rel="rust" />
+    <link data-trunk rel="css" href="style.css" />
   </head>
   <body>
     <div id="chimera-root"></div>
-    <script>
-      window.addEventListener("load", () => {
-        if (document && document.getElementById("chimera-root")) {
-          if (document.getElementById("chimera-root").children.length === 0) {
-            document.getElementById("chimera-root").id = "root";
-          }
-        }
-      });
-    </script>
-    <script type="module">
-      import init from "./chimera-web.js";
-      init();
-    </script>
   </body>
 </html>

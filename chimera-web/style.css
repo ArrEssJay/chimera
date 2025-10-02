@@ -5,6 +5,36 @@
   font-family: "Inter", system-ui, sans-serif;
 }
 
+.controls {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.controls label {
+  grid-column: span 2;
+  font-weight: 600;
+  color: #202020;
+}
+
+.controls textarea {
+  grid-column: span 2;
+}
+
+.controls input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #d0d0d0;
+}
+
+.controls button {
+  grid-column: span 2;
+  justify-self: start;
+}
+
 .dashboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
