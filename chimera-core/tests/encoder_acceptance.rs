@@ -151,7 +151,7 @@ fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
 
     let mut sim = SimulationConfig::default();
     sim.sample_rate = protocol.qpsk_symbol_rate;
-    sim.snr_db = -5.0; // Well below LDPC failure threshold of ~7 dB
+    sim.snr_db = -5.0; // At LDPC failure threshold
     sim.plaintext_source = "Hello Chimera".into();
     sim.rng_seed = Some(1337);
 
