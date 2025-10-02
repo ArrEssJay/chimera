@@ -73,8 +73,8 @@ pub fn demodulate_and_decode(
             .map(|(bits, _, _)| *bits)
             .expect("reference constellation is non-empty");
 
-    demodulated_bits.extend_from_slice(&closest_bits);
-    decision_symbols.push(avg_symbol);
+        demodulated_bits.extend_from_slice(&closest_bits);
+        decision_symbols.push(avg_symbol);
     }
 
     if demodulated_bits.len() < encoding.qpsk_bitstream.len() {

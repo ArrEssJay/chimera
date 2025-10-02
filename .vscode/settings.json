@@ -1,0 +1,23 @@
+{
+  "github.copilot.mcp.enabled": true,
+  "github.copilot.mcp.servers": [
+    {
+      "id": "serena",
+      "displayName": "Serena (Chimera)",
+      "transport": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/rowan/.local/share/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "/Users/rowan/VSCode/chimera"
+      ],
+      "workspaceFolders": ["/Users/rowan/VSCode/chimera"]
+    }
+  ]
+}

@@ -98,15 +98,75 @@ fn sparse_to_array(matrix: &SparseBinMat) -> Array2<u8> {
     dense
 }
 
-/// Decode by stripping parity bits (no correction yet).
+/// Perform hard-decision decoding by solving the linear system defined by the
+/// generator matrix. This recovers the original message bits when no channel
+/// errors remain after demodulation.
 pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64) -> Vec<u8> {
-    debug_assert_eq!(noisy_codeword.len(), matrices.codeword_bits);
-    noisy_codeword[..matrices.message_bits].to_vec()
+    let message_bits = matrices.message_bits;
+    let codeword_bits = matrices.codeword_bits;
+
+    debug_assert_eq!(noisy_codeword.len(), codeword_bits);
+
+    // Build the augmented matrix for the linear system G^T * m = c, where G is
+    // the generator matrix and c is the received codeword. Each row encodes a
+    // single codeword bit equation over GF(2).
+    let mut augmented: Vec<Vec<u8>> = Vec::with_capacity(codeword_bits);
+    for col in 0..codeword_bits {
+        let mut row = Vec::with_capacity(message_bits + 1);
+        for row_idx in 0..message_bits {
+            row.push(matrices.generator[(row_idx, col)] & 1);
+        }
+        row.push(noisy_codeword[col] & 1);
+        augmented.push(row);
+    }
+
+    // Gaussian elimination over GF(2) to obtain reduced row echelon form. We
+    // keep track of which row becomes the pivot for each message bit column.
+    let mut pivot_row = 0usize;
+    let mut column_pivots: Vec<Option<usize>> = vec![None; message_bits];
+
+    for col in 0..message_bits {
+        if pivot_row >= augmented.len() {
+            break;
+        }
+
+        // Find a row with a leading 1 in this column.
+        if let Some(pivot_idx) = (pivot_row..augmented.len())
+            .find(|&r| augmented[r][col] == 1)
+        {
+            augmented.swap(pivot_row, pivot_idx);
+
+            // Eliminate this column from every other row to reach reduced form.
+            for r in 0..augmented.len() {
+                if r != pivot_row && augmented[r][col] == 1 {
+                    for c in col..=message_bits {
+                        augmented[r][c] ^= augmented[pivot_row][c];
+                    }
+                }
+            }
+
+            column_pivots[col] = Some(pivot_row);
+            pivot_row += 1;
+        }
+    }
+
+    let mut message = vec![0u8; message_bits];
+    for (col, pivot) in column_pivots.into_iter().enumerate() {
+        if let Some(row_idx) = pivot {
+            message[col] = augmented[row_idx][message_bits];
+        } else {
+            // Column without a pivot corresponds to a free variable; choose 0.
+            message[col] = 0;
+        }
+    }
+
+    message
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::{rngs::StdRng, Rng, SeedableRng};
 
     #[test]
     fn matrices_have_expected_shapes() {
@@ -122,21 +182,27 @@ mod tests {
     }
 
     #[test]
-    fn decode_ldpc_returns_systematic_bits() {
+    fn decode_ldpc_recovers_encoded_message() {
         let layout = FrameLayout::default();
         let cfg = LDPCConfig::default();
         let matrices = LDPCSuite::new(&layout, &cfg).matrices;
 
+        let mut rng = StdRng::seed_from_u64(1337);
+        let message: Vec<u8> = (0..layout.message_bits())
+            .map(|_| if rng.gen_bool(0.5) { 1 } else { 0 })
+            .collect();
+
         let mut codeword = vec![0u8; layout.codeword_bits()];
-        for i in 0..layout.message_bits() {
-            codeword[i] = (i % 2) as u8;
-        }
-        for i in layout.message_bits()..layout.codeword_bits() {
-            codeword[i] = 1;
+        for (row_idx, &bit) in message.iter().enumerate() {
+            if bit == 0 {
+                continue;
+            }
+            for col_idx in 0..layout.codeword_bits() {
+                codeword[col_idx] ^= matrices.generator[(row_idx, col_idx)] & 1;
+            }
         }
 
         let decoded = decode_ldpc(&matrices, &codeword, 0.0);
-        assert_eq!(decoded.len(), layout.message_bits());
-        assert_eq!(decoded, codeword[..layout.message_bits()].to_vec());
+        assert_eq!(decoded, message);
     }
 }
