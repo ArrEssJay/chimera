@@ -5,7 +5,6 @@ use crate::presets::FramePreset;
 use chimera_core::diagnostics::{FrameDescriptor, SymbolDecision};
 use gloo_file::callbacks::{read_as_data_url, FileReader};
 use gloo_file::Blob;
-use gloo_timers::callback::Timeout;
 use plotters::prelude::*;
 use plotters::style::colors::TRANSPARENT;
 use plotters::style::RGBAColor;
@@ -28,46 +27,14 @@ pub fn app() -> Html {
     let is_running = use_state(|| false);
     let external_audio_name = use_state(|| None::<String>);
     let reader_handle = use_mut_ref(|| None::<FileReader>);
+    let last_run_input = use_state(|| None::<SimulationInput>);
 
     let current_input = (*simulation).clone();
     let preset_bundle = current_input.preset.bundle();
     let frame_layout = preset_bundle.protocol.frame_layout;
 
-    {
-        let output_state = output.clone();
-        let running_state = is_running.clone();
-        use_effect_with((*simulation).clone(), move |input| {
-            let maybe_timeout = if *running_state {
-                None
-            } else {
-                let snapshot = input.clone();
-                let output_handle = output_state.clone();
-                let running_handle = running_state.clone();
-                Some(Timeout::new(300, move || {
-                    if *running_handle {
-                        return;
-                    }
-
-                    running_handle.set(true);
-                    let output_handle = output_handle.clone();
-                    let running_handle_inner = running_handle.clone();
-                    let sim_to_run = snapshot.clone();
-
-                    spawn_local(async move {
-                        let result = run_pipeline(sim_to_run);
-                        output_handle.set(Some(result));
-                        running_handle_inner.set(false);
-                    });
-                }))
-            };
-
-            move || {
-                if let Some(timeout) = maybe_timeout {
-                    timeout.cancel();
-                }
-            }
-        });
-    }
+    // Check if there are pending changes (simulation input differs from last run)
+    let has_pending_changes = (*last_run_input).as_ref() != Some(&current_input);
 
     let on_preset_change = {
         let simulation = simulation.clone();
@@ -171,6 +138,7 @@ pub fn app() -> Html {
         let simulation_handle = simulation.clone();
         let output_handle = output.clone();
         let running_handle = is_running.clone();
+        let last_run_handle = last_run_input.clone();
         Callback::from(move |_event: MouseEvent| {
             if *running_handle {
                 return;
@@ -179,10 +147,13 @@ pub fn app() -> Html {
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
             let running_state = running_handle.clone();
+            let last_run_state = last_run_handle.clone();
+            let input_clone = input.clone();
             spawn_local(async move {
                 let result = run_pipeline(input);
                 output_state.set(Some(result));
                 running_state.set(false);
+                last_run_state.set(Some(input_clone));
             });
         })
     };
@@ -259,23 +230,29 @@ pub fn app() -> Html {
                     <header class="panel-header">
                         <div>
                             <h1>{"Simulation Controls"}</h1>
-                            <p class="muted">{"Configure presets and channel parameters; the dashboard re-runs automatically after edits."}</p>
+                            <p class="muted">{"Configure presets and channel parameters, then click \"Run Now\" to execute the simulation."}</p>
                         </div>
                         <div class="run-controls">
                             {
                                 if *is_running {
-                                    html! { <span class="badge badge-live">{"Updating…"}</span> }
+                                    html! { <span class="badge badge-live">{"Running…"}</span> }
+                                } else if has_pending_changes {
+                                    html! { <span class="badge badge-pending">{"Changes pending"}</span> }
                                 } else {
-                                    html! { <span class="badge badge-live idle">{"Live preview"}</span> }
+                                    html! { <span class="badge badge-live idle">{"Up to date"}</span> }
                                 }
                             }
-                            <button class="primary" onclick={on_run.clone()} disabled={*is_running}>
+                            <button 
+                                class={if has_pending_changes && !*is_running { "primary highlight" } else { "primary" }}
+                                onclick={on_run.clone()} 
+                                disabled={*is_running}
+                            >
                                 { if *is_running { "Running…" } else { "Run Now" } }
                             </button>
                         </div>
                     </header>
 
-                    <p class="control-hint">{"Changes trigger an auto-preview after 300 ms. Use \"Run Now\" to force an immediate rebuild."}</p>
+                    <p class="control-hint">{"Click \"Run Now\" to execute the simulation with the current parameters."}</p>
 
                     <div class="control-grid">
                         <label class="field">
@@ -356,7 +333,7 @@ pub fn app() -> Html {
                                 </div>
                             }
                         } else {
-                            html! { <p class="muted">{"Auto-preview will populate telemetry after the first run."}</p> }
+                            html! { <p class="muted">{"Run the simulation to populate telemetry data."}</p> }
                         }
                     }
                 </section>
