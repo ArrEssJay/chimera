@@ -1,7 +1,23 @@
-# Chimera
+<div align="center">
+
+# 🔮 Chimera
+
+### *Advanced Signal Processing & Modulation Pipeline*
 
 [![CI](https://github.com/arressjay/chimera/actions/workflows/ci.yml/badge.svg)](https://github.com/arressjay/chimera/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/chimera-core.svg)](https://crates.io/crates/chimera-core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+
+---
+
+### 🌐 **[Try the Live Web Dashboard →](https://arressjay.github.io/chimera/)**
+
+*WebAssembly-powered visualization running in your browser*
+
+---
+
+</div>
 
 Chimera is a Rust-native, high-performance implementation of the **Raman Whisper** modulation and decoding pipeline.
 
@@ -9,7 +25,7 @@ The protocol is an unconventional system optimized not for data throughput, but 
 
 This project provides a type-safe, high-performance, and thoroughly tested library for simulating and processing signals using this specialized protocol.
 
-## Library Features
+## ✨ Library Features
 
 The `chimera-core` library provides a complete end-to-end simulation and processing pipeline, enabling engineers and researchers to:
 
@@ -20,7 +36,7 @@ The `chimera-core` library provides a complete end-to-end simulation and process
 
 Written entirely in Rust, the library is engineered for performance-critical applications such as real-time digital signal processing (DSP) and embedded systems, where efficiency, memory safety, and concurrency are paramount.
 
-## Getting Started
+## 🚀 Getting Started
 
 To use `chimera-core` in your project, add it as a dependency in your `Cargo.toml`:
 
@@ -29,7 +45,7 @@ To use `chimera-core` in your project, add it as a dependency in your `Cargo.tom
 chimera-core = { git = "https://github.com/arressjay/chimera.git" }
 ```
 
-### Example Usage
+### 📝 Example Usage
 
 Here is a basic example of how to run an end-to-end simulation:
 
@@ -57,19 +73,20 @@ fn main() {
 }
 ```
 
-## Workspace Structure
+## 📦 Workspace Structure
 
 This repository is a Cargo workspace containing several crates:
 
--   `chimera-core`: The core library implementing the modulation/demodulation pipeline, LDPC codes, and simulation logic.
--   `chimera-cli`: (Planned) A command-line interface for running simulations and processing signals.
--   `chimera-wasm`: (Planned) A WebAssembly binding for using the core library in web applications.
+-   **`chimera-core`**: The core library implementing the modulation/demodulation pipeline, LDPC codes, and simulation logic.
+-   **`chimera-web`**: 🌐 WebAssembly-based interactive dashboard for visualizing the pipeline ([Live Demo](https://arressjay.github.io/chimera/))
+-   **`chimera-cli`**: 🔧 (Planned) A command-line interface for running simulations and processing signals.
 
-## Documentation
+## 📚 Documentation
 
--   [Chimera Technical Overview](docs/chimera_technical_overview.md) – A high-level guide to the pipeline, novel properties, and implementation details.
+-   📖 [Chimera Technical Overview](docs/chimera_technical_overview.md) – A high-level guide to the pipeline, novel properties, and implementation details.
+-   🌐 [Live Web Dashboard](https://arressjay.github.io/chimera/) – Interactive WASM-based visualization
 
-## Core Concepts
+## 🔬 Core Concepts
 
 The `chimera-core` library is organized into several key modules:
 
@@ -80,7 +97,7 @@ The `chimera-core` library is organized into several key modules:
 -   `diagnostics`: Contains tools and data structures for diagnostics, logging, and reporting.
 -   `utils`: A collection of utility functions used across the library.
 
-## Building and Testing
+## 🛠️ Building and Testing
 
 ### Build from Source
 
@@ -92,7 +109,7 @@ cd chimera
 cargo build --release
 ```
 
-### Run Tests
+### 🧪 Run Tests
 
 To run the full test suite:
 
@@ -100,7 +117,7 @@ To run the full test suite:
 cargo test --all-features
 ```
 
-## Protocol Deep Dive
+## 🔍 Protocol Deep Dive
 
 <details>
 <summary>Click to expand for a detailed background on the protocol.</summary>
@@ -139,10 +156,10 @@ The protocol is analogous to Submarine ELF (Extremely Low Frequency) communicati
 
 </details>
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
