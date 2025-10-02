@@ -1,3 +1,4 @@
+use chimera_web::model::FIXED_SAMPLE_RATE;
 use chimera_web::{run_pipeline, FramePreset, SimulationInput};
 
 #[test]
@@ -12,26 +13,39 @@ fn pipeline_runs_with_defaults() {
         .diagnostics
         .modulation_audio
         .expect("modulation audio absent");
-    assert_eq!(audio.sample_rate, SimulationInput::default().sample_rate);
+    assert_eq!(audio.sample_rate, FIXED_SAMPLE_RATE);
     assert!(!audio.noisy.is_empty());
+    assert!(!output.diagnostics.tx_symbols_i.is_empty());
+    assert!(!output.diagnostics.tx_symbols_q.is_empty());
+    assert!(!output.diagnostics.clean_baseband.is_empty());
+    assert!(!output.diagnostics.noisy_baseband.is_empty());
+    assert!(!output
+        .diagnostics
+        .demodulation
+        .received_symbols_i
+        .is_empty());
+    assert!(!output
+        .diagnostics
+        .demodulation
+        .received_symbols_q
+        .is_empty());
 }
 
 #[test]
 fn pipeline_respects_preset_configuration() {
     let mut input = SimulationInput::with_preset(FramePreset::DeepSpaceProbe);
     input.plaintext = "Probe telemetry".into();
-    let expected_sample_rate = input.sample_rate;
     let output = run_pipeline(input);
 
     assert_eq!(output.report.recovered_message, "Probe telemetry");
     assert_eq!(output.report.post_fec_errors, 0);
-    assert_eq!(expected_sample_rate, 48_000);
     assert!(output
         .diagnostics
         .modulation_audio
         .as_ref()
         .map(|audio| !audio.clean.is_empty())
         .unwrap_or(false));
+    assert_eq!(output.diagnostics.tx_bits.len() % 2, 0);
 }
 
 #[test]

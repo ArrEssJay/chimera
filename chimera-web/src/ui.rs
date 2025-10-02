@@ -535,14 +535,6 @@ pub struct ConstellationProps {
 
 #[function_component(ConstellationChart)]
 pub fn constellation_chart(props: &ConstellationProps) -> Html {
-    if props.i_samples.is_empty() || props.q_samples.is_empty() {
-        return html! {
-            <div class="constellation-panel panel">
-                <div class="chart-empty">{"No constellation samples."}</div>
-            </div>
-        };
-    }
-
     let canvas_ref = use_node_ref();
     {
         let canvas_ref = canvas_ref.clone();
@@ -554,6 +546,10 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         use_effect_with(
             (i_samples.clone(), q_samples.clone(), variant.clone()),
             move |(i_samples, q_samples, variant)| {
+                if i_samples.is_empty() || q_samples.is_empty() {
+                    return || ();
+                }
+
                 if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
                     draw_constellation(&canvas, i_samples, q_samples, &title, variant.clone());
                 }
@@ -562,10 +558,18 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         );
     }
 
-    html! {
-        <div class="constellation-panel panel">
-            <canvas ref={canvas_ref} width="260" height="260" />
-        </div>
+    if props.i_samples.is_empty() || props.q_samples.is_empty() {
+        html! {
+            <div class="constellation-panel panel">
+                <div class="chart-empty">{"No constellation samples."}</div>
+            </div>
+        }
+    } else {
+        html! {
+            <div class="constellation-panel panel">
+                <canvas ref={canvas_ref} width="260" height="260" />
+            </div>
+        }
     }
 }
 
@@ -579,14 +583,6 @@ pub struct LineChartProps {
 
 #[function_component(LineChart)]
 fn line_chart(props: &LineChartProps) -> Html {
-    if props.values.is_empty() {
-        return html! {
-            <div class="chart-panel panel">
-                <div class="chart-empty">{"No samples available."}</div>
-            </div>
-        };
-    }
-
     let canvas_ref = use_node_ref();
     {
         let canvas_ref = canvas_ref.clone();
@@ -595,6 +591,9 @@ fn line_chart(props: &LineChartProps) -> Html {
         let accent = props.accent_rgb;
 
         use_effect_with((values.clone(), accent), move |(values, accent)| {
+            if values.is_empty() {
+                return || ();
+            }
             if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
                 draw_line_chart(&canvas, values, &title, *accent);
             }
@@ -602,10 +601,18 @@ fn line_chart(props: &LineChartProps) -> Html {
         });
     }
 
-    html! {
-        <div class="chart-panel panel">
-            <canvas ref={canvas_ref} width="320" height="220" />
-        </div>
+    if props.values.is_empty() {
+        html! {
+            <div class="chart-panel panel">
+                <div class="chart-empty">{"No samples available."}</div>
+            </div>
+        }
+    } else {
+        html! {
+            <div class="chart-panel panel">
+                <canvas ref={canvas_ref} width="320" height="220" />
+            </div>
+        }
     }
 }
 
