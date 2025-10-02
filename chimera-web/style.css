@@ -1,3 +1,48 @@
+.preset-description {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 4px 0 12px;
+}
+
+.symbol-decisions-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.symbol-decisions-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.symbol-decisions-panel th,
+.symbol-decisions-panel td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: right;
+}
+
+.symbol-decisions-panel th:first-child,
+.symbol-decisions-panel td:first-child,
+.symbol-decisions-panel th:nth-child(2),
+.symbol-decisions-panel td:nth-child(2) {
+  text-align: left;
+}
+
+.symbol-decisions-panel tr:last-child td {
+  border-bottom: none;
+}
+
+.symbol-decisions-panel .symbol-decisions-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #666;
+}
 .app-container {
   max-width: 960px;
   margin: 0 auto;

@@ -115,5 +115,8 @@ fn given_high_snr_when_pipeline_runs_then_plaintext_roundtrips() {
     assert_eq!(demodulation.report.post_fec_errors, 0);
     assert!(demodulation.report.post_fec_ber <= 1e-9);
     assert_eq!(demodulation.recovered_message, sim.plaintext_source);
-    assert_eq!(demodulation.demodulated_bitstream.len(), encoding.qpsk_bitstream.len());
+    assert_eq!(
+        demodulation.demodulated_bitstream.len(),
+        encoding.qpsk_bitstream.len()
+    );
 }

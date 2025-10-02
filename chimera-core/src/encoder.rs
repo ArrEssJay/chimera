@@ -109,11 +109,8 @@ pub fn generate_modulated_signal(
         None => StdRng::from_entropy(),
     };
 
-    let signal_power: f64 = qpsk_symbols
-        .iter()
-        .map(|c| c.norm_sqr())
-        .sum::<f64>()
-        / qpsk_symbols.len().max(1) as f64;
+    let signal_power: f64 =
+        qpsk_symbols.iter().map(|c| c.norm_sqr()).sum::<f64>() / qpsk_symbols.len().max(1) as f64;
 
     let snr_linear = 10f64.powf(sim.snr_db / 10.0);
     let noise_variance = if snr_linear > 0.0 {
@@ -137,7 +134,10 @@ pub fn generate_modulated_signal(
         qpsk_symbols.len(),
         frame_stream.frame_count
     ));
-    logger.log(format!("Applied AWGN channel with SNR = {:.2} dB.", sim.snr_db));
+    logger.log(format!(
+        "Applied AWGN channel with SNR = {:.2} dB.",
+        sim.snr_db
+    ));
 
     EncodingResult {
         noisy_signal: Array1::from_vec(noisy_iq),

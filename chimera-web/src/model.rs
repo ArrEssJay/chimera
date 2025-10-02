@@ -1,4 +1,4 @@
-use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
+use crate::presets::{FramePreset, PresetBundle};
 use chimera_core::diagnostics::{DiagnosticsBundle, SimulationReport};
 use chimera_core::run_simulation;
 use serde::{Deserialize, Serialize};
@@ -8,15 +8,23 @@ pub struct SimulationInput {
     pub plaintext: String,
     pub snr_db: f64,
     pub sample_rate: usize,
+    pub preset: FramePreset,
 }
 
 impl Default for SimulationInput {
     fn default() -> Self {
-        let sim = SimulationConfig::default();
+        Self::with_preset(FramePreset::RamanWhisper)
+    }
+}
+
+impl SimulationInput {
+    pub fn with_preset(preset: FramePreset) -> Self {
+        let defaults = preset.simulation_config();
         Self {
-            plaintext: sim.plaintext_source,
-            snr_db: sim.snr_db,
-            sample_rate: sim.sample_rate,
+            plaintext: defaults.plaintext_source,
+            snr_db: defaults.snr_db,
+            sample_rate: defaults.sample_rate,
+            preset,
         }
     }
 }
@@ -28,13 +36,17 @@ pub struct SimulationOutput {
 }
 
 pub fn run_pipeline(input: SimulationInput) -> SimulationOutput {
-    let mut sim = SimulationConfig::default();
+    let PresetBundle {
+        protocol,
+        simulation,
+        ldpc,
+    } = input.preset.bundle();
+
+    let mut sim = simulation;
     sim.plaintext_source = input.plaintext;
     sim.snr_db = input.snr_db;
     sim.sample_rate = input.sample_rate;
 
-    let protocol = ProtocolConfig::default();
-    let ldpc = LDPCConfig::default();
     let output = run_simulation(&sim, &protocol, &ldpc);
     SimulationOutput {
         report: output.report,

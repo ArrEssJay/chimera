@@ -5,7 +5,7 @@ use ndarray::Array1;
 use num_complex::Complex64;
 
 use crate::config::{ProtocolConfig, SimulationConfig};
-use crate::diagnostics::{DemodulationDiagnostics, SimulationReport};
+use crate::diagnostics::{DemodulationDiagnostics, SimulationReport, SymbolDecision};
 use crate::encoder::EncodingResult;
 use crate::ldpc::{decode_ldpc, LDPCMatrices};
 use crate::utils::{complex_from_interleaved, hex_to_bitstream, pack_bits, LogCollector};
@@ -54,7 +54,7 @@ pub fn demodulate_and_decode(
 
     let reference = qpsk_constellation();
     let mut demodulated_bits = Vec::with_capacity(symbol_count * 2);
-    let mut decision_symbols = Vec::with_capacity(symbol_count);
+    let mut symbol_decisions = Vec::with_capacity(symbol_count);
 
     for symbol_idx in 0..symbol_count {
         let start = symbol_idx * samples_per_symbol;
@@ -63,18 +63,50 @@ pub fn demodulate_and_decode(
         let avg_symbol = sample_slice.iter().copied().sum::<Complex64>()
             / Complex64::new(samples_per_symbol as f64, 0.0);
 
-        let closest_bits = reference
-            .iter()
-            .map(|(candidate, bits)| {
-                let distance = (avg_symbol - *candidate).norm_sqr();
-                (bits, candidate, distance)
-            })
-            .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap())
-            .map(|(bits, _, _)| *bits)
-            .expect("reference constellation is non-empty");
+        let mut distances = [0.0_f64; 4];
+        let mut best_distance = f64::INFINITY;
+        let mut best_index = 0usize;
+
+        for (idx, (candidate, _)) in reference.iter().enumerate() {
+            let distance = (avg_symbol - *candidate).norm_sqr();
+            distances[idx] = distance;
+            if distance < best_distance {
+                best_distance = distance;
+                best_index = idx;
+            }
+        }
+
+        let closest_bits = reference[best_index].1;
+
+        let mut bit_min_distance = [[f64::INFINITY; 2]; 2];
+        for (idx, (_, bits)) in reference.iter().enumerate() {
+            for bit_pos in 0..2 {
+                let bit_val = bits[bit_pos] as usize;
+                if distances[idx] < bit_min_distance[bit_pos][bit_val] {
+                    bit_min_distance[bit_pos][bit_val] = distances[idx];
+                }
+            }
+        }
+
+        let mut soft_metrics = [0.0_f64; 2];
+        for bit_pos in 0..2 {
+            let zero = bit_min_distance[bit_pos][0];
+            let one = bit_min_distance[bit_pos][1];
+            if zero.is_finite() && one.is_finite() {
+                soft_metrics[bit_pos] = one - zero;
+            }
+        }
 
         demodulated_bits.extend_from_slice(&closest_bits);
-        decision_symbols.push(avg_symbol);
+        symbol_decisions.push(SymbolDecision {
+            index: symbol_idx,
+            decided_bits: closest_bits,
+            average_i: avg_symbol.re,
+            average_q: avg_symbol.im,
+            min_distance: best_distance,
+            distances,
+            soft_metrics,
+        });
     }
 
     if demodulated_bits.len() < encoding.qpsk_bitstream.len() {
@@ -89,7 +121,10 @@ pub fn demodulate_and_decode(
         .filter(|(rx, tx)| rx != tx)
         .count();
     let pre_fec_ber = pre_fec_errors as f64 / encoding.qpsk_bitstream.len() as f64;
-    logger.log(format!("Pre-FEC BER: {:.6} ({} errors).", pre_fec_ber, pre_fec_errors));
+    logger.log(format!(
+        "Pre-FEC BER: {:.6} ({} errors).",
+        pre_fec_ber, pre_fec_errors
+    ));
 
     let sync_bit_len = protocol.frame_layout.sync_symbols * 2;
     let sync_bits = hex_to_bitstream(&protocol.sync_sequence_hex, sync_bit_len);
@@ -105,7 +140,7 @@ pub fn demodulate_and_decode(
 
     if sync_index.is_none() {
         logger.log("Frame sync sequence not found; aborting decode.");
-        let diagnostics = diagnostics_from_symbols(decision_symbols);
+        let diagnostics = diagnostics_from_decisions(symbol_decisions.clone());
         let report = SimulationReport {
             pre_fec_errors,
             pre_fec_ber,
@@ -189,7 +224,7 @@ pub fn demodulate_and_decode(
         .trim_end_matches('\u{0}')
         .to_string();
 
-    let diagnostics = diagnostics_from_symbols(decision_symbols);
+    let diagnostics = diagnostics_from_decisions(symbol_decisions);
     let report = SimulationReport {
         pre_fec_errors,
         pre_fec_ber,
@@ -224,11 +259,17 @@ fn qpsk_constellation() -> [(Complex64, [u8; 2]); 4] {
     ]
 }
 
-fn diagnostics_from_symbols(symbols: Vec<Complex64>) -> DemodulationDiagnostics {
+fn diagnostics_from_decisions(decisions: Vec<SymbolDecision>) -> DemodulationDiagnostics {
+    let (received_symbols_i, received_symbols_q): (Vec<f64>, Vec<f64>) =
+        decisions.iter().map(|d| (d.average_i, d.average_q)).unzip();
+
+    let len = decisions.len();
+
     DemodulationDiagnostics {
-        received_symbols_i: symbols.iter().map(|c| c.re).collect(),
-        received_symbols_q: symbols.iter().map(|c| c.im).collect(),
-        timing_error: vec![0.0; symbols.len()],
-        nco_freq_offset: vec![0.0; symbols.len()],
+        received_symbols_i,
+        received_symbols_q,
+        symbol_decisions: decisions,
+        timing_error: vec![0.0; len],
+        nco_freq_offset: vec![0.0; len],
     }
 }

@@ -131,9 +131,7 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
         }
 
         // Find a row with a leading 1 in this column.
-        if let Some(pivot_idx) = (pivot_row..augmented.len())
-            .find(|&r| augmented[r][col] == 1)
-        {
+        if let Some(pivot_idx) = (pivot_row..augmented.len()).find(|&r| augmented[r][col] == 1) {
             augmented.swap(pivot_row, pivot_idx);
 
             // Eliminate this column from every other row to reach reduced form.

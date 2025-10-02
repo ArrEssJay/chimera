@@ -13,10 +13,10 @@ pub mod ldpc;
 pub mod utils;
 
 use config::{LDPCConfig, ProtocolConfig, SimulationConfig};
-use diagnostics::{DiagnosticsBundle, SimulationReport};
-use ldpc::LDPCSuite;
 use decoder::demodulate_and_decode;
+use diagnostics::{DiagnosticsBundle, SimulationReport};
 use encoder::generate_modulated_signal;
+use ldpc::LDPCSuite;
 
 /// High-level handle returned by `run_simulation`.
 pub struct SimulationOutput {

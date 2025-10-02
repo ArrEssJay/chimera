@@ -1,8 +1,12 @@
 use crate::model::{run_pipeline, SimulationInput, SimulationOutput};
-use chimera_core::diagnostics::DiagnosticsBundle;
+use crate::presets::FramePreset;
+use chimera_core::diagnostics::{DiagnosticsBundle, SymbolDecision};
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
-use web_sys::{Document, HtmlCanvasElement, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{
+    Document, HtmlCanvasElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement,
+};
+use yew::events::Event;
 use yew::prelude::*;
 
 #[function_component(App)]
@@ -56,8 +60,29 @@ pub fn app() -> Html {
         })
     };
 
+    let on_preset_change = {
+        let input = input.clone();
+        Callback::from(move |e: Event| {
+            if let Some(target) = e.target_dyn_into::<HtmlSelectElement>() {
+                if let Some(preset) = FramePreset::from_key(&target.value()) {
+                    let mut updated = (*input).clone();
+                    let previous_defaults = updated.preset.simulation_config();
+                    let defaults = preset.simulation_config();
+                    if updated.plaintext == previous_defaults.plaintext_source {
+                        updated.plaintext = defaults.plaintext_source.clone();
+                    }
+                    updated.preset = preset;
+                    updated.snr_db = defaults.snr_db;
+                    updated.sample_rate = defaults.sample_rate;
+                    input.set(updated);
+                }
+            }
+        })
+    };
+
     let current_input = (*input).clone();
     let current_output = (*output).clone();
+    let active_preset = current_input.preset;
 
     html! {
         <div class="app-container">
@@ -69,6 +94,23 @@ pub fn app() -> Html {
                     value={current_input.plaintext.clone()}
                     oninput={on_plaintext_change}
                 />
+
+                <label for="preset">{"Frame preset"}</label>
+                <select
+                    id="preset"
+                    value={AttrValue::from(active_preset.key())}
+                    onchange={on_preset_change}
+                >
+                    {for FramePreset::all().iter().map(|preset| {
+                        let label = preset.display_name();
+                        let value = preset.key();
+                        let selected = *preset == active_preset;
+                        html! {
+                            <option value={AttrValue::from(value)} selected={selected}>{label}</option>
+                        }
+                    })}
+                </select>
+                <p class="preset-description">{active_preset.description()}</p>
 
                 <label for="snr">{"SNR (dB)"}</label>
                 <input
@@ -95,6 +137,7 @@ pub fn app() -> Html {
             <div class="dashboard">
                 <StatsPanel input={current_input.clone()} output={current_output.clone()} />
                 <ConstellationChart diagnostics={current_output.diagnostics.clone()} />
+                <SymbolDecisionPanel decisions={current_output.diagnostics.demodulation.symbol_decisions.clone()} />
                 <LogsPanel title={AttrValue::from("Encoder Logs")} entries={current_output.diagnostics.encoding_logs.clone()} />
                 <LogsPanel title={AttrValue::from("Decoder Logs")} entries={current_output.diagnostics.decoding_logs.clone()} />
             </div>
@@ -111,13 +154,43 @@ pub struct StatsPanelProps {
 #[function_component(StatsPanel)]
 pub fn stats_panel(props: &StatsPanelProps) -> Html {
     let report = &props.output.report;
+    let preset = props.input.preset;
+    let protocol = preset.protocol_config();
+    let layout = &protocol.frame_layout;
+    let baseline_sim = preset.simulation_config();
+    let symbol_decisions = props.output.diagnostics.demodulation.symbol_decisions.len();
 
     html! {
         <div class="stats-panel">
             <h2>{"Simulation Results"}</h2>
             <ul>
-                <li>{format!("SNR configured: {:.1} dB", props.input.snr_db)}</li>
-                <li>{format!("Sample rate: {} Hz", props.input.sample_rate)}</li>
+                <li>{format!("Preset: {}", preset.display_name())}</li>
+                <li class="preset-description">{preset.description()}</li>
+                <li>{format!(
+                    "Frame layout: total {} (sync {} · target {} · command {} · data {} · ecc {})",
+                    layout.total_symbols,
+                    layout.sync_symbols,
+                    layout.target_id_symbols,
+                    layout.command_type_symbols,
+                    layout.data_payload_symbols,
+                    layout.ecc_symbols
+                )}</li>
+                <li>{format!(
+                    "Symbol rate: {} sym/s · Bandwidth {:.1} Hz",
+                    protocol.qpsk_symbol_rate,
+                    protocol.qpsk_bandwidth_hz
+                )}</li>
+                <li>{format!(
+                    "SNR configured: {:.1} dB (baseline {:.1} dB)",
+                    props.input.snr_db,
+                    baseline_sim.snr_db
+                )}</li>
+                <li>{format!(
+                    "Sample rate: {} Hz (baseline {} Hz)",
+                    props.input.sample_rate,
+                    baseline_sim.sample_rate
+                )}</li>
+                <li>{format!("Symbol decisions captured: {}", symbol_decisions)}</li>
                 <li>{format!("Pre-FEC errors: {} (BER {:.6})", report.pre_fec_errors, report.pre_fec_ber)}</li>
                 <li>{format!("Post-FEC errors: {} (BER {:.6})", report.post_fec_errors, report.post_fec_ber)}</li>
                 <li>{format!("Recovered message: {}", report.recovered_message)}</li>
@@ -176,10 +249,79 @@ fn draw_constellation(canvas: &HtmlCanvasElement, symbols_i: &[f64], symbols_q: 
         {
             let _ = chart.configure_mesh().x_labels(5).y_labels(5).draw();
 
-            let symbols = symbols_i.iter().zip(symbols_q.iter()).map(|(&i, &q)| (i, q));
+            let symbols = symbols_i
+                .iter()
+                .zip(symbols_q.iter())
+                .map(|(&i, &q)| (i, q));
 
             let _ = chart.draw_series(symbols.map(|(i, q)| Circle::new((i, q), 3, RED.filled())));
         }
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct SymbolDecisionPanelProps {
+    pub decisions: Vec<SymbolDecision>,
+}
+
+#[function_component(SymbolDecisionPanel)]
+pub fn symbol_decision_panel(props: &SymbolDecisionPanelProps) -> Html {
+    const MAX_PREVIEW: usize = 24;
+    let total = props.decisions.len();
+    let preview_len = total.min(MAX_PREVIEW);
+    let summary_message = if total == 0 {
+        String::from("No demodulated symbols captured.")
+    } else if total > MAX_PREVIEW {
+        format!("Showing first {} of {} symbols", preview_len, total)
+    } else {
+        format!("Showing {} symbols", total)
+    };
+
+    html! {
+        <div class="symbol-decisions-panel">
+            <h2>{"Symbol Decisions"}</h2>
+            {
+                if total == 0 {
+                    html! { <p>{summary_message}</p> }
+                } else {
+                    html! {
+                        <>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>{"Index"}</th>
+                                        <th>{"Bits"}</th>
+                                        <th>{"Ī"}</th>
+                                        <th>{"Q̄"}</th>
+                                        <th>{"Min Dist"}</th>
+                                        <th>{"Soft(0)"}</th>
+                                        <th>{"Soft(1)"}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {for props.decisions.iter().take(MAX_PREVIEW).map(|decision| {
+                                        let bits = decision.decided_bits;
+                                        let bit_str = format!("{}{}", bits[0], bits[1]);
+                                        html! {
+                                            <tr>
+                                                <td>{decision.index}</td>
+                                                <td>{bit_str}</td>
+                                                <td>{format!("{:+.3}", decision.average_i)}</td>
+                                                <td>{format!("{:+.3}", decision.average_q)}</td>
+                                                <td>{format!("{:.3}", decision.min_distance)}</td>
+                                                <td>{format!("{:+.3}", decision.soft_metrics[0])}</td>
+                                                <td>{format!("{:+.3}", decision.soft_metrics[1])}</td>
+                                            </tr>
+                                        }
+                                    })}
+                                </tbody>
+                            </table>
+                            <p class="symbol-decisions-note">{summary_message}</p>
+                        </>
+                    }
+                }
+            }
+        </div>
     }
 }
 
