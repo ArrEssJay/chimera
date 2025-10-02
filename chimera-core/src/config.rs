@@ -1,7 +1,7 @@
 //! Configuration types for the Chimera pipeline.
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub enum BitDepth {
     Pcm16,
     Pcm24,
@@ -10,7 +10,7 @@ pub enum BitDepth {
     Float32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FrameLayout {
     pub total_symbols: usize,
     pub sync_symbols: usize,
@@ -51,7 +51,7 @@ impl FrameLayout {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ProtocolConfig {
     pub carrier_freq_hz: f64,
     pub qpsk_symbol_rate: usize,
@@ -94,7 +94,7 @@ impl Default for ProtocolConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LDPCConfig {
     pub dv: usize,
     pub dc: usize,
@@ -111,7 +111,7 @@ impl Default for LDPCConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SimulationConfig {
     pub sample_rate: usize,
     pub bit_depth: BitDepth,

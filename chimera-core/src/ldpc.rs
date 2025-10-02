@@ -6,7 +6,7 @@ use sparse_bin_mat::SparseBinMat;
 
 use crate::config::{FrameLayout, LDPCConfig};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LDPCMatrices {
     pub parity_check: Array2<u8>,
     pub generator: Array2<u8>,
@@ -27,7 +27,7 @@ impl Default for LDPCMatrices {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LDPCSuite {
     pub x_code: LinearCode,
     pub z_code: LinearCode,

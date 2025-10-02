@@ -21,6 +21,7 @@ use encoder::{generate_modulated_signal, EncodingResult};
 use ldpc::LDPCSuite;
 
 /// High-level handle returned by `run_simulation`.
+#[derive(Clone, Debug, PartialEq)]
 pub struct SimulationOutput {
     pub report: SimulationReport,
     pub diagnostics: DiagnosticsBundle,
