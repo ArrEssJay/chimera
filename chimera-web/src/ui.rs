@@ -298,9 +298,8 @@ pub fn app() -> Html {
 
                         <label class="field">
                             <span>{"Eb/N₀ (dB)"}</span>
-                                <input type="range" min="-10" max="20" step="0.5" value={current_input.snr_db.to_string()} oninput={on_snr_change.clone()} />
-                            <input type="number" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
-                            <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values generally reduce pre-FEC BER under AWGN."}</p>
+                            <input type="number" min="-10" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
+                            <p class="muted small">{"Eb/N₀ expresses per-bit energy against noise density. Higher values (closer to 0 dB) reduce pre-FEC BER under AWGN. Values below ~7 dB cause LDPC failure."}</p>
                         </label>
 
                         <div class="field">

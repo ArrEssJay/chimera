@@ -125,7 +125,7 @@ impl Default for SimulationConfig {
         Self {
             sample_rate: 48_000,
             bit_depth: BitDepth::default(),
-            snr_db: 3.0,
+            snr_db: -3.0,
             plaintext_source: "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into(),
             rng_seed: None,
         }
