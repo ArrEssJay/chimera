@@ -2,7 +2,7 @@
 name = "chimera-web"
 version = "0.1.0"
 edition = "2021"
-authors = ["Chimera Project <chimera@example.com>"]
+authors = ["Rowan Jones <rowan@impermanent.io>"]
 description = "WebAssembly-based visualization dashboard for the Chimera modulation pipeline"
 license = "MIT OR Apache-2.0"
 
@@ -30,6 +30,7 @@ web-sys = { version = "0.3", features = [
 	"AudioContextState",
 	"AudioDestinationNode",
 	"AudioNode",
+	"AudioParam",
 	"HtmlCanvasElement",
 	"HtmlInputElement",
 	"HtmlSelectElement",
@@ -37,8 +38,10 @@ web-sys = { version = "0.3", features = [
 	"File",
 	"FileList",
 	"Blob",
+	"GainNode",
 	"Window"
 ] }
+rustfft = "6"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
