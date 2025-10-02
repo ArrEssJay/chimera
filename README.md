@@ -65,6 +65,10 @@ This repository is a Cargo workspace containing several crates:
 -   `chimera-cli`: (Planned) A command-line interface for running simulations and processing signals.
 -   `chimera-wasm`: (Planned) A WebAssembly binding for using the core library in web applications.
 
+## Documentation
+
+-   [Chimera Technical Overview](docs/chimera_technical_overview.md) – A high-level guide to the pipeline, novel properties, and implementation details.
+
 ## Core Concepts
 
 The `chimera-core` library is organized into several key modules:

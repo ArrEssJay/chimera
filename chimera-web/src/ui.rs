@@ -347,6 +347,13 @@ fn play_samples(
     Ok(source)
 }
 
+fn stop_source(source: &AudioBufferSourceNode) {
+    #[allow(deprecated)]
+    {
+        let _ = source.stop();
+    }
+}
+
 fn mixdown_audio_buffer(buffer: &AudioBuffer) -> Result<Vec<f32>, JsValue> {
     let channels = buffer.number_of_channels();
     let length = buffer.length() as usize;
@@ -720,7 +727,7 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
             }
 
             if let Some(source) = (*active_source).clone() {
-                let _ = source.stop_with_when(0.0);
+                stop_source(&source);
                 active_source.set(None);
             }
 
@@ -784,7 +791,11 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
     }
 
     let mix_samples = Rc::new(mix);
-    let spectrum = compute_magnitude_spectrum(mix_samples.as_ref(), audio.sample_rate as f32);
+    let spectrum = if sources_active > 0 {
+        compute_magnitude_spectrum(mix_samples.as_ref(), audio.sample_rate as f32)
+    } else {
+        Vec::new()
+    };
     let carrier_summary = format!(
         "Carrier {:.1} Hz · Sample rate {} Hz",
         audio.carrier_freq_hz, audio.sample_rate
@@ -898,17 +909,16 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                                                         ).into());
                                                                     }
                                                                     Err(err) => {
-                                                                        
-                                                                            console::error_1(&err);
-                                                                        
+                                                                        console::error_1(&err);
+
                                                                         status.set("Failed to mix channels from uploaded audio".into());
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                         Err(err) => {
-                                                                console::error_1(&err);
-                                                            
+                                                            console::error_1(&err);
+
                                                             status.set(
                                                                 "Unable to decode uploaded audio"
                                                                     .into(),
@@ -917,8 +927,8 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                                     }
                                                 }
                                                 Err(err) => {
-                                                        console::error_1(&err);
-                                                    
+                                                    console::error_1(&err);
+
                                                     status
                                                         .set("Audio decode promise failed".into());
                                                 }
@@ -927,8 +937,8 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                     }
                                 }
                                 Err(err) => {
-                                        console::error_1(&err);
-                                    
+                                    console::error_1(&err);
+
                                     status.set("Audio context unavailable".into());
                                 }
                             }
@@ -974,7 +984,7 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                     Ok(ctx) => {
                         resume_context(&ctx).await;
                         if let Some(existing) = (*active_source).clone() {
-                            let _ = existing.stop_with_when(0.0);
+                            stop_source(&existing);
                         }
 
                         match play_samples(
@@ -988,17 +998,15 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
                                 status.set(AttrValue::from("Playback active"));
                             }
                             Err(err) => {
-            
-                                    console::error_1(&err);
-                                
+                                console::error_1(&err);
+
                                 status.set(AttrValue::from("Unable to play audio"));
                             }
                         }
                     }
                     Err(err) => {
-                       
-                            console::error_1(&err);
-                        
+                        console::error_1(&err);
+
                         status.set(AttrValue::from("Audio context unavailable"));
                     }
                 }
@@ -1011,7 +1019,7 @@ pub fn audio_panel(props: &AudioPanelProps) -> Html {
         let status = status.clone();
         Callback::from(move |_| {
             if let Some(source) = (*active_source).clone() {
-                let _ = source.stop_with_when(0.0);
+                stop_source(&source);
                 status.set(AttrValue::from("Playback stopped"));
             } else {
                 status.set(AttrValue::from("No playback active"));
