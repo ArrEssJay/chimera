@@ -13,6 +13,14 @@ pub struct SymbolDecision {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct ModulationAudio {
+    pub sample_rate: usize,
+    pub carrier_freq_hz: f64,
+    pub clean: Vec<f32>,
+    pub noisy: Vec<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct DemodulationDiagnostics {
     pub received_symbols_i: Vec<f64>,
     pub received_symbols_q: Vec<f64>,
@@ -35,4 +43,5 @@ pub struct DiagnosticsBundle {
     pub encoding_logs: Vec<String>,
     pub decoding_logs: Vec<String>,
     pub demodulation: DemodulationDiagnostics,
+    pub modulation_audio: Option<ModulationAudio>,
 }

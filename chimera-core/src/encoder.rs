@@ -35,6 +35,7 @@ pub struct EncodingResult {
     pub payload_bits: Vec<u8>,
     pub total_frames: usize,
     pub samples_per_symbol: usize,
+    pub sample_rate: usize,
     pub logs: Vec<String>,
 }
 
@@ -48,6 +49,7 @@ impl EncodingResult {
             payload_bits: Vec::new(),
             total_frames: 0,
             samples_per_symbol: 1,
+            sample_rate: 0,
             logs: Vec::new(),
         }
     }
@@ -147,6 +149,7 @@ pub fn generate_modulated_signal(
         payload_bits,
         total_frames: frame_stream.frame_count,
         samples_per_symbol,
+        sample_rate: sim.sample_rate,
         logs: logger.entries().to_vec(),
     }
 }

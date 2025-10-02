@@ -1,10 +1,16 @@
 use crate::model::{run_pipeline, SimulationInput, SimulationOutput};
 use crate::presets::FramePreset;
-use chimera_core::diagnostics::{DiagnosticsBundle, SymbolDecision};
+use chimera_core::diagnostics::{DiagnosticsBundle, ModulationAudio, SymbolDecision};
+use js_sys::{ArrayBuffer, Float32Array};
 use plotters::prelude::*;
 use plotters_canvas::CanvasBackend;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::JsValue;
+use wasm_bindgen_futures::{spawn_local, JsFuture};
+use web_sys::console;
 use web_sys::{
-    Document, HtmlCanvasElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement,
+    AudioBuffer, AudioBufferSourceNode, AudioContext, AudioContextState, Document,
+    HtmlCanvasElement, HtmlInputElement, HtmlSelectElement, HtmlTextAreaElement,
 };
 use yew::events::Event;
 use yew::prelude::*;
@@ -137,6 +143,7 @@ pub fn app() -> Html {
             <div class="dashboard">
                 <StatsPanel input={current_input.clone()} output={current_output.clone()} />
                 <ConstellationChart diagnostics={current_output.diagnostics.clone()} />
+                <AudioPanel audio={current_output.diagnostics.modulation_audio.clone()} />
                 <SymbolDecisionPanel decisions={current_output.diagnostics.demodulation.symbol_decisions.clone()} />
                 <LogsPanel title={AttrValue::from("Encoder Logs")} entries={current_output.diagnostics.encoding_logs.clone()} />
                 <LogsPanel title={AttrValue::from("Decoder Logs")} entries={current_output.diagnostics.decoding_logs.clone()} />
