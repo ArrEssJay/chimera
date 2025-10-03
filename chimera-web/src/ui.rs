@@ -17,9 +17,7 @@ use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{
-    AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement,
-};
+use web_sys::{AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement};
 use yew::events::InputEvent;
 use yew::prelude::*;
 use yew::TargetCast;
@@ -162,7 +160,7 @@ pub fn app() -> Html {
             }
             // Stop any currently playing audio before running new simulation
             stop_audio(&audio_source, &audio_playback);
-            
+
             running_handle.set(true);
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
@@ -1057,8 +1055,8 @@ fn draw_constellation_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(&RGBColor(80, 140, 100).mix(0.5))
-                .light_line_style(&RGBColor(60, 100, 80).mix(0.3))
+                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(7)
                 .y_labels(7)
                 .x_label_formatter(&|x| format!("{:.1}", x))
@@ -1272,8 +1270,8 @@ fn draw_line_chart_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(&RGBColor(80, 140, 100).mix(0.5))
-                .light_line_style(&RGBColor(60, 100, 80).mix(0.3))
+                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(6)
                 .y_labels(6)
                 .x_label_formatter(&|x| format!("{:.0}", x))
@@ -1460,18 +1458,18 @@ fn play_audio(
 
     let ctx = match (*context_ref.borrow()).as_ref() {
         Some(existing) => existing.clone(),
-        None => {
-            match AudioContext::new() {
-                Ok(new_ctx) => {
-                    *context_ref.borrow_mut() = Some(new_ctx.clone());
-                    new_ctx
-                }
-                Err(e) => {
-                    web_sys::console::error_1(&format!("Failed to create AudioContext: {:?}", e).into());
-                    return;
-                }
+        None => match AudioContext::new() {
+            Ok(new_ctx) => {
+                *context_ref.borrow_mut() = Some(new_ctx.clone());
+                new_ctx
             }
-        }
+            Err(e) => {
+                web_sys::console::error_1(
+                    &format!("Failed to create AudioContext: {:?}", e).into(),
+                );
+                return;
+            }
+        },
     };
 
     // Resume context if suspended
@@ -1519,7 +1517,9 @@ fn play_audio(
     }
 
     if let Err(e) = gain_node.connect_with_audio_node(&ctx.destination()) {
-        web_sys::console::error_1(&format!("Failed to connect gain to destination: {:?}", e).into());
+        web_sys::console::error_1(
+            &format!("Failed to connect gain to destination: {:?}", e).into(),
+        );
         return;
     }
 
@@ -1545,6 +1545,7 @@ fn stop_audio(
     state: &UseStateHandle<AudioPlaybackState>,
 ) {
     if let Some(source) = source_node_ref.borrow_mut().take() {
+        #[allow(deprecated)]
         let _ = source.stop();
     }
     state.set(AudioPlaybackState::Stopped);

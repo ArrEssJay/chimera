@@ -1,41 +1,67 @@
-//! LDPC matrix generation and decoding abstractions built on the `ldpc` quantum LDPC crate.
 use ldpc::codes::{CssCode, LinearCode};
 use ndarray::Array2;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sparse_bin_mat::SparseBinMat;
 
 use crate::config::{FrameLayout, LDPCConfig};
 
+/// Represents the core matrices and parameters of a classical linear block code.
+///
+/// This structure holds the generator and parity-check matrices, along with the
+/// fundamental dimensions of the code: the number of message bits (k), codeword
+/// bits (n), and parity-check bits (n-k).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LDPCMatrices {
+    /// The parity-check matrix (H) of the code.
+    ///
+    /// A binary vector `c` is a valid codeword if `H * c^T = 0`.
     pub parity_check: Array2<u8>,
+    /// The generator matrix (G) of the code.
+    ///
+    /// A message vector `m` is encoded into a codeword `c` by `c = m * G`.
     pub generator: Array2<u8>,
+    /// The number of message bits (k), also known as the dimension of the code.
     pub message_bits: usize,
+    /// The number of codeword bits (n), also known as the block length.
     pub codeword_bits: usize,
+    /// The number of parity-check bits (n-k).
     pub parity_bits: usize,
 }
 
-impl Default for LDPCMatrices {
-    fn default() -> Self {
-        Self {
-            parity_check: Array2::zeros((0, 0)),
-            generator: Array2::zeros((0, 0)),
-            message_bits: 0,
-            codeword_bits: 0,
-            parity_bits: 0,
-        }
-    }
-}
-
+/// A collection of LDPC-related code structures for quantum error correction.
+///
+/// This suite encapsulates the classical X and Z codes, the resulting quantum
+/// CSS code, and the dense matrix representations required for classical encoding
+/// and decoding operations.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LDPCSuite {
+    /// The classical linear code for correcting Z-type errors (bit-flips).
     pub x_code: LinearCode,
+    /// The classical linear code for correcting X-type errors (phase-flips).
     pub z_code: LinearCode,
+    /// The Calderbank-Shor-Steane (CSS) quantum code constructed from the X and Z codes.
     pub quantum_css: CssCode,
+    /// Dense matrix representations derived from the `x_code` for simulation purposes.
     pub matrices: LDPCMatrices,
 }
 
 impl LDPCSuite {
+    /// Creates a new `LDPCSuite` based on a given frame layout and configuration.
+    ///
+    /// This constructor currently builds a simple repetition-like code structure
+    /// where the X and Z checks are orthogonal. The `LDPCConfig` is reserved for
+    /// future use, such as generating random LDPC code ensembles with specific
+    /// properties (e.g., defined `dv` and `dc`).
+    ///
+    /// # Arguments
+    ///
+    /// * `layout` - The `FrameLayout` defining the number of message, ECC, and total bits.
+    /// * `cfg` - The `LDPCConfig` for the code construction (currently unused).
+    ///
+    /// # Returns
+    ///
+    /// A new `LDPCSuite` instance.
     pub fn new(layout: &FrameLayout, cfg: &LDPCConfig) -> Self {
         let (x_code, z_code) = build_css_pair(layout);
         let quantum_css = CssCode::new(&x_code, &z_code);
@@ -98,27 +124,110 @@ fn sparse_to_array(matrix: &SparseBinMat) -> Array2<u8> {
     dense
 }
 
-/// Perform hard-decision decoding by solving the linear system defined by the
-/// generator matrix. This recovers the original message bits when no channel
-/// errors remain after demodulation.
+#[inline]
+fn words_for_bits(bits: usize) -> usize {
+    bits.div_ceil(64)
+}
+
+#[inline]
+fn get_bit(words: &[u64], idx: usize) -> u8 {
+    let word = idx / 64;
+    let bit = idx % 64;
+    ((words[word] >> bit) & 1) as u8
+}
+
+#[inline]
+fn set_bit(words: &mut [u64], idx: usize, value: u8) {
+    let word = idx / 64;
+    let bit = idx % 64;
+    let mask = 1u64 << bit;
+    if value & 1 == 1 {
+        words[word] |= mask;
+    } else {
+        words[word] &= !mask;
+    }
+}
+
+#[inline]
+fn xor_suffix(row: &mut [u64], pivot: &[u64], start_bit: usize, total_bits: usize) {
+    if start_bit >= total_bits {
+        return;
+    }
+
+    let start_word = start_bit / 64;
+    let bit_offset = start_bit % 64;
+    let total_words = words_for_bits(total_bits);
+    let last_bits = total_bits % 64;
+
+    for word_idx in start_word..total_words {
+        let mut mask = u64::MAX;
+        if word_idx == start_word {
+            mask &= u64::MAX << bit_offset;
+        }
+        if last_bits != 0 && word_idx == total_words - 1 {
+            mask &= (1u64 << last_bits) - 1;
+        }
+
+        row[word_idx] ^= pivot[word_idx] & mask;
+    }
+}
+
+/// Performs hard-decision decoding of an LDPC codeword.
+///
+/// This function attempts to recover the original message bits from a (potentially noisy)
+/// codeword by solving the linear system `G * m^T = c^T` over the finite field GF(2),
+/// where `G` is the generator matrix, `m` is the message vector, and `c` is the codeword.
+///
+/// The implementation uses parallelized Gaussian elimination to transform an augmented
+/// matrix `[G^T | c]` into reduced row echelon form. This method is effective for
+/// recovering the message when the codeword has few or no errors. It is not a
+/// belief propagation or message-passing decoder and is therefore not robust against
+/// high noise levels.
+///
+/// The `_snr_db` parameter is currently unused but is reserved for future integration
+/// with soft-decision decoding algorithms.
+///
+/// # Arguments
+///
+/// * `matrices` - A reference to the `LDPCMatrices` containing the generator matrix.
+/// * `noisy_codeword` - A slice of `u8` representing the received codeword bits. Its
+///   length must equal `matrices.codeword_bits`.
+/// * `_snr_db` - The signal-to-noise ratio in decibels (currently unused).
+///
+/// # Returns
+///
+/// A `Vec<u8>` containing the recovered message bits. If the system is underdetermined,
+/// free variables are resolved to 0.
+///
+/// # Panics
+///
+/// Panics in debug builds if `noisy_codeword.len()` does not match `matrices.codeword_bits`.
 pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64) -> Vec<u8> {
     let message_bits = matrices.message_bits;
     let codeword_bits = matrices.codeword_bits;
+    let total_bits = message_bits + 1;
+    let word_len = words_for_bits(total_bits);
 
     debug_assert_eq!(noisy_codeword.len(), codeword_bits);
 
     // Build the augmented matrix for the linear system G^T * m = c, where G is
     // the generator matrix and c is the received codeword. Each row encodes a
     // single codeword bit equation over GF(2).
-    let mut augmented: Vec<Vec<u8>> = Vec::with_capacity(codeword_bits);
-    for (col, &codeword_bit) in noisy_codeword.iter().enumerate().take(codeword_bits) {
-        let mut row = Vec::with_capacity(message_bits + 1);
-        for row_idx in 0..message_bits {
-            row.push(matrices.generator[(row_idx, col)] & 1);
-        }
-        row.push(codeword_bit & 1);
-        augmented.push(row);
-    }
+    let mut augmented: Vec<Vec<u64>> = (0..codeword_bits)
+        .into_iter()
+        .map(|col| {
+            let mut row = vec![0u64; word_len];
+            for row_idx in 0..message_bits {
+                if matrices.generator[(row_idx, col)] & 1 == 1 {
+                    set_bit(&mut row, row_idx, 1);
+                }
+            }
+            if noisy_codeword[col] & 1 == 1 {
+                set_bit(&mut row, message_bits, 1);
+            }
+            row
+        })
+        .collect();
 
     // Gaussian elimination over GF(2) to obtain reduced row echelon form. We
     // keep track of which row becomes the pivot for each message bit column.
@@ -131,7 +240,9 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
         }
 
         // Find a row with a leading 1 in this column.
-        if let Some(pivot_idx) = (pivot_row..augmented.len()).find(|&r| augmented[r][col] == 1) {
+        if let Some(pivot_idx) =
+            (pivot_row..augmented.len()).find(|&r| get_bit(&augmented[r], col) == 1)
+        {
             augmented.swap(pivot_row, pivot_idx);
 
             // Eliminate this column from every other row to reach reduced form.
@@ -142,18 +253,23 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
 
             // XOR the pivot row with all other rows that have a 1 in the pivot column.
             let pivot_row_data = &pivot_row_ref[0];
-            for row in pivot_slice
-                .iter_mut()
-                .chain(other_rows_after.iter_mut())
-                .filter(|row| row[col] == 1)
-            {
-                for (val, pivot_val) in row[col..=message_bits]
-                    .iter_mut()
-                    .zip(&pivot_row_data[col..=message_bits])
-                {
-                    *val ^= *pivot_val;
+
+            let eliminate = |rows: &mut [Vec<u64>]| {
+                // Use sequential iteration for small matrices to avoid parallel overhead.
+                const PARALLEL_THRESHOLD: usize = 1000;
+                if rows.len() < PARALLEL_THRESHOLD {
+                    rows.iter_mut()
+                        .filter(|row| get_bit(row, col) == 1)
+                        .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
+                } else {
+                    rows.par_iter_mut()
+                        .filter(|row| get_bit(row, col) == 1)
+                        .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
                 }
-            }
+            };
+
+            eliminate(pivot_slice);
+            eliminate(other_rows_after);
 
             *pivot = Some(pivot_row);
             pivot_row += 1;
@@ -163,7 +279,7 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
     let mut message = vec![0u8; message_bits];
     for (col, pivot) in column_pivots.into_iter().enumerate() {
         if let Some(row_idx) = pivot {
-            message[col] = augmented[row_idx][message_bits];
+            message[col] = get_bit(&augmented[row_idx], message_bits);
         } else {
             // Column without a pivot corresponds to a free variable; choose 0.
             message[col] = 0;
