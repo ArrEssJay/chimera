@@ -174,7 +174,7 @@ pub fn generate_modulated_signal(
     // Link loss represents path loss, free-space loss, antenna gains, etc.
     let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
     let attenuated_signal_power = signal_power / link_loss_linear;
-    
+
     // Apply link loss to clean signal
     let attenuation_factor = if link_loss_linear > 0.0 {
         1.0 / link_loss_linear.sqrt()

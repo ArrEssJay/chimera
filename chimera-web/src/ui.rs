@@ -858,7 +858,7 @@ fn render_log(entries: &[String]) -> Html {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ConstellationVariant {
     Tx,
     Rx,
@@ -903,7 +903,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
                 title.clone(),
             ),
             move |(i_samples, q_samples, variant, title)| {
-                if !i_samples.is_empty() && !q_samples.is_empty() {
+                if has_valid_constellation_samples(i_samples, q_samples) {
                     let svg = draw_constellation_svg(
                         i_samples,
                         q_samples,
@@ -911,13 +911,20 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
                         variant.clone(),
                     );
                     svg_content.set(svg);
+                } else {
+                    log::warn!(
+                        "Skipping constellation '{}' ({:?}) render due to lack of finite samples",
+                        title,
+                        variant
+                    );
+                    svg_content.set(String::new());
                 }
                 || ()
             },
         );
     }
 
-    let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
+    let is_empty = !has_valid_constellation_samples(&props.i_samples, &props.q_samples);
     let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
     let panel_class = if props.tooltip.is_some() {
         "constellation-panel panel has-tooltip"
@@ -962,19 +969,28 @@ pub fn combined_constellation(props: &CombinedConstellationProps) -> Html {
                 title.clone(),
             ),
             move |(tx_i, tx_q, rx_i, rx_q, title)| {
-                if (!tx_i.is_empty() && !tx_q.is_empty()) || (!rx_i.is_empty() && !rx_q.is_empty())
-                {
+                let has_tx = has_valid_constellation_samples(tx_i, tx_q);
+                let has_rx = has_valid_constellation_samples(rx_i, rx_q);
+
+                if has_tx || has_rx {
                     let svg =
                         draw_combined_constellation_svg(tx_i, tx_q, rx_i, rx_q, title.as_str());
                     svg_content.set(svg);
+                } else {
+                    log::warn!(
+                        "Skipping combined constellation '{}' render due to lack of finite samples",
+                        title
+                    );
+                    svg_content.set(String::new());
                 }
                 || ()
             },
         );
     }
 
-    let is_empty = (props.tx_i_samples.is_empty() || props.tx_q_samples.is_empty())
-        && (props.rx_i_samples.is_empty() || props.rx_q_samples.is_empty());
+    let has_tx = has_valid_constellation_samples(&props.tx_i_samples, &props.tx_q_samples);
+    let has_rx = has_valid_constellation_samples(&props.rx_i_samples, &props.rx_q_samples);
+    let is_empty = !has_tx && !has_rx;
     html! {
         <div class="constellation-panel panel constellation-combined">
             {
@@ -1065,12 +1081,78 @@ fn line_chart(props: &LineChartProps) -> Html {
     }
 }
 
+fn compute_constellation_extent(channels: &[&[f64]]) -> f64 {
+    const DEFAULT_EXTENT: f64 = 1.5;
+    let mut max_abs = 0.0;
+
+    for channel in channels {
+        for &value in *channel {
+            if value.is_finite() {
+                let abs = value.abs();
+                if abs > max_abs {
+                    max_abs = abs;
+                }
+            }
+        }
+    }
+
+    if max_abs > 0.0 {
+        (max_abs * 1.1).max(DEFAULT_EXTENT)
+    } else {
+        DEFAULT_EXTENT
+    }
+}
+
+fn has_valid_constellation_samples(i: &[f64], q: &[f64]) -> bool {
+    i.iter()
+        .zip(q.iter())
+        .any(|(&in_phase, &quadrature)| in_phase.is_finite() && quadrature.is_finite())
+}
+
+fn collect_constellation_points(i: &[f64], q: &[f64]) -> (Vec<(f64, f64)>, usize) {
+    let mut dropped = 0usize;
+    let points = i
+        .iter()
+        .zip(q.iter())
+        .filter_map(|(&in_phase, &quadrature)| {
+            if in_phase.is_finite() && quadrature.is_finite() {
+                Some((in_phase, quadrature))
+            } else {
+                dropped += 1;
+                None
+            }
+        })
+        .collect();
+
+    (points, dropped)
+}
+
 fn draw_constellation_svg(
     symbols_i: &[f64],
     symbols_q: &[f64],
     title: &str,
     variant: ConstellationVariant,
 ) -> String {
+    let (points, dropped) = collect_constellation_points(symbols_i, symbols_q);
+    if points.is_empty() {
+        log::warn!(
+            "Constellation '{}' ({:?}) has no finite samples ({} total, {} dropped)",
+            title,
+            variant,
+            symbols_i.len().min(symbols_q.len()),
+            dropped
+        );
+        return String::new();
+    }
+
+    log::info!(
+        "Rendering constellation '{}' ({:?}) with {} points ({} dropped)",
+        title,
+        variant,
+        points.len(),
+        dropped
+    );
+
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
@@ -1078,13 +1160,16 @@ fn draw_constellation_svg(
 
         let _ = root.fill(&TRANSPARENT);
 
+        let axis_limit = compute_constellation_extent(&[symbols_i, symbols_q]);
+        let axis_range = -axis_limit..axis_limit;
+
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
                 .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
                 .margin(15)
                 .x_label_area_size(40)
                 .y_label_area_size(50)
-                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+                .build_cartesian_2d(axis_range.clone(), axis_range.clone())?;
 
             chart
                 .configure_mesh()
@@ -1127,14 +1212,9 @@ fn draw_constellation_svg(
             }
 
             // Draw actual symbols
-            let symbols = symbols_i
-                .iter()
-                .zip(symbols_q.iter())
-                .map(|(&i, &q)| (i, q));
-
-            chart.draw_series(
-                symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())),
-            )?;
+            chart.draw_series(points.iter().copied().map(|(i, q)| {
+                Circle::new((i, q), radius, point_color.filled())
+            }))?;
 
             Ok(())
         })();
@@ -1158,6 +1238,30 @@ fn draw_combined_constellation_svg(
     rx_q: &[f64],
     title: &str,
 ) -> String {
+    let (tx_points, tx_dropped) = collect_constellation_points(tx_i, tx_q);
+    let (rx_points, rx_dropped) = collect_constellation_points(rx_i, rx_q);
+
+    if tx_points.is_empty() && rx_points.is_empty() {
+        log::warn!(
+            "Combined constellation '{}' has no finite samples (tx: total {} dropped {}, rx: total {} dropped {})",
+            title,
+            tx_i.len().min(tx_q.len()),
+            tx_dropped,
+            rx_i.len().min(rx_q.len()),
+            rx_dropped
+        );
+        return String::new();
+    }
+
+    log::info!(
+        "Rendering combined constellation '{}' with {} TX points ({} dropped) and {} RX points ({} dropped)",
+        title,
+        tx_points.len(),
+        tx_dropped,
+        rx_points.len(),
+        rx_dropped
+    );
+
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
@@ -1165,13 +1269,16 @@ fn draw_combined_constellation_svg(
 
         let _ = root.fill(&TRANSPARENT);
 
+        let axis_limit = compute_constellation_extent(&[tx_i, tx_q, rx_i, rx_q]);
+        let axis_range = -axis_limit..axis_limit;
+
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
                 .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
                 .margin(20)
                 .x_label_area_size(40)
                 .y_label_area_size(50)
-                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+                .build_cartesian_2d(axis_range.clone(), axis_range.clone())?;
 
             chart
                 .configure_mesh()
@@ -1202,20 +1309,24 @@ fn draw_combined_constellation_svg(
             )?;
 
             // Draw TX symbols (ideal, larger, cyan/green)
-            if !tx_i.is_empty() && !tx_q.is_empty() {
+            if !tx_points.is_empty() {
                 let tx_color = RGBColor(126, 240, 196);
-                let tx_symbols = tx_i.iter().zip(tx_q.iter()).map(|(&i, &q)| (i, q));
                 chart.draw_series(
-                    tx_symbols.map(|(i, q)| Circle::new((i, q), 5, tx_color.filled())),
+                    tx_points
+                        .iter()
+                        .copied()
+                        .map(|(i, q)| Circle::new((i, q), 5, tx_color.filled())),
                 )?;
             }
 
             // Draw RX symbols (received, smaller, pink/magenta)
-            if !rx_i.is_empty() && !rx_q.is_empty() {
+            if !rx_points.is_empty() {
                 let rx_color = RGBColor(255, 168, 250);
-                let rx_symbols = rx_i.iter().zip(rx_q.iter()).map(|(&i, &q)| (i, q));
                 chart.draw_series(
-                    rx_symbols.map(|(i, q)| Circle::new((i, q), 3, rx_color.filled())),
+                    rx_points
+                        .iter()
+                        .copied()
+                        .map(|(i, q)| Circle::new((i, q), 3, rx_color.filled())),
                 )?;
             }
 
@@ -1582,6 +1693,88 @@ fn stop_audio(
         let _ = source.stop();
     }
     state.set(AudioPlaybackState::Stopped);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        compute_constellation_extent, draw_combined_constellation_svg, draw_constellation_svg,
+        has_valid_constellation_samples, ConstellationVariant,
+    };
+
+    #[test]
+    fn extent_defaults_to_base_when_values_are_small() {
+        let extent = compute_constellation_extent(&[&[0.2, -0.3, 0.1], &[0.05, -0.1]]);
+        assert!((extent - 1.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn extent_expands_for_large_constellations() {
+        let extent = compute_constellation_extent(&[&[2.0, -3.2], &[0.0, 3.0]]);
+        assert!(extent >= 3.2 * 1.1);
+    }
+
+    #[test]
+    fn extent_ignores_non_finite_samples() {
+        let extent = compute_constellation_extent(&[&[f64::NAN, f64::INFINITY], &[0.0]]);
+        assert!((extent - 1.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn detects_valid_constellation_samples() {
+        assert!(has_valid_constellation_samples(
+            &[0.1, f64::NAN],
+            &[0.2, 0.3]
+        ));
+        assert!(!has_valid_constellation_samples(&[f64::NAN], &[f64::NAN]));
+    }
+
+    #[test]
+    fn draw_constellation_produces_svg_for_valid_points() {
+        let svg =
+            draw_constellation_svg(&[0.5, -0.5], &[0.5, -0.5], "Test", ConstellationVariant::Tx);
+
+        assert!(!svg.is_empty());
+        assert!(svg.contains("<svg"), "expected SVG element in output");
+        assert!(
+            svg.contains("<circle"),
+            "expected plotted symbols in output"
+        );
+    }
+
+    #[test]
+    fn draw_constellation_returns_empty_when_no_valid_points() {
+        let svg = draw_constellation_svg(
+            &[f64::NAN],
+            &[f64::INFINITY],
+            "Test",
+            ConstellationVariant::Rx,
+        );
+        assert!(svg.is_empty());
+    }
+
+    #[test]
+    fn draw_combined_constellation_handles_mixed_validity() {
+        let svg = draw_combined_constellation_svg(
+            &[f64::NAN, 1.0],
+            &[f64::NAN, 1.0],
+            &[f64::NAN],
+            &[f64::NAN],
+            "Combined",
+        );
+
+        assert!(!svg.is_empty());
+        assert!(svg.contains("<circle"));
+
+        let empty_svg = draw_combined_constellation_svg(
+            &[f64::NAN],
+            &[f64::NAN],
+            &[f64::NAN],
+            &[f64::INFINITY],
+            "Combined",
+        );
+        assert!(empty_svg.is_empty());
+    }
 }
 
 pub fn mount_app() {
