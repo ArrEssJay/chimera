@@ -255,9 +255,17 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
             let pivot_row_data = &pivot_row_ref[0];
 
             let eliminate = |rows: &mut [Vec<u64>]| {
-                rows.par_iter_mut()
-                    .filter(|row| get_bit(row, col) == 1)
-                    .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
+                // Use sequential iteration for small matrices to avoid parallel overhead.
+                const PARALLEL_THRESHOLD: usize = 1000;
+                if rows.len() < PARALLEL_THRESHOLD {
+                    rows.iter_mut()
+                        .filter(|row| get_bit(row, col) == 1)
+                        .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
+                } else {
+                    rows.par_iter_mut()
+                        .filter(|row| get_bit(row, col) == 1)
+                        .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
+                }
             };
 
             eliminate(pivot_slice);
