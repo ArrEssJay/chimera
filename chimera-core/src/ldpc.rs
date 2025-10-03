@@ -214,7 +214,6 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
     // the generator matrix and c is the received codeword. Each row encodes a
     // single codeword bit equation over GF(2).
     let mut augmented: Vec<Vec<u64>> = (0..codeword_bits)
-        .into_iter()
         .map(|col| {
             let mut row = vec![0u64; word_len];
             for row_idx in 0..message_bits {

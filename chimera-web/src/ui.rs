@@ -10,13 +10,13 @@ use gloo_file::Blob;
 // font/IO dependencies that are incompatible with the WebAssembly target.
 // We now generate minimal SVG markup directly to ensure deterministic
 // rendering in the browser without requiring system fonts.
+use gloo_timers::callback::Timeout;
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
 use std::f64::consts::FRAC_1_SQRT_2;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
-use gloo_timers::callback::Timeout;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
@@ -185,16 +185,16 @@ pub fn app() -> Html {
             let running_state = running_handle.clone();
             let last_run_state = last_run_handle.clone();
             let input_clone = input.clone();
-                spawn_local(async move {
-                    web_sys::console::info_1(&"Run Now clicked: starting pipeline".into());
-                    // run_pipeline is synchronous CPU-bound; log around it so we can see progress
-                    let result = run_pipeline(input);
-                    web_sys::console::info_1(&"Pipeline completed: setting output".into());
-                    output_state.set(Some(result));
-                    running_state.set(false);
-                    last_run_state.set(Some(input_clone));
-                    web_sys::console::info_1(&"Output stored and UI state updated".into());
-                });
+            spawn_local(async move {
+                web_sys::console::info_1(&"Run Now clicked: starting pipeline".into());
+                // run_pipeline is synchronous CPU-bound; log around it so we can see progress
+                let result = run_pipeline(input);
+                web_sys::console::info_1(&"Pipeline completed: setting output".into());
+                output_state.set(Some(result));
+                running_state.set(false);
+                last_run_state.set(Some(input_clone));
+                web_sys::console::info_1(&"Output stored and UI state updated".into());
+            });
         })
     };
 
@@ -888,7 +888,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         "constellation-panel panel"
     };
     let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
-    
+
     html! {
         <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
@@ -916,7 +916,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
 pub fn combined_constellation(props: &CombinedConstellationProps) -> Html {
     let is_empty = (props.tx_i_samples.is_empty() || props.tx_q_samples.is_empty())
         && (props.rx_i_samples.is_empty() || props.rx_q_samples.is_empty());
-    
+
     html! {
         <div class="constellation-panel panel constellation-combined">
             {
@@ -965,7 +965,7 @@ fn line_chart(props: &LineChartProps) -> Html {
         "chart-panel panel"
     };
     let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
-    
+
     html! {
         <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
@@ -1022,7 +1022,11 @@ fn draw_constellation_svg(
 
     if finite.is_empty() {
         web_sys::console::warn_1(
-            &format!("Skipping constellation '{}' due to lack of finite samples", title).into(),
+            &format!(
+                "Skipping constellation '{}' due to lack of finite samples",
+                title
+            )
+            .into(),
         );
         return String::new();
     }
@@ -1040,9 +1044,7 @@ fn draw_constellation_svg(
     let y_min = -1.5;
     let y_max = 1.5;
 
-    let map_x = |x: f64| {
-        padding + ((x - x_min) / (x_max - x_min)) * plot_w
-    };
+    let map_x = |x: f64| padding + ((x - x_min) / (x_max - x_min)) * plot_w;
     let map_y = |y: f64| {
         // SVG Y axis goes down so invert
         padding + (1.0 - (y - y_min) / (y_max - y_min)) * plot_h
@@ -1056,9 +1058,7 @@ fn draw_constellation_svg(
     ));
 
     // Background
-    svg.push_str(&format!(
-        "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>"
-    ));
+    svg.push_str(&"<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>".to_string());
 
     // Title
     svg.push_str(&format!(
@@ -1214,12 +1214,24 @@ fn draw_combined_constellation_svg(
     let tx: Vec<(f64, f64)> = tx_i
         .iter()
         .zip(tx_q.iter())
-        .filter_map(|(&i, &q)| if i.is_finite() && q.is_finite() { Some((i, q)) } else { None })
+        .filter_map(|(&i, &q)| {
+            if i.is_finite() && q.is_finite() {
+                Some((i, q))
+            } else {
+                None
+            }
+        })
         .collect();
     let rx: Vec<(f64, f64)> = rx_i
         .iter()
         .zip(rx_q.iter())
-        .filter_map(|(&i, &q)| if i.is_finite() && q.is_finite() { Some((i, q)) } else { None })
+        .filter_map(|(&i, &q)| {
+            if i.is_finite() && q.is_finite() {
+                Some((i, q))
+            } else {
+                None
+            }
+        })
         .collect();
 
     web_sys::console::info_1(
@@ -1236,7 +1248,11 @@ fn draw_combined_constellation_svg(
 
     if tx.is_empty() && rx.is_empty() {
         web_sys::console::warn_1(
-            &format!("Skipping combined constellation '{}' due to lack of finite samples", title).into(),
+            &format!(
+                "Skipping combined constellation '{}' due to lack of finite samples",
+                title
+            )
+            .into(),
         );
         return String::new();
     }
@@ -1372,7 +1388,11 @@ fn draw_line_chart_svg(
 
     if finite.is_empty() {
         web_sys::console::warn_1(
-            &format!("Skipping line chart '{}' due to lack of finite samples", title).into(),
+            &format!(
+                "Skipping line chart '{}' due to lack of finite samples",
+                title
+            )
+            .into(),
         );
         return String::new();
     }
@@ -1387,7 +1407,11 @@ fn draw_line_chart_svg(
     let y_min = finite.iter().cloned().fold(f64::INFINITY, f64::min);
     let y_max = finite.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
     let y_min = if y_min == f64::INFINITY { 0.0 } else { y_min };
-    let y_max = if y_max == f64::NEG_INFINITY { 0.0 } else { y_max };
+    let y_max = if y_max == f64::NEG_INFINITY {
+        0.0
+    } else {
+        y_max
+    };
     let y_range = (y_max - y_min).abs().max(1e-6);
 
     let x_denominator = (finite.len().saturating_sub(1) as f64).max(1.0);
@@ -1473,7 +1497,8 @@ fn draw_line_chart_svg(
     // X-axis tick marks (show sample indices at key points)
     let num_x_ticks = 5;
     for i in 0..=num_x_ticks {
-        let tick_idx = (finite.len().saturating_sub(1) as f64 * i as f64 / num_x_ticks as f64) as usize;
+        let tick_idx =
+            (finite.len().saturating_sub(1) as f64 * i as f64 / num_x_ticks as f64) as usize;
         let tx = map_x(tick_idx);
         // Tick mark
         svg.push_str(&format!(
@@ -1812,16 +1837,16 @@ pub fn mount_app() {
     // Check for localStorage-triggered runs (tests may set this before reloading)
     if let Some(window) = web_sys::window() {
         if let Ok(Some(storage)) = window.local_storage() {
-                if let Ok(Some(val)) = storage.get_item("chimera_test_run_now") {
-                    if val == "1" {
-                        // Delay the trigger slightly so the Yew app has time to mount
-                        let _ = storage.remove_item("chimera_test_run_now");
-                        Timeout::new(250, || {
-                            let _ = __test_trigger_run();
-                        })
-                        .forget();
-                    }
+            if let Ok(Some(val)) = storage.get_item("chimera_test_run_now") {
+                if val == "1" {
+                    // Delay the trigger slightly so the Yew app has time to mount
+                    let _ = storage.remove_item("chimera_test_run_now");
+                    Timeout::new(250, || {
+                        let _ = __test_trigger_run();
+                    })
+                    .forget();
                 }
+            }
         }
     }
 }
@@ -1859,21 +1884,46 @@ pub fn __test_trigger_run() -> Result<(), JsValue> {
     };
 
     // Inject TX and RX constellations
-    web_sys::console::info_1(&format!(
-        "Test hook diagnostics: tx={} tx_finite={}, rx={} rx_finite={}",
-        diag.tx_symbols_i.len(),
-        diag.tx_symbols_i.iter().filter(|v| v.is_finite()).count(),
-        diag.demodulation.received_symbols_i.len(),
-        diag.demodulation.received_symbols_i.iter().filter(|v| v.is_finite()).count()
-    ).into());
-    let tx_svg = draw_constellation_svg(&diag.tx_symbols_i, &diag.tx_symbols_q, "TX Symbols", ConstellationVariant::Tx);
-    let rx_svg = draw_constellation_svg(&diag.demodulation.received_symbols_i, &diag.demodulation.received_symbols_q, "RX Symbols", ConstellationVariant::Rx);
+    web_sys::console::info_1(
+        &format!(
+            "Test hook diagnostics: tx={} tx_finite={}, rx={} rx_finite={}",
+            diag.tx_symbols_i.len(),
+            diag.tx_symbols_i.iter().filter(|v| v.is_finite()).count(),
+            diag.demodulation.received_symbols_i.len(),
+            diag.demodulation
+                .received_symbols_i
+                .iter()
+                .filter(|v| v.is_finite())
+                .count()
+        )
+        .into(),
+    );
+    let tx_svg = draw_constellation_svg(
+        &diag.tx_symbols_i,
+        &diag.tx_symbols_q,
+        "TX Symbols",
+        ConstellationVariant::Tx,
+    );
+    let rx_svg = draw_constellation_svg(
+        &diag.demodulation.received_symbols_i,
+        &diag.demodulation.received_symbols_q,
+        "RX Symbols",
+        ConstellationVariant::Rx,
+    );
     set_node_svg("Transmitter", tx_svg);
     set_node_svg("Receiver", rx_svg);
 
     // Inject combined constellation
-    if let Ok(Some(combined)) = document.query_selector(".constellation-combined .svg-chart-container") {
-        let combined_svg = draw_combined_constellation_svg(&diag.tx_symbols_i, &diag.tx_symbols_q, &diag.demodulation.received_symbols_i, &diag.demodulation.received_symbols_q, "TX vs RX Constellation");
+    if let Ok(Some(combined)) =
+        document.query_selector(".constellation-combined .svg-chart-container")
+    {
+        let combined_svg = draw_combined_constellation_svg(
+            &diag.tx_symbols_i,
+            &diag.tx_symbols_q,
+            &diag.demodulation.received_symbols_i,
+            &diag.demodulation.received_symbols_q,
+            "TX vs RX Constellation",
+        );
         combined.set_inner_html(&combined_svg);
     }
 
@@ -1897,19 +1947,49 @@ pub fn __test_trigger_run() -> Result<(), JsValue> {
     };
 
     // Create and inject some diagnostics charts
-    let timing_svg = draw_line_chart_svg(&diag.demodulation.timing_error, "Timing Error", "Sample Index", "Error (samples)", Some((94, 214, 255)));
+    let timing_svg = draw_line_chart_svg(
+        &diag.demodulation.timing_error,
+        "Timing Error",
+        "Sample Index",
+        "Error (samples)",
+        Some((94, 214, 255)),
+    );
     inject_line_by_title("Timing Error", timing_svg);
 
-    let nco_svg = draw_line_chart_svg(&diag.demodulation.nco_freq_offset, "NCO Frequency Offset", "Sample Index", "Offset (Hz)", Some((255, 168, 112)));
+    let nco_svg = draw_line_chart_svg(
+        &diag.demodulation.nco_freq_offset,
+        "NCO Frequency Offset",
+        "Sample Index",
+        "Offset (Hz)",
+        Some((255, 168, 112)),
+    );
     inject_line_by_title("NCO Frequency Offset", nco_svg);
 
-    let clean_svg = draw_line_chart_svg(&compute_psd(&diag.clean_baseband, FIXED_SAMPLE_RATE), "Clean Signal PSD", "Frequency Bin", "Power (dBFS)", Some((126, 240, 180)));
+    let clean_svg = draw_line_chart_svg(
+        &compute_psd(&diag.clean_baseband, FIXED_SAMPLE_RATE),
+        "Clean Signal PSD",
+        "Frequency Bin",
+        "Power (dBFS)",
+        Some((126, 240, 180)),
+    );
     inject_line_by_title("Clean Signal PSD", clean_svg);
 
-    let noisy_svg = draw_line_chart_svg(&compute_psd(&diag.noisy_baseband, FIXED_SAMPLE_RATE), "Noisy Signal PSD", "Frequency Bin", "Power (dBFS)", Some((255, 132, 220)));
+    let noisy_svg = draw_line_chart_svg(
+        &compute_psd(&diag.noisy_baseband, FIXED_SAMPLE_RATE),
+        "Noisy Signal PSD",
+        "Frequency Bin",
+        "Power (dBFS)",
+        Some((255, 132, 220)),
+    );
     inject_line_by_title("Noisy Signal PSD", noisy_svg);
 
-    let ber_svg = draw_line_chart_svg(&compute_ber_trend(&diag.tx_bits, &diag.demodulation.symbol_decisions), "Running BER", "Symbol Index", "BER", Some((255, 238, 96)));
+    let ber_svg = draw_line_chart_svg(
+        &compute_ber_trend(&diag.tx_bits, &diag.demodulation.symbol_decisions),
+        "Running BER",
+        "Symbol Index",
+        "BER",
+        Some((255, 238, 96)),
+    );
     inject_line_by_title("Running BER", ber_svg);
 
     Ok(())
@@ -1925,14 +2005,8 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_constellation_svg_generation() {
         // Test data: QPSK constellation points
-        let symbols_i = vec![
-            0.707, 0.707, -0.707, -0.707,
-            0.707, 0.707, -0.707, -0.707,
-        ];
-        let symbols_q = vec![
-            0.707, -0.707, 0.707, -0.707,
-            0.707, -0.707, 0.707, -0.707,
-        ];
+        let symbols_i = vec![0.707, 0.707, -0.707, -0.707, 0.707, 0.707, -0.707, -0.707];
+        let symbols_q = vec![0.707, -0.707, 0.707, -0.707, 0.707, -0.707, 0.707, -0.707];
 
         let svg = draw_constellation_svg(
             &symbols_i,
@@ -1943,19 +2017,29 @@ mod tests {
 
         // Verify SVG is not empty
         assert!(!svg.is_empty(), "SVG should not be empty");
-        
+
         // Verify SVG has proper structure
         assert!(svg.contains("<svg"), "SVG should contain opening tag");
         assert!(svg.contains("</svg>"), "SVG should contain closing tag");
-        
+
         // Verify it contains data points (circles)
-        assert!(svg.contains("<circle"), "SVG should contain circle elements");
-        
+        assert!(
+            svg.contains("<circle"),
+            "SVG should contain circle elements"
+        );
+
         // Count circles - should have data points plus reference points
         let circle_count = svg.matches("<circle").count();
         assert!(circle_count > 0, "Should have at least one circle");
-        
-        web_sys::console::log_1(&format!("Generated SVG with {} circles, {} bytes", circle_count, svg.len()).into());
+
+        web_sys::console::log_1(
+            &format!(
+                "Generated SVG with {} circles, {} bytes",
+                circle_count,
+                svg.len()
+            )
+            .into(),
+        );
     }
 
     #[wasm_bindgen_test]
@@ -1966,26 +2050,25 @@ mod tests {
         let rx_i = vec![0.71, 0.69, -0.71, -0.69];
         let rx_q = vec![0.71, -0.69, 0.71, -0.69];
 
-        let svg = draw_combined_constellation_svg(
-            &tx_i,
-            &tx_q,
-            &rx_i,
-            &rx_q,
-            "Combined Test",
-        );
+        let svg = draw_combined_constellation_svg(&tx_i, &tx_q, &rx_i, &rx_q, "Combined Test");
 
         // Verify SVG structure
         assert!(!svg.is_empty(), "SVG should not be empty");
         assert!(svg.contains("<svg"), "SVG should contain opening tag");
         assert!(svg.contains("</svg>"), "SVG should contain closing tag");
-        assert!(svg.contains("<circle"), "SVG should contain circle elements");
-        
+        assert!(
+            svg.contains("<circle"),
+            "SVG should contain circle elements"
+        );
+
         // Verify legend text
         assert!(svg.contains("TX Symbols"), "Should have TX legend");
         assert!(svg.contains("RX Symbols"), "Should have RX legend");
-        
+
         let circle_count = svg.matches("<circle").count();
-        web_sys::console::log_1(&format!("Generated combined SVG with {} circles", circle_count).into());
+        web_sys::console::log_1(
+            &format!("Generated combined SVG with {} circles", circle_count).into(),
+        );
     }
 
     #[wasm_bindgen_test]
@@ -1994,12 +2077,8 @@ mod tests {
         let empty_i: Vec<f64> = vec![];
         let empty_q: Vec<f64> = vec![];
 
-        let svg = draw_constellation_svg(
-            &empty_i,
-            &empty_q,
-            "Empty Test",
-            ConstellationVariant::Rx,
-        );
+        let svg =
+            draw_constellation_svg(&empty_i, &empty_q, "Empty Test", ConstellationVariant::Rx);
 
         // Should return empty string when no data
         assert!(svg.is_empty(), "SVG should be empty when no data points");
@@ -2020,7 +2099,13 @@ mod tests {
 
         // Should still generate SVG if there are some finite values
         // We have 2 finite pairs out of 4
-        assert!(!svg.is_empty(), "SVG should be generated with partial finite data");
-        assert!(svg.contains("<circle"), "Should contain circles for finite points");
+        assert!(
+            !svg.is_empty(),
+            "SVG should be generated with partial finite data"
+        );
+        assert!(
+            svg.contains("<circle"),
+            "Should contain circles for finite points"
+        );
     }
 }

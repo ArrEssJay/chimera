@@ -5,14 +5,9 @@ use std::fs;
 use std::path::PathBuf;
 
 // Helper to create test SVG using the same plotters backend as the UI
-fn create_test_svg(
-    symbols_i: &[f64],
-    symbols_q: &[f64],
-    title: &str,
-    output_path: &str,
-) -> String {
-    use plotters::prelude::*;
+fn create_test_svg(symbols_i: &[f64], symbols_q: &[f64], title: &str, output_path: &str) -> String {
     use plotters::backend::SVGBackend;
+    use plotters::prelude::*;
     use std::f64::consts::FRAC_1_SQRT_2;
 
     let mut svg_string = String::new();
@@ -64,7 +59,8 @@ fn create_test_svg(
                 .zip(symbols_q.iter())
                 .map(|(&i, &q)| (i, q));
 
-            chart.draw_series(symbols.map(|(i, q)| Circle::new((i, q), 6, point_color.filled())))?;
+            chart
+                .draw_series(symbols.map(|(i, q)| Circle::new((i, q), 6, point_color.filled())))?;
 
             Ok(())
         })();
@@ -142,7 +138,13 @@ fn generate_constellation_svg_samples() {
     );
 
     println!("\n✓ Successfully generated test SVG files");
-    println!("  TX: {}", output_dir.join("tx_constellation.svg").display());
-    println!("  RX: {}", output_dir.join("rx_constellation.svg").display());
+    println!(
+        "  TX: {}",
+        output_dir.join("tx_constellation.svg").display()
+    );
+    println!(
+        "  RX: {}",
+        output_dir.join("rx_constellation.svg").display()
+    );
     println!("\nOpen these files in a browser to visually verify the charts render correctly.");
 }

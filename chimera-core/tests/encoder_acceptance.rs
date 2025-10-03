@@ -216,20 +216,18 @@ fn given_link_loss_when_pipeline_runs_then_signal_is_attenuated() {
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
 
     let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
-    
+
     // Verify that the noisy signal has lower power than clean signal due to link loss
-    let clean_power: f64 = encoding.clean_signal.iter()
-        .map(|&x| x * x)
-        .sum::<f64>() / encoding.clean_signal.len() as f64;
-    
-    let noisy_power: f64 = encoding.noisy_signal.iter()
-        .map(|&x| x * x)
-        .sum::<f64>() / encoding.noisy_signal.len() as f64;
-    
+    let clean_power: f64 = encoding.clean_signal.iter().map(|&x| x * x).sum::<f64>()
+        / encoding.clean_signal.len() as f64;
+
+    let noisy_power: f64 = encoding.noisy_signal.iter().map(|&x| x * x).sum::<f64>()
+        / encoding.noisy_signal.len() as f64;
+
     // With 20 dB link loss, the power should be reduced by 100x
     let expected_attenuation = 10f64.powf(20.0 / 10.0); // 100x
     let measured_attenuation = clean_power / noisy_power;
-    
+
     // Allow some tolerance for noise addition
     assert!(
         measured_attenuation > expected_attenuation * 0.8,
@@ -255,14 +253,14 @@ fn given_link_loss_and_noise_when_pipeline_runs_then_both_applied() {
 
     let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
     let _demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
-    
+
     // Verify logs mention both link loss and AWGN
     let has_link_loss_log = encoding.logs.iter().any(|log| log.contains("link loss"));
     let has_awgn_log = encoding.logs.iter().any(|log| log.contains("AWGN"));
-    
+
     assert!(has_link_loss_log, "Expected log mentioning link loss");
     assert!(has_awgn_log, "Expected log mentioning AWGN");
-    
+
     // With moderate SNR and link loss, some errors are expected but LDPC might still recover
     assert!(
         encoding.noisy_signal.len() > 0,
