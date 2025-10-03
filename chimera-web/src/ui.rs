@@ -725,20 +725,6 @@ pub fn app() -> Html {
                     </div>
                 </section>
 
-                <section class="panel constellation-comparison-panel">
-                    <header>
-                        <h2>{"Constellation Diagram"}</h2>
-                        <p class="muted">{"Combined view of transmitted (TX) and received (RX) QPSK symbols."}</p>
-                    </header>
-                    <CombinedConstellation
-                        title="TX vs RX Constellation"
-                        tx_i_samples={tx_i.clone()}
-                        tx_q_samples={tx_q.clone()}
-                        rx_i_samples={rx_i.clone()}
-                        rx_q_samples={rx_q.clone()}
-                    />
-                </section>
-
                 <section class="panel frame-panel">
                     <header>
                         <h2>{"Frame Inspector"}</h2>
@@ -1110,6 +1096,60 @@ fn draw_constellation_svg(
         y = map_y(y_max) + 15.0
     ));
 
+    // X-axis tick marks and values (decision boundaries at ±√2/2 ≈ ±0.707)
+    let x_ticks = [-1.0, -FRAC_1_SQRT_2, 0.0, FRAC_1_SQRT_2, 1.0];
+    for &tick_x in &x_ticks {
+        let tx = map_x(tick_x);
+        // Tick mark
+        svg.push_str(&format!(
+            "<line x1=\"{x}\" y1=\"{y1}\" x2=\"{x}\" y2=\"{y2}\" stroke=\"#507061\" stroke-width=1/>",
+            x = tx,
+            y1 = cy - 3.0,
+            y2 = cy + 3.0
+        ));
+        // Value label
+        let label = if tick_x.abs() < 0.01 {
+            "0".to_string()
+        } else if (tick_x - FRAC_1_SQRT_2).abs() < 0.01 || (tick_x + FRAC_1_SQRT_2).abs() < 0.01 {
+            format!("{:.2}", tick_x)
+        } else {
+            format!("{:.1}", tick_x)
+        };
+        svg.push_str(&format!(
+            "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=9 fill=\"#96DC96\" text-anchor=\"middle\">{label}</text>",
+            x = tx,
+            y = cy + 15.0,
+            label = label
+        ));
+    }
+
+    // Y-axis tick marks and values (decision boundaries)
+    let y_ticks = [-1.0, -FRAC_1_SQRT_2, 0.0, FRAC_1_SQRT_2, 1.0];
+    for &tick_y in &y_ticks {
+        let ty = map_y(tick_y);
+        // Tick mark
+        svg.push_str(&format!(
+            "<line x1=\"{x1}\" y1=\"{y}\" x2=\"{x2}\" y2=\"{y}\" stroke=\"#507061\" stroke-width=1/>",
+            x1 = cx - 3.0,
+            x2 = cx + 3.0,
+            y = ty
+        ));
+        // Value label
+        let label = if tick_y.abs() < 0.01 {
+            "0".to_string()
+        } else if (tick_y - FRAC_1_SQRT_2).abs() < 0.01 || (tick_y + FRAC_1_SQRT_2).abs() < 0.01 {
+            format!("{:.2}", tick_y)
+        } else {
+            format!("{:.1}", tick_y)
+        };
+        svg.push_str(&format!(
+            "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=9 fill=\"#96DC96\" text-anchor=\"end\">{label}</text>",
+            x = cx - 8.0,
+            y = ty + 3.0,
+            label = label
+        ));
+    }
+
     // Reference constellation for TX
     if matches!(variant, ConstellationVariant::Tx) {
         let ref_pts = [
@@ -1130,9 +1170,9 @@ fn draw_constellation_svg(
         }
     }
 
-    // Draw symbol points
+    // Draw symbol points - use larger, more visible circles
     let (point_color, r) = match variant {
-        ConstellationVariant::Tx => ("#78DC96", 4),
+        ConstellationVariant::Tx => ("#78DC96", 3),
         ConstellationVariant::Rx => ("#78C8F0", 3),
     };
 
@@ -1140,7 +1180,7 @@ fn draw_constellation_svg(
         let x = map_x(*i);
         let y = map_y(*q);
         svg.push_str(&format!(
-            "<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"{color}\" />",
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"{color}\" fill-opacity=\"0.8\" stroke=\"{color}\" stroke-width=\"0.5\" />",
             x = x,
             y = y,
             r = r,
@@ -1401,6 +1441,55 @@ fn draw_line_chart_svg(
         y1 = map_y(y_min),
         y2 = map_y(y_max)
     ));
+
+    // Y-axis tick marks and values (5 ticks)
+    let num_y_ticks = 5;
+    for i in 0..=num_y_ticks {
+        let tick_val = y_min + (y_max - y_min) * (i as f64 / num_y_ticks as f64);
+        let ty = map_y(tick_val);
+        // Tick mark
+        svg.push_str(&format!(
+            "<line x1=\"{x1}\" y1=\"{y}\" x2=\"{x2}\" y2=\"{y}\" stroke=\"#507061\" stroke-width=1/>",
+            x1 = map_x(0) - 3.0,
+            x2 = map_x(0),
+            y = ty
+        ));
+        // Value label - use scientific notation for very small/large values
+        let label = if tick_val.abs() < 0.01 && tick_val.abs() > 1e-10 {
+            format!("{:.2e}", tick_val)
+        } else if tick_val.abs() > 1000.0 {
+            format!("{:.1e}", tick_val)
+        } else {
+            format!("{:.3}", tick_val)
+        };
+        svg.push_str(&format!(
+            "<text x=\"{x}\" y=\"{y}\" font-family=\"monospace\" font-size=9 fill=\"#96DC96\" text-anchor=\"end\">{label}</text>",
+            x = map_x(0) - 6.0,
+            y = ty + 3.0,
+            label = label
+        ));
+    }
+
+    // X-axis tick marks (show sample indices at key points)
+    let num_x_ticks = 5;
+    for i in 0..=num_x_ticks {
+        let tick_idx = (finite.len().saturating_sub(1) as f64 * i as f64 / num_x_ticks as f64) as usize;
+        let tx = map_x(tick_idx);
+        // Tick mark
+        svg.push_str(&format!(
+            "<line x1=\"{x}\" y1=\"{y1}\" x2=\"{x}\" y2=\"{y2}\" stroke=\"#507061\" stroke-width=1/>",
+            x = tx,
+            y1 = map_y(y_min),
+            y2 = map_y(y_min) + 3.0
+        ));
+        // Index label
+        svg.push_str(&format!(
+            "<text x=\"{x}\" y=\"{y}\" font-family=\"monospace\" font-size=9 fill=\"#96DC96\" text-anchor=\"middle\">{label}</text>",
+            x = tx,
+            y = map_y(y_min) + 15.0,
+            label = tick_idx
+        ));
+    }
 
     // Build polyline points
     let mut points = String::new();

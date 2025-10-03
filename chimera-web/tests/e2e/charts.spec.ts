@@ -85,38 +85,6 @@ test.describe('Chart Rendering and Axis Labels', () => {
     expect(genLog).toBeTruthy();
   });
 
-  test('should render combined constellation chart with legend', async ({ page }) => {
-  // Click the Run button to execute simulation using JS click
-  // Wait for and trigger the debug run helper
-  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
-  await page.waitForFunction(() => {
-    const c = document.querySelector('.constellation-combined .svg-chart-container');
-    return !!(c && c.innerHTML && c.innerHTML.includes('<svg'));
-  }, { timeout: 30000 });
-    
-    // Wait for combined constellation to render
-    await page.waitForSelector('.constellation-combined svg', { timeout: 30000 });
-    
-    const combinedConstellation = page.locator('.constellation-combined svg');
-    await expect(combinedConstellation).toBeVisible();
-    
-    // Check for legend items
-    const svgContent = await combinedConstellation.innerHTML();
-    expect(svgContent).toContain('TX Symbols');
-    expect(svgContent).toContain('RX Symbols');
-    expect(svgContent).toContain('In-Phase (I)');
-    expect(svgContent).toContain('Quadrature (Q)');
-    
-    // CRITICAL: Verify combined constellation actually contains data points (circles)
-    expect(svgContent).toContain('<circle');
-    const circleCount = (svgContent.match(/<circle/g) || []).length;
-    expect(circleCount).toBeGreaterThan(0);
-    console.log(`Combined constellation has ${circleCount} circles`);
-    
-    // Take a screenshot to visually verify
-    await page.screenshot({ path: 'test-results/combined-constellation.png', fullPage: true });
-  });
-
   test('should render diagnostics charts with proper axis labels', async ({ page }) => {
   // Click the Run button to execute simulation using JS click
   await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
@@ -184,7 +152,7 @@ test.describe('Chart Rendering and Axis Labels', () => {
     const svgElements = page.locator('svg');
     const svgCount = await svgElements.count();
     
-    // Should have multiple SVG charts (at least 7: 2 constellation + 1 combined + 5 diagnostics)
+    // Should have multiple SVG charts (at least 7: 2 constellation + 5 diagnostics)
     expect(svgCount).toBeGreaterThanOrEqual(7);
     
     // Verify SVGs have proper viewBox or dimensions (confirms proper rendering)
