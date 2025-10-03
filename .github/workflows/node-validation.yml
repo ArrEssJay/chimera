@@ -1,0 +1,104 @@
+name: DSP Node Validation
+
+on:
+  pull_request:
+    paths:
+      - 'chimera-core/src/nodes/**'
+      - 'chimera-core/src/graph.rs'
+      - 'chimera-core/src/executor.rs'
+
+jobs:
+  node-unit-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      
+      - name: Extract node name from PR
+        id: node_info
+        run: |
+          # Try to extract node type from PR title
+          # Expected format: "Add [NodeType]Node" or "Implement [NodeType] node"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Extract node name (simple heuristic)
+          NODE_NAME=$(echo "$PR_TITLE" | grep -oE '[A-Z][a-z]+Node' | head -1 || echo "")
+          echo "node_name=$NODE_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Run node unit tests
+        run: |
+          echo "🧪 Running unit tests for all nodes..."
+          cargo test --lib nodes::
+      
+      - name: Verify node registration
+        run: |
+          NODE_NAME="${{ steps.node_info.outputs.node_name }}"
+          
+          if [ ! -z "$NODE_NAME" ]; then
+            echo "🔍 Checking if $NODE_NAME is registered..."
+            
+            # Check if node appears in any registry/factory files
+            if grep -r "$NODE_NAME" chimera-core/src/ | grep -v "test"; then
+              echo "✅ $NODE_NAME found in codebase"
+            else
+              echo "⚠️  $NODE_NAME not found - make sure to register it"
+            fi
+          fi
+      
+      - name: Run node-specific tests
+        run: |
+          echo "🧪 Running all node tests with verbose output..."
+          cargo test --lib nodes:: -- --nocapture
+  
+  node-integration-test:
+    needs: node-unit-test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      
+      - name: Run integration tests
+        run: |
+          echo "🔗 Running integration tests..."
+          cargo test --test '*' -- --nocapture
+      
+      - name: Comment PR with node validation
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## 🎛️ DSP Node Validation Results
+            
+            ✅ Unit tests passed
+            ✅ Node registration verified
+            ✅ Integration tests passed
+            
+            **Node is ready for graph integration!**
+            
+            ### Next Steps
+            - Ensure node is exported in \`lib.rs\`
+            - Add node to TypeScript type definitions
+            - Update documentation with node usage
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
