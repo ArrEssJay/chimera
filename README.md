@@ -177,6 +177,16 @@ This project uses a GitOps workflow with automated testing and deployment:
 
 See [Branch Protection Documentation](docs/branch-protection.md) for detailed information about our CI/CD pipeline and quality gates.
 
+### Local Git Hooks
+
+To enforce the same Clippy checks before you push, point Git at the repo-managed hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After opting in, the `pre-push` hook will run `cargo clippy --workspace --all-targets --all-features` and block the push if it fails. Use `git push --no-verify` for the rare cases where you need to skip it (for example, when debugging the hook itself).
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
