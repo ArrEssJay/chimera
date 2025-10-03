@@ -205,12 +205,14 @@ fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
 fn given_link_loss_when_pipeline_runs_then_signal_is_attenuated() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
-    sim.sample_rate = protocol.qpsk_symbol_rate;
-    sim.snr_db = 30.0; // High SNR, minimal noise
-    sim.link_loss_db = 20.0; // 20 dB link loss (100x power reduction)
-    sim.plaintext_source = "Test".into();
-    sim.rng_seed = Some(1337);
+    let sim = SimulationConfig {
+        sample_rate: protocol.qpsk_symbol_rate,
+        snr_db: 30.0,       // High SNR, minimal noise
+        link_loss_db: 20.0, // 20 dB link loss (100x power reduction)
+        plaintext_source: "Test".into(),
+        rng_seed: Some(1337),
+        ..Default::default()
+    };
 
     let ldpc_cfg = LDPCConfig::default();
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
@@ -241,12 +243,14 @@ fn given_link_loss_when_pipeline_runs_then_signal_is_attenuated() {
 fn given_link_loss_and_noise_when_pipeline_runs_then_both_applied() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
-    sim.sample_rate = protocol.qpsk_symbol_rate;
-    sim.snr_db = 10.0; // Moderate SNR
-    sim.link_loss_db = 10.0; // 10 dB link loss
-    sim.plaintext_source = "Hello".into();
-    sim.rng_seed = Some(1337);
+    let sim = SimulationConfig {
+        sample_rate: protocol.qpsk_symbol_rate,
+        snr_db: 10.0,       // Moderate SNR
+        link_loss_db: 10.0, // 10 dB link loss
+        plaintext_source: "Hello".into(),
+        rng_seed: Some(1337),
+        ..Default::default()
+    };
 
     let ldpc_cfg = LDPCConfig::default();
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
@@ -263,7 +267,7 @@ fn given_link_loss_and_noise_when_pipeline_runs_then_both_applied() {
 
     // With moderate SNR and link loss, some errors are expected but LDPC might still recover
     assert!(
-        encoding.noisy_signal.len() > 0,
+        !encoding.noisy_signal.is_empty(),
         "Noisy signal should be generated"
     );
 }
