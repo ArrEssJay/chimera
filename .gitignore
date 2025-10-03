@@ -13,4 +13,7 @@ chimera-web/package-lock.json
 # Playwright
 chimera-web/playwright-report/
 chimera-web/test-results/
-chimera-web/.playwright/ 
+chimera-web/.playwright/
+
+# Test outputs
+chimera-web/test-output/
