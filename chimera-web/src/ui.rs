@@ -1545,6 +1545,7 @@ fn stop_audio(
     state: &UseStateHandle<AudioPlaybackState>,
 ) {
     if let Some(source) = source_node_ref.borrow_mut().take() {
+        #[allow(clippy::deprecated)]
         let _ = source.stop();
     }
     state.set(AudioPlaybackState::Stopped);
