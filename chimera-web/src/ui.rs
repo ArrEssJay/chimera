@@ -13,12 +13,23 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
 use std::f64::consts::FRAC_1_SQRT_2;
+use std::rc::Rc;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, Event, HtmlCanvasElement, HtmlElement};
+use web_sys::{
+    AudioBufferSourceNode, AudioContext, Document, Event, HtmlCanvasElement, HtmlElement,
+};
 use yew::events::InputEvent;
 use yew::prelude::*;
 use yew::TargetCast;
+
+#[derive(Clone, PartialEq)]
+enum AudioPlaybackState {
+    Stopped,
+    PlayingClean,
+    PlayingNoisy,
+}
 
 #[function_component(App)]
 pub fn app() -> Html {
@@ -28,6 +39,10 @@ pub fn app() -> Html {
     let external_audio_name = use_state(|| None::<String>);
     let reader_handle = use_mut_ref(|| None::<FileReader>);
     let last_run_input = use_state(|| None::<SimulationInput>);
+    let audio_playback_state = use_state(|| AudioPlaybackState::Stopped);
+    let audio_source_node = use_mut_ref(|| None::<AudioBufferSourceNode>);
+    let audio_context = use_mut_ref(|| None::<AudioContext>);
+    let audio_gain = use_state(|| 0.5_f64);
 
     let current_input = (*simulation).clone();
     let preset_bundle = current_input.preset.bundle();
@@ -139,10 +154,15 @@ pub fn app() -> Html {
         let output_handle = output.clone();
         let running_handle = is_running.clone();
         let last_run_handle = last_run_input.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
         Callback::from(move |_event: MouseEvent| {
             if *running_handle {
                 return;
             }
+            // Stop any currently playing audio before running new simulation
+            stop_audio(&audio_source, &audio_playback);
+            
             running_handle.set(true);
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
@@ -155,6 +175,73 @@ pub fn app() -> Html {
                 running_state.set(false);
                 last_run_state.set(Some(input_clone));
             });
+        })
+    };
+
+    let on_play_clean = {
+        let output_handle = output.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        let audio_ctx = audio_context.clone();
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |_event: MouseEvent| {
+            if let Some(out) = (*output_handle).as_ref() {
+                if let Some(ref audio) = out.diagnostics.modulation_audio {
+                    stop_audio(&audio_source, &audio_playback);
+                    play_audio(
+                        &audio.clean,
+                        audio.sample_rate,
+                        &audio_source,
+                        &audio_ctx,
+                        &audio_playback,
+                        AudioPlaybackState::PlayingClean,
+                        *gain_handle,
+                    );
+                }
+            }
+        })
+    };
+
+    let on_play_noisy = {
+        let output_handle = output.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        let audio_ctx = audio_context.clone();
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |_event: MouseEvent| {
+            if let Some(out) = (*output_handle).as_ref() {
+                if let Some(ref audio) = out.diagnostics.modulation_audio {
+                    stop_audio(&audio_source, &audio_playback);
+                    play_audio(
+                        &audio.noisy,
+                        audio.sample_rate,
+                        &audio_source,
+                        &audio_ctx,
+                        &audio_playback,
+                        AudioPlaybackState::PlayingNoisy,
+                        *gain_handle,
+                    );
+                }
+            }
+        })
+    };
+
+    let on_stop_audio = {
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        Callback::from(move |_event: MouseEvent| {
+            stop_audio(&audio_source, &audio_playback);
+        })
+    };
+
+    let on_gain_change = {
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |event: InputEvent| {
+            if let Some(input) = event.target_dyn_into::<web_sys::HtmlInputElement>() {
+                if let Ok(value) = input.value().parse::<f64>() {
+                    gain_handle.set(value);
+                }
+            }
         })
     };
 
@@ -346,6 +433,46 @@ pub fn app() -> Html {
                                             <span class="label">{"Modulation Audio"}</span>
                                             <span class="value">{format!("{} Hz", audio.sample_rate)}</span>
                                             <span class="detail">{format!("Carrier {:.1} Hz", audio.carrier_freq_hz)}</span>
+                                        </div>
+                                        <div class="metric audio-controls">
+                                            <span class="label">{"Audio Playback"}</span>
+                                            <div class="audio-buttons">
+                                                <button
+                                                    class={if *audio_playback_state == AudioPlaybackState::PlayingClean { "primary active" } else { "primary" }}
+                                                    onclick={on_play_clean.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::PlayingClean}
+                                                >
+                                                    {"▶ Play Clean"}
+                                                </button>
+                                                <button
+                                                    class={if *audio_playback_state == AudioPlaybackState::PlayingNoisy { "primary active" } else { "primary" }}
+                                                    onclick={on_play_noisy.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::PlayingNoisy}
+                                                >
+                                                    {"▶ Play Noisy"}
+                                                </button>
+                                                <button
+                                                    class="ghost"
+                                                    onclick={on_stop_audio.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::Stopped}
+                                                >
+                                                    {"⏹ Stop"}
+                                                </button>
+                                            </div>
+                                            <div class="volume-control">
+                                                <label class="field">
+                                                    <span>{"Volume"}</span>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="1"
+                                                        step="0.01"
+                                                        value={format!("{:.2}", *audio_gain)}
+                                                        oninput={on_gain_change}
+                                                    />
+                                                    <span class="detail">{format!("{}%", (*audio_gain * 100.0) as i32)}</span>
+                                                </label>
+                                            </div>
                                         </div>
                                     }
                                 </div>
@@ -913,6 +1040,112 @@ fn format_sci(value: f64) -> String {
     } else {
         format!("{:.3e}", value)
     }
+}
+
+fn play_audio(
+    samples: &[f32],
+    sample_rate: usize,
+    source_node_ref: &Rc<std::cell::RefCell<Option<AudioBufferSourceNode>>>,
+    context_ref: &Rc<std::cell::RefCell<Option<AudioContext>>>,
+    state: &UseStateHandle<AudioPlaybackState>,
+    new_state: AudioPlaybackState,
+    gain: f64,
+) {
+    if samples.is_empty() {
+        web_sys::console::warn_1(&"Cannot play empty audio buffer".into());
+        return;
+    }
+
+    let ctx = match (*context_ref.borrow()).as_ref() {
+        Some(existing) => existing.clone(),
+        None => {
+            match AudioContext::new() {
+                Ok(new_ctx) => {
+                    *context_ref.borrow_mut() = Some(new_ctx.clone());
+                    new_ctx
+                }
+                Err(e) => {
+                    web_sys::console::error_1(&format!("Failed to create AudioContext: {:?}", e).into());
+                    return;
+                }
+            }
+        }
+    };
+
+    // Resume context if suspended
+    if ctx.state() == web_sys::AudioContextState::Suspended {
+        let _ = ctx.resume();
+    }
+
+    let buffer = match ctx.create_buffer(1, samples.len() as u32, sample_rate as f32) {
+        Ok(buf) => buf,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create audio buffer: {:?}", e).into());
+            return;
+        }
+    };
+
+    if let Err(e) = buffer.copy_to_channel(samples, 0) {
+        web_sys::console::error_1(&format!("Failed to copy audio data: {:?}", e).into());
+        return;
+    }
+
+    let source = match ctx.create_buffer_source() {
+        Ok(src) => src,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create buffer source: {:?}", e).into());
+            return;
+        }
+    };
+
+    source.set_buffer(Some(&buffer));
+
+    // Create gain node for volume control
+    let gain_node = match ctx.create_gain() {
+        Ok(node) => node,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create gain node: {:?}", e).into());
+            return;
+        }
+    };
+
+    gain_node.gain().set_value(gain as f32);
+
+    if let Err(e) = source.connect_with_audio_node(&gain_node) {
+        web_sys::console::error_1(&format!("Failed to connect source to gain: {:?}", e).into());
+        return;
+    }
+
+    if let Err(e) = gain_node.connect_with_audio_node(&ctx.destination()) {
+        web_sys::console::error_1(&format!("Failed to connect gain to destination: {:?}", e).into());
+        return;
+    }
+
+    let state_handle = state.clone();
+    let on_ended = Closure::wrap(Box::new(move || {
+        state_handle.set(AudioPlaybackState::Stopped);
+    }) as Box<dyn Fn()>);
+
+    let _ = source.add_event_listener_with_callback("ended", on_ended.as_ref().unchecked_ref());
+    on_ended.forget();
+
+    if let Err(e) = source.start() {
+        web_sys::console::error_1(&format!("Failed to start audio playback: {:?}", e).into());
+        return;
+    }
+
+    *source_node_ref.borrow_mut() = Some(source);
+    state.set(new_state);
+}
+
+fn stop_audio(
+    source_node_ref: &Rc<std::cell::RefCell<Option<AudioBufferSourceNode>>>,
+    state: &UseStateHandle<AudioPlaybackState>,
+) {
+    if let Some(source) = source_node_ref.borrow_mut().take() {
+        let _ = source.stop_with_when(0.0);
+    }
+    state.set(AudioPlaybackState::Stopped);
 }
 
 pub fn mount_app() {
