@@ -43,7 +43,7 @@ web-sys = { version = "0.3", features = [
 	"Window"
 ] }
 rustfft = "6"
-gloo-timers = { version = "0.2", features = ["futures"] }
+gloo-timers = { version = "0.3", features = ["futures"] }
 gloo-file = "0.3"
 
 # Used to safely escape user-provided text when embedding into generated SVG
