@@ -298,7 +298,7 @@ pub fn app() -> Html {
                         </label>
 
                         <label class="field">
-                            <span>{"Channel SNR (dB)"}</span>
+                            <span title="Additive White Gaussian Noise level - controls random noise added to the signal">{"Channel SNR (dB)"}</span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
                             <p class="muted small">
                                 {"AWGN noise level (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
@@ -307,7 +307,7 @@ pub fn app() -> Html {
                         </label>
 
                         <label class="field">
-                            <span>{"Link Loss (dB)"}</span>
+                            <span title="Path loss and signal attenuation - deterministic reduction in signal power from transmission">{"Link Loss (dB)"}</span>
                             <input type="number" min="0" max="150" step="1" value={format!("{:.1}", current_input.link_loss_db)} oninput={on_link_loss_change} />
                             <p class="muted small">
                                 {"Signal attenuation from path loss, antenna gains, etc. Typical radio links have 100+ dB loss. "}
