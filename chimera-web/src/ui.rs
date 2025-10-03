@@ -869,6 +869,7 @@ pub struct ConstellationProps {
     pub tooltip: Option<AttrValue>,
 }
 
+#[allow(dead_code)] // TODO: Will be used for combined TX/RX constellation display
 #[derive(Properties, PartialEq)]
 pub struct CombinedConstellationProps {
     pub title: AttrValue,
@@ -1058,7 +1059,9 @@ fn draw_constellation_svg(
     ));
 
     // Background
-    svg.push_str(&"<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>".to_string());
+    svg.push_str(
+        "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>",
+    );
 
     // Title
     svg.push_str(&format!(
