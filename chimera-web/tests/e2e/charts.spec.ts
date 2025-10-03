@@ -31,7 +31,7 @@ test.describe('Chart Rendering and Axis Labels', () => {
   // hook runs in the fresh page context where DOM injection is stable.
   // Click the Run button via JS and wait for the SVG container to be filled
   await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
-  await page.waitForFunction(() => !!(document.querySelector('.node') ), { timeout: 10000 });
+  await page.waitForFunction(() => !!(document.querySelector('.node')), { timeout: 10000 });
   // Small pause for UI to update, then inspect insertion
   await page.waitForTimeout(500);
   const containerHtmlLen = await page.evaluate(() => {
