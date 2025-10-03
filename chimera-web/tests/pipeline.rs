@@ -3,8 +3,10 @@ use chimera_web::{run_pipeline, FramePreset, SimulationInput};
 
 #[test]
 fn pipeline_runs_with_defaults() {
-    let mut input = SimulationInput::default();
-    input.plaintext = "Test message".into();
+    let input = SimulationInput {
+        plaintext: "Test message".into(),
+        ..Default::default()
+    };
     let output = run_pipeline(input);
 
     assert_eq!(output.report.post_fec_errors, 0);
@@ -63,20 +65,20 @@ fn burst_telemetry_layout_matches_spec() {
 fn simulation_input_equality_for_change_detection() {
     let input1 = SimulationInput::default();
     let input2 = SimulationInput::default();
-    
+
     // Same defaults should be equal
     assert_eq!(input1, input2);
-    
+
     // Different plaintext should not be equal
     let mut input3 = SimulationInput::default();
     input3.plaintext = "Different text".into();
     assert_ne!(input1, input3);
-    
+
     // Different SNR should not be equal
     let mut input4 = SimulationInput::default();
     input4.snr_db = 10.0;
     assert_ne!(input1, input4);
-    
+
     // Different preset should not be equal
     let input5 = SimulationInput::with_preset(FramePreset::BurstTelemetry);
     assert_ne!(input1, input5);

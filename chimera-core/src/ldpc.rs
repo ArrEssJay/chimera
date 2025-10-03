@@ -111,12 +111,12 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
     // the generator matrix and c is the received codeword. Each row encodes a
     // single codeword bit equation over GF(2).
     let mut augmented: Vec<Vec<u8>> = Vec::with_capacity(codeword_bits);
-    for col in 0..codeword_bits {
+    for (col, &codeword_bit) in noisy_codeword.iter().enumerate().take(codeword_bits) {
         let mut row = Vec::with_capacity(message_bits + 1);
         for row_idx in 0..message_bits {
             row.push(matrices.generator[(row_idx, col)] & 1);
         }
-        row.push(noisy_codeword[col] & 1);
+        row.push(codeword_bit & 1);
         augmented.push(row);
     }
 
@@ -125,7 +125,7 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
     let mut pivot_row = 0usize;
     let mut column_pivots: Vec<Option<usize>> = vec![None; message_bits];
 
-    for col in 0..message_bits {
+    for (col, pivot) in column_pivots.iter_mut().enumerate().take(message_bits) {
         if pivot_row >= augmented.len() {
             break;
         }
@@ -143,7 +143,7 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
                 }
             }
 
-            column_pivots[col] = Some(pivot_row);
+            *pivot = Some(pivot_row);
             pivot_row += 1;
         }
     }
@@ -195,8 +195,10 @@ mod tests {
             if bit == 0 {
                 continue;
             }
-            for col_idx in 0..layout.codeword_bits() {
-                codeword[col_idx] ^= matrices.generator[(row_idx, col_idx)] & 1;
+            for (col_idx, codeword_bit) in
+                codeword.iter_mut().enumerate().take(layout.codeword_bits())
+            {
+                *codeword_bit ^= matrices.generator[(row_idx, col_idx)] & 1;
             }
         }
 
