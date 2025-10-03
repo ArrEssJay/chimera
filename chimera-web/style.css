@@ -1,39 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
 
 :root {
-  /* SIGINT Workbench - Tactical Military Intelligence Theme */
-  --bg: lch(8% 2 180);
-  --bg-overlay: lch(6% 3 180);
-  --panel: lch(12% 3 180);
-  --panel-border: lch(35% 20 140 / 0.4);
-  --panel-glow: lch(65% 50 140 / 0.15);
-  --text-primary: lch(92% 8 140);
-  --text-muted: lch(55% 12 140);
-  --text-soft: lch(70% 10 140);
-  --accent: lch(75% 65 140);
-  --accent-strong: lch(85% 70 120);
-  --accent-glow: lch(70% 60 140 / 0.25);
-  --accent-highlight: lch(78% 55 135 / 0.15);
-  --accent-gradient: linear-gradient(135deg, lch(75% 65 140) 0%, lch(72% 62 130) 50%, lch(70% 60 120) 100%);
+  /* SIGINT Workbench - Professional Military Intelligence Theme */
+  --bg: lch(8% 2 220);
+  --bg-overlay: lch(6% 3 220);
+  --panel: lch(12% 3 220);
+  --panel-border: lch(35% 20 220 / 0.4);
+  --panel-glow: lch(60% 35 210 / 0.12);
+  --text-primary: lch(92% 5 220);
+  --text-muted: lch(55% 8 220);
+  --text-soft: lch(70% 6 220);
+  --accent: lch(70% 40 210);
+  --accent-strong: lch(78% 45 205);
+  --accent-glow: lch(65% 38 210 / 0.18);
+  --accent-highlight: lch(72% 35 210 / 0.12);
+  --accent-gradient: linear-gradient(135deg, lch(70% 40 210) 0%, lch(68% 38 215) 50%, lch(65% 35 220) 100%);
   --tactical-amber: lch(75% 70 80);
-  --tactical-green: lch(70% 60 140);
-  --tactical-cyan: lch(75% 50 200);
-  --success: lch(72% 58 140);
+  --tactical-green: lch(70% 45 145);
+  --tactical-cyan: lch(72% 40 210);
+  --success: lch(70% 42 145);
   --danger: lch(62% 72 30);
   --warning: lch(75% 70 80);
-  --background-secondary: lch(10% 2 180);
-  --border-color: lch(30% 15 140 / 0.35);
-  --border-tactical: lch(65% 50 140 / 0.5);
-  --text-accent: lch(75% 65 140);
-  --scanline-color: lch(65% 50 140 / 0.08);
-  --grid-color: lch(30% 20 140 / 0.12);
+  --background-secondary: lch(10% 2 220);
+  --border-color: lch(30% 12 220 / 0.35);
+  --border-tactical: lch(60% 35 210 / 0.5);
+  --text-accent: lch(70% 40 210);
+  --scanline-color: lch(60% 35 210 / 0.06);
+  --grid-color: lch(30% 15 220 / 0.10);
   --font-body: "Share Tech Mono", "Consolas", "SF Mono", "Liberation Mono", monospace;
   --font-mono: "Share Tech Mono", "Consolas", "SF Mono", "Liberation Mono", Courier, monospace;
   --font-display: "Orbitron", "Share Tech Mono", "Rajdhani", monospace;
   --gradient-bg: 
     repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline-color) 2px, var(--scanline-color) 4px),
     radial-gradient(ellipse at top right, var(--panel-glow), transparent 60%),
-    radial-gradient(ellipse at bottom left, lch(65% 50 200 / 0.1), transparent 55%),
+    radial-gradient(ellipse at bottom left, lch(60% 32 215 / 0.08), transparent 55%),
     var(--bg);
 }
 
@@ -411,9 +411,8 @@ input[type="range"]::-moz-range-thumb {
   text-transform: uppercase;
   color: var(--accent);
   text-shadow: 
-    0 0 20px var(--accent-glow),
-    0 0 40px var(--accent-glow),
-    0 2px 4px lch(0% 0 0 / 0.8);
+    0 0 8px var(--accent-glow),
+    0 1px 3px lch(0% 0 0 / 0.6);
   position: relative;
 }
 
