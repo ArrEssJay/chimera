@@ -135,11 +135,23 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
             augmented.swap(pivot_row, pivot_idx);
 
             // Eliminate this column from every other row to reach reduced form.
-            for r in 0..augmented.len() {
-                if r != pivot_row && augmented[r][col] == 1 {
-                    for c in col..=message_bits {
-                        augmented[r][c] ^= augmented[pivot_row][c];
-                    }
+            // The pivot row is now at `pivot_row`. We can borrow it immutably
+            // while we modify other rows.
+            let (pivot_slice, other_rows) = augmented.split_at_mut(pivot_row);
+            let (pivot_row_ref, other_rows_after) = other_rows.split_at_mut(1);
+
+            // XOR the pivot row with all other rows that have a 1 in the pivot column.
+            let pivot_row_data = &pivot_row_ref[0];
+            for row in pivot_slice
+                .iter_mut()
+                .chain(other_rows_after.iter_mut())
+                .filter(|row| row[col] == 1)
+            {
+                for (val, pivot_val) in row[col..=message_bits]
+                    .iter_mut()
+                    .zip(&pivot_row_data[col..=message_bits])
+                {
+                    *val ^= *pivot_val;
                 }
             }
 

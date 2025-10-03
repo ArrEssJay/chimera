@@ -102,7 +102,13 @@ The `chimera-core` library is organized into several key modules:
 
 ### Build from Source
 
-Clone the repository and use Cargo to build the project:
+Clone the repository and use Cargo to build the project. Chimera now targets Rust nightly; install it once if you have not already:
+
+```sh
+rustup toolchain install nightly
+```
+
+The included `rust-toolchain.toml` pins commands run inside the workspace to nightly automatically.
 
 ```sh
 git clone https://github.com/arressjay/chimera.git
@@ -176,6 +182,16 @@ This project uses a GitOps workflow with automated testing and deployment:
    - Web dashboard build and verification
 
 See [Branch Protection Documentation](docs/branch-protection.md) for detailed information about our CI/CD pipeline and quality gates.
+
+### Local Git Hooks
+
+To enforce the same Clippy checks before you push, point Git at the repo-managed hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After opting in, the `pre-push` hook will run `cargo clippy --workspace --all-targets --all-features` and block the push if it fails. Use `git push --no-verify` for the rare cases where you need to skip it (for example, when debugging the hook itself).
 
 ## License
 

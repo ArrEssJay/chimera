@@ -13,12 +13,23 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
 use std::f64::consts::FRAC_1_SQRT_2;
+use std::rc::Rc;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, Event, HtmlElement};
+use web_sys::{
+    AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement,
+};
 use yew::events::InputEvent;
 use yew::prelude::*;
 use yew::TargetCast;
+
+#[derive(Clone, PartialEq)]
+enum AudioPlaybackState {
+    Stopped,
+    PlayingClean,
+    PlayingNoisy,
+}
 
 #[function_component(App)]
 pub fn app() -> Html {
@@ -28,6 +39,10 @@ pub fn app() -> Html {
     let external_audio_name = use_state(|| None::<String>);
     let reader_handle = use_mut_ref(|| None::<FileReader>);
     let last_run_input = use_state(|| None::<SimulationInput>);
+    let audio_playback_state = use_state(|| AudioPlaybackState::Stopped);
+    let audio_source_node = use_mut_ref(|| None::<AudioBufferSourceNode>);
+    let audio_context = use_mut_ref(|| None::<AudioContext>);
+    let audio_gain = use_state(|| 0.5_f64);
 
     let current_input = (*simulation).clone();
     let preset_bundle = current_input.preset.bundle();
@@ -139,10 +154,15 @@ pub fn app() -> Html {
         let output_handle = output.clone();
         let running_handle = is_running.clone();
         let last_run_handle = last_run_input.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
         Callback::from(move |_event: MouseEvent| {
             if *running_handle {
                 return;
             }
+            // Stop any currently playing audio before running new simulation
+            stop_audio(&audio_source, &audio_playback);
+            
             running_handle.set(true);
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
@@ -155,6 +175,73 @@ pub fn app() -> Html {
                 running_state.set(false);
                 last_run_state.set(Some(input_clone));
             });
+        })
+    };
+
+    let on_play_clean = {
+        let output_handle = output.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        let audio_ctx = audio_context.clone();
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |_event: MouseEvent| {
+            if let Some(out) = (*output_handle).as_ref() {
+                if let Some(ref audio) = out.diagnostics.modulation_audio {
+                    stop_audio(&audio_source, &audio_playback);
+                    play_audio(
+                        &audio.clean,
+                        audio.sample_rate,
+                        &audio_source,
+                        &audio_ctx,
+                        &audio_playback,
+                        AudioPlaybackState::PlayingClean,
+                        *gain_handle,
+                    );
+                }
+            }
+        })
+    };
+
+    let on_play_noisy = {
+        let output_handle = output.clone();
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        let audio_ctx = audio_context.clone();
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |_event: MouseEvent| {
+            if let Some(out) = (*output_handle).as_ref() {
+                if let Some(ref audio) = out.diagnostics.modulation_audio {
+                    stop_audio(&audio_source, &audio_playback);
+                    play_audio(
+                        &audio.noisy,
+                        audio.sample_rate,
+                        &audio_source,
+                        &audio_ctx,
+                        &audio_playback,
+                        AudioPlaybackState::PlayingNoisy,
+                        *gain_handle,
+                    );
+                }
+            }
+        })
+    };
+
+    let on_stop_audio = {
+        let audio_playback = audio_playback_state.clone();
+        let audio_source = audio_source_node.clone();
+        Callback::from(move |_event: MouseEvent| {
+            stop_audio(&audio_source, &audio_playback);
+        })
+    };
+
+    let on_gain_change = {
+        let gain_handle = audio_gain.clone();
+        Callback::from(move |event: InputEvent| {
+            if let Some(input) = event.target_dyn_into::<web_sys::HtmlInputElement>() {
+                if let Ok(value) = input.value().parse::<f64>() {
+                    gain_handle.set(value);
+                }
+            }
         })
     };
 
@@ -238,10 +325,6 @@ pub fn app() -> Html {
             <div class="main-grid">
                 <section class="panel controls-panel">
                     <header class="panel-header">
-                        <div>
-                            <h1>{"Simulation Controls"}</h1>
-                            <p class="muted">{"Configure presets and channel parameters, then click \"Run Now\" to execute the simulation."}</p>
-                        </div>
                         <div class="run-controls">
                             {
                                 if *is_running {
@@ -262,11 +345,16 @@ pub fn app() -> Html {
                         </div>
                     </header>
 
-                    <p class="control-hint">{"Click \"Run Now\" to execute the simulation with the current parameters."}</p>
-
                     <div class="control-grid">
                         <label class="field">
-                            <span>{"Preset"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Selects a preconfigured link budget and frame layout profile."
+                                title="Selects a preconfigured link budget and frame layout profile."
+                                tabindex="0"
+                            >
+                                {"Preset"}
+                            </span>
                             <select value={current_input.preset.key()} onchange={on_preset_change}>
                                 { for FramePreset::all().iter().map(|preset| {
                                     let key = preset.key();
@@ -278,13 +366,27 @@ pub fn app() -> Html {
                         </label>
 
                         <label class="field">
-                            <span>{"Plaintext"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Text payload that will be encoded into frames prior to modulation."
+                                title="Text payload that will be encoded into frames prior to modulation."
+                                tabindex="0"
+                            >
+                                {"Plaintext"}
+                            </span>
                             <textarea value={current_input.plaintext.clone()} oninput={on_plaintext_change} />
                             <p class="muted">{format!("{} chars", plaintext_len)}</p>
                         </label>
 
                         <label class="field">
-                            <span>{"Channel SNR (dB)"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Adjusts the additive white Gaussian noise level applied before decoding."
+                                title="Adjusts the additive white Gaussian noise level applied before decoding."
+                                tabindex="0"
+                            >
+                                {"Channel SNR (dB)"}
+                            </span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
                             <p class="muted small">
                                 {"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
@@ -293,7 +395,14 @@ pub fn app() -> Html {
                         </label>
 
                         <div class="field">
-                            <span>{"External Audio Payload"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Upload a small WAV or MP3 file to embed as a base64 payload across frames."
+                                title="Upload a small WAV or MP3 file to embed as a base64 payload across frames."
+                                tabindex="0"
+                            >
+                                {"External Audio Payload"}
+                            </span>
                             <input type="file" accept="audio/*" onchange={on_audio_upload} />
                             <div class="audio-actions">
                                 {
@@ -328,24 +437,92 @@ pub fn app() -> Html {
                             html! {
                                 <div class="metrics-grid">
                                     <div class="metric">
-                                        <span class="label">{"Pre-FEC BER"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Bit-error ratio measured before the LDPC decoder applies forward error correction."
+                                            title="Bit-error ratio measured before the LDPC decoder applies forward error correction."
+                                            tabindex="0"
+                                        >
+                                            {"Pre-FEC BER"}
+                                        </span>
                                         <span class="value">{format_sci(report.pre_fec_ber)}</span>
                                         <span class="detail">{format!("{} symbol errors", report.pre_fec_errors)}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="label">{"Post-FEC BER"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Residual bit-error ratio after LDPC decoding and error correction."
+                                            title="Residual bit-error ratio after LDPC decoding and error correction."
+                                            tabindex="0"
+                                        >
+                                            {"Post-FEC BER"}
+                                        </span>
                                         <span class="value">{format_sci(report.post_fec_ber)}</span>
                                         <span class="detail">{format!("{} residual errors", report.post_fec_errors)}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="label">{"Recovered Message"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Decoded plaintext recovered from the LDPC decoder and descrambler."
+                                            title="Decoded plaintext recovered from the LDPC decoder and descrambler."
+                                            tabindex="0"
+                                        >
+                                            {"Recovered Message"}
+                                        </span>
                                         <span class="value value-long">{&report.recovered_message}</span>
                                     </div>
                                     if let Some(ref audio) = modulation_audio {
                                         <div class="metric">
-                                            <span class="label">{"Modulation Audio"}</span>
+                                            <span
+                                                class="label info-rollover"
+                                                data-tooltip="Synthetic audio preview generated from the complex baseband waveform."
+                                                title="Synthetic audio preview generated from the complex baseband waveform."
+                                                tabindex="0"
+                                            >
+                                                {"Modulation Audio"}
+                                            </span>
                                             <span class="value">{format!("{} Hz", audio.sample_rate)}</span>
                                             <span class="detail">{format!("Carrier {:.1} Hz", audio.carrier_freq_hz)}</span>
+                                        </div>
+                                        <div class="metric audio-controls">
+                                            <span class="label">{"Audio Playback"}</span>
+                                            <div class="audio-buttons">
+                                                <button
+                                                    class={if *audio_playback_state == AudioPlaybackState::PlayingClean { "primary active" } else { "primary" }}
+                                                    onclick={on_play_clean.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::PlayingClean}
+                                                >
+                                                    {"▶ Play Clean"}
+                                                </button>
+                                                <button
+                                                    class={if *audio_playback_state == AudioPlaybackState::PlayingNoisy { "primary active" } else { "primary" }}
+                                                    onclick={on_play_noisy.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::PlayingNoisy}
+                                                >
+                                                    {"▶ Play Noisy"}
+                                                </button>
+                                                <button
+                                                    class="ghost"
+                                                    onclick={on_stop_audio.clone()}
+                                                    disabled={*audio_playback_state == AudioPlaybackState::Stopped}
+                                                >
+                                                    {"⏹ Stop"}
+                                                </button>
+                                            </div>
+                                            <div class="volume-control">
+                                                <label class="field">
+                                                    <span>{"Volume"}</span>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="1"
+                                                        step="0.01"
+                                                        value={format!("{:.2}", *audio_gain)}
+                                                        oninput={on_gain_change}
+                                                    />
+                                                    <span class="detail">{format!("{}%", (*audio_gain * 100.0) as i32)}</span>
+                                                </label>
+                                            </div>
                                         </div>
                                     }
                                 </div>
@@ -361,29 +538,64 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Input"}</h3>
-                                <p>{format!("Payload: {} chars", plaintext_len)}</p>
-                                <p>
-                                    <span title="Energy per symbol to noise power spectral density ratio">{"Es/N₀"}</span>
-                                    {format!(": {:.1} dB", current_input.snr_db)}
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Total characters currently staged for transmission in the payload field."
+                                    title="Total characters currently staged for transmission in the payload field."
+                                    tabindex="0"
+                                >
+                                    {format!("Payload: {} chars", plaintext_len)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Energy per symbol to noise-power spectral density ratio applied ahead of receiver processing."
+                                    title="Energy per symbol to noise-power spectral density ratio applied ahead of receiver processing."
+                                    tabindex="0"
+                                >
+                                    {format!("Es/N₀: {:.1} dB", current_input.snr_db)}
                                 </p>
                             </div>
                         </div>
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Encoder"}</h3>
-                                <p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Total QPSK symbols per frame including sync, payload, and parity symbols."
+                                    title="Total QPSK symbols per frame including sync, payload, and parity symbols."
+                                    tabindex="0"
+                                >
                                     {format!("Total symbols: {}", frame_layout.total_symbols)}
-                                    <span class="info-bubble" title="Each symbol represents 2 bits (QPSK). Total symbols = Payload + ECC.">{"?"}</span>
                                 </p>
-                                <p>{format!("Payload symbols: {}", frame_layout.data_payload_symbols)}</p>
-                                <p>{format!("ECC symbols: {}", frame_layout.ecc_symbols)}</p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Symbols dedicated to framing the user payload before forward-error correction."
+                                    title="Symbols dedicated to framing the user payload before forward-error correction."
+                                    tabindex="0"
+                                >
+                                    {format!("Payload symbols: {}", frame_layout.data_payload_symbols)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Parity symbols generated by the LDPC encoder to enable error correction."
+                                    title="Parity symbols generated by the LDPC encoder to enable error correction."
+                                    tabindex="0"
+                                >
+                                    {format!("ECC symbols: {}", frame_layout.ecc_symbols)}
+                                </p>
                                 <p class="muted small">
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#symbols" target="_blank" rel="noopener noreferrer">{"What are symbols?"}</a>
                                 </p>
                             </div>
                             <div class="node">
                                 <h3>{"Transmitter"}</h3>
-                                <ConstellationChart title="TX Symbols" i_samples={tx_i.clone()} q_samples={tx_q.clone()} variant={ConstellationVariant::Tx} />
+                                <ConstellationChart
+                                    title="TX Symbols"
+                                    i_samples={tx_i.clone()}
+                                    q_samples={tx_q.clone()}
+                                    variant={ConstellationVariant::Tx}
+                                    tooltip={Some(AttrValue::from("Transmitted QPSK symbols prior to channel noise and impairment injection."))}
+                                />
                                 <p class="muted small">
                                     {"Ideal QPSK constellation produced by the framing encoder. "}
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
@@ -395,9 +607,30 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Channel"}</h3>
-                                <p>{format!("Carrier: {:.1} Hz", preset_bundle.protocol.carrier_freq_hz)}</p>
-                                <p>{format!("QPSK rate: {} sym/s", preset_bundle.protocol.qpsk_symbol_rate)}</p>
-                                <p>{format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}</p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Center carrier frequency used for QPSK modulation of this preset."
+                                    title="Center carrier frequency used for QPSK modulation of this preset."
+                                    tabindex="0"
+                                >
+                                    {format!("Carrier: {:.1} Hz", preset_bundle.protocol.carrier_freq_hz)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Symbol rate of the quadrature phase-shift keying waveform in symbols per second."
+                                    title="Symbol rate of the quadrature phase-shift keying waveform in symbols per second."
+                                    tabindex="0"
+                                >
+                                    {format!("QPSK rate: {} sym/s", preset_bundle.protocol.qpsk_symbol_rate)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Maximum number of frames allowed in a single transmission burst for this preset."
+                                    title="Maximum number of frames allowed in a single transmission burst for this preset."
+                                    tabindex="0"
+                                >
+                                    {format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}
+                                </p>
                                 <p class="muted small">
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#additive-white-gaussian-noise-awgn" target="_blank" rel="noopener noreferrer">{"Learn about AWGN channel"}</a>
                                 </p>
@@ -406,7 +639,13 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Receiver"}</h3>
-                                <ConstellationChart title="RX Symbols" i_samples={rx_i.clone()} q_samples={rx_q.clone()} variant={ConstellationVariant::Rx} />
+                                <ConstellationChart
+                                    title="RX Symbols"
+                                    i_samples={rx_i.clone()}
+                                    q_samples={rx_q.clone()}
+                                    variant={ConstellationVariant::Rx}
+                                    tooltip={Some(AttrValue::from("Recovered constellation after receiver timing, carrier, and phase correction."))}
+                                />
                                 <p class="muted small">
                                     {"Recovered constellation after timing/frequency correction. "}
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
@@ -418,8 +657,22 @@ pub fn app() -> Html {
                                     if let Some(ref report) = report {
                                         html! {
                                             <>
-                                                <p>{format!("Residual errors: {}", report.post_fec_errors)}</p>
-                                                <p>{format!("Post-FEC BER: {}", format_sci(report.post_fec_ber))}</p>
+                                                <p
+                                                    class="info-rollover"
+                                                    data-tooltip="Remaining bit errors that persisted after LDPC decoding across the entire burst."
+                                                    title="Remaining bit errors that persisted after LDPC decoding across the entire burst."
+                                                    tabindex="0"
+                                                >
+                                                    {format!("Residual errors: {}", report.post_fec_errors)}
+                                                </p>
+                                                <p
+                                                    class="info-rollover"
+                                                    data-tooltip="Bit-error ratio after LDPC decoding and frame reassembly."
+                                                    title="Bit-error ratio after LDPC decoding and frame reassembly."
+                                                    tabindex="0"
+                                                >
+                                                    {format!("Post-FEC BER: {}", format_sci(report.post_fec_ber))}
+                                                </p>
                                             </>
                                         }
                                     } else {
@@ -471,11 +724,11 @@ pub fn app() -> Html {
                                     <table class="frame-table">
                                         <thead>
                                             <tr>
-                                                <th>{"Index"}</th>
-                                                <th>{"Label"}</th>
-                                                <th>{"Opcode"}</th>
-                                                <th>{"Command Word"}</th>
-                                                <th>{"Payload Preview"}</th>
+                                                <th class="info-rollover" data-tooltip="Ordinal position of this frame within the burst." title="Ordinal position of this frame within the burst." tabindex="0">{"Index"}</th>
+                                                <th class="info-rollover" data-tooltip="Human-readable label describing the frame type." title="Human-readable label describing the frame type." tabindex="0">{"Label"}</th>
+                                                <th class="info-rollover" data-tooltip="Operational opcode embedded in the command word for this frame." title="Operational opcode embedded in the command word for this frame." tabindex="0">{"Opcode"}</th>
+                                                <th class="info-rollover" data-tooltip="Full command word including frame counters and addressing information." title="Full command word including frame counters and addressing information." tabindex="0">{"Command Word"}</th>
+                                                <th class="info-rollover" data-tooltip="Hex preview of the frame payload contents (truncated)." title="Hex preview of the frame payload contents (truncated)." tabindex="0">{"Payload Preview"}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -507,11 +760,36 @@ pub fn app() -> Html {
                         </p>
                     </header>
                     <div class="chart-grid">
-                        <LineChart title="Timing Error" values={timing_error.clone()} accent_rgb={Some((94, 214, 255))} x_label="Sample Index" y_label="Error (samples)" />
-                        <LineChart title="NCO Frequency Offset" values={freq_offset.clone()} accent_rgb={Some((255, 168, 112))} x_label="Sample Index" y_label="Offset (Hz)" />
-                        <LineChart title="Clean Signal PSD (dBFS)" values={psd_clean.clone()} accent_rgb={Some((126, 240, 180))} x_label="Frequency Bin" y_label="Power (dBFS)" />
-                        <LineChart title="Noisy Signal PSD (dBFS)" values={psd_noisy.clone()} accent_rgb={Some((255, 132, 220))} x_label="Frequency Bin" y_label="Power (dBFS)" />
-                        <LineChart title="Running BER" values={ber_trend.clone()} accent_rgb={Some((255, 238, 96))} x_label="Symbol Index" y_label="BER" />
+                        <LineChart
+                            title="Timing Error"
+                            values={timing_error.clone()}
+                            accent_rgb={Some((94, 214, 255))}
+                            tooltip={Some(AttrValue::from("Timing-loop error for each processed symbol, expressed in fractional samples."))}
+                        />
+                        <LineChart
+                            title="NCO Frequency Offset"
+                            values={freq_offset.clone()}
+                            accent_rgb={Some((255, 168, 112))}
+                            tooltip={Some(AttrValue::from("Residual carrier offset tracked by the numerically controlled oscillator in Hertz."))}
+                        />
+                        <LineChart
+                            title="Clean Signal PSD (dBFS)"
+                            values={psd_clean.clone()}
+                            accent_rgb={Some((126, 240, 180))}
+                            tooltip={Some(AttrValue::from("Power spectral density of the synthesized clean baseband waveform."))}
+                        />
+                        <LineChart
+                            title="Noisy Signal PSD (dBFS)"
+                            values={psd_noisy.clone()}
+                            accent_rgb={Some((255, 132, 220))}
+                            tooltip={Some(AttrValue::from("Power spectral density of the received waveform after AWGN injection."))}
+                        />
+                        <LineChart
+                            title="Running BER"
+                            values={ber_trend.clone()}
+                            accent_rgb={Some((255, 238, 96))}
+                            tooltip={Some(AttrValue::from("Cumulative bit-error ratio computed as symbols are demodulated."))}
+                        />
                     </div>
                     <div class="log-columns">
                         <div class="log-pane">
@@ -562,6 +840,8 @@ pub struct ConstellationProps {
     pub q_samples: Vec<f64>,
     #[prop_or(ConstellationVariant::Rx)]
     pub variant: ConstellationVariant,
+    #[prop_or_default]
+    pub tooltip: Option<AttrValue>,
 }
 
 #[derive(Properties, PartialEq)]
@@ -607,8 +887,15 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
     }
 
     let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
+    let panel_class = if props.tooltip.is_some() {
+        "constellation-panel panel has-tooltip"
+    } else {
+        "constellation-panel panel"
+    };
+    let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
     html! {
-        <div class="constellation-panel panel">
+    <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
@@ -680,6 +967,8 @@ pub struct LineChartProps {
     #[prop_or(None)]
     pub accent_rgb: Option<(u8, u8, u8)>,
     #[prop_or_default]
+    pub tooltip: Option<AttrValue>,
+    #[prop_or_default]
     pub x_label: AttrValue,
     #[prop_or_default]
     pub y_label: AttrValue,
@@ -722,8 +1011,15 @@ fn line_chart(props: &LineChartProps) -> Html {
     }
 
     let is_empty = props.values.is_empty();
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
+    let panel_class = if props.tooltip.is_some() {
+        "chart-panel panel has-tooltip"
+    } else {
+        "chart-panel panel"
+    };
+    let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
     html! {
-        <div class="chart-panel panel">
+        <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No samples available."}</div> }
@@ -848,8 +1144,8 @@ fn draw_combined_constellation_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(&RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(&RGBColor(40, 60, 90).mix(0.3))
+                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
                 .x_labels(7)
                 .y_labels(7)
                 .x_label_formatter(&|x| format!("{:.1}", x))
@@ -1146,6 +1442,112 @@ fn format_sci(value: f64) -> String {
     } else {
         format!("{:.3e}", value)
     }
+}
+
+fn play_audio(
+    samples: &[f32],
+    sample_rate: usize,
+    source_node_ref: &Rc<std::cell::RefCell<Option<AudioBufferSourceNode>>>,
+    context_ref: &Rc<std::cell::RefCell<Option<AudioContext>>>,
+    state: &UseStateHandle<AudioPlaybackState>,
+    new_state: AudioPlaybackState,
+    gain: f64,
+) {
+    if samples.is_empty() {
+        web_sys::console::warn_1(&"Cannot play empty audio buffer".into());
+        return;
+    }
+
+    let ctx = match (*context_ref.borrow()).as_ref() {
+        Some(existing) => existing.clone(),
+        None => {
+            match AudioContext::new() {
+                Ok(new_ctx) => {
+                    *context_ref.borrow_mut() = Some(new_ctx.clone());
+                    new_ctx
+                }
+                Err(e) => {
+                    web_sys::console::error_1(&format!("Failed to create AudioContext: {:?}", e).into());
+                    return;
+                }
+            }
+        }
+    };
+
+    // Resume context if suspended
+    if ctx.state() == web_sys::AudioContextState::Suspended {
+        let _ = ctx.resume();
+    }
+
+    let buffer = match ctx.create_buffer(1, samples.len() as u32, sample_rate as f32) {
+        Ok(buf) => buf,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create audio buffer: {:?}", e).into());
+            return;
+        }
+    };
+
+    if let Err(e) = buffer.copy_to_channel(samples, 0) {
+        web_sys::console::error_1(&format!("Failed to copy audio data: {:?}", e).into());
+        return;
+    }
+
+    let source = match ctx.create_buffer_source() {
+        Ok(src) => src,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create buffer source: {:?}", e).into());
+            return;
+        }
+    };
+
+    source.set_buffer(Some(&buffer));
+
+    // Create gain node for volume control
+    let gain_node = match ctx.create_gain() {
+        Ok(node) => node,
+        Err(e) => {
+            web_sys::console::error_1(&format!("Failed to create gain node: {:?}", e).into());
+            return;
+        }
+    };
+
+    gain_node.gain().set_value(gain as f32);
+
+    if let Err(e) = source.connect_with_audio_node(&gain_node) {
+        web_sys::console::error_1(&format!("Failed to connect source to gain: {:?}", e).into());
+        return;
+    }
+
+    if let Err(e) = gain_node.connect_with_audio_node(&ctx.destination()) {
+        web_sys::console::error_1(&format!("Failed to connect gain to destination: {:?}", e).into());
+        return;
+    }
+
+    let state_handle = state.clone();
+    let on_ended = Closure::wrap(Box::new(move || {
+        state_handle.set(AudioPlaybackState::Stopped);
+    }) as Box<dyn Fn()>);
+
+    let _ = source.add_event_listener_with_callback("ended", on_ended.as_ref().unchecked_ref());
+    on_ended.forget();
+
+    if let Err(e) = source.start() {
+        web_sys::console::error_1(&format!("Failed to start audio playback: {:?}", e).into());
+        return;
+    }
+
+    *source_node_ref.borrow_mut() = Some(source);
+    state.set(new_state);
+}
+
+fn stop_audio(
+    source_node_ref: &Rc<std::cell::RefCell<Option<AudioBufferSourceNode>>>,
+    state: &UseStateHandle<AudioPlaybackState>,
+) {
+    if let Some(source) = source_node_ref.borrow_mut().take() {
+        let _ = source.stop();
+    }
+    state.set(AudioPlaybackState::Stopped);
 }
 
 pub fn mount_app() {

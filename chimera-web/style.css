@@ -85,6 +85,59 @@ a:hover {
   text-decoration: underline;
 }
 
+.info-rollover,
+.has-tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.info-rollover {
+  border-bottom: 1px dashed lch(65% 25 260 / 0.5);
+  padding-bottom: 1px;
+}
+
+.info-rollover:focus-visible {
+  outline: none;
+  border-bottom-color: var(--accent);
+  box-shadow: 0 2px 0 var(--accent-glow);
+}
+
+.info-rollover::after,
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  transform: translate(-50%, -6px);
+  background: lch(12% 6 250 / 0.96);
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px lch(0% 0 0 / 0.45);
+  max-width: 280px;
+  width: max-content;
+  white-space: normal;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 40;
+}
+
+.info-rollover::after {
+  bottom: calc(100% + 8px);
+}
+
+.info-rollover:hover::after,
+.info-rollover:focus::after,
+.info-rollover:focus-visible::after,
+.has-tooltip:hover::after,
+.has-tooltip:focus-within::after {
+  opacity: 1;
+  transform: translate(-50%, -12px);
+}
+
 button,
 input,
 select,
