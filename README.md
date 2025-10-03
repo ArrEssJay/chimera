@@ -160,6 +160,22 @@ The protocol is analogous to Submarine ELF (Extremely Low Frequency) communicati
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.
 
-## 📄 License
+### Development Workflow
+
+This project uses a GitOps workflow with automated testing and deployment:
+
+1. Create a feature branch from `main`
+2. Make your changes and ensure they pass local tests
+3. Push your changes - CI will run automatically
+4. Create a pull request to `main`
+5. All status checks must pass before merging:
+   - Unit and integration tests
+   - Code formatting (`cargo fmt`)
+   - Linting (`cargo clippy`)
+   - Web dashboard build and verification
+
+See [Branch Protection Documentation](docs/branch-protection.md) for detailed information about our CI/CD pipeline and quality gates.
+
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
