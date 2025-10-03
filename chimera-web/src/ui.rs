@@ -858,7 +858,7 @@ fn render_log(entries: &[String]) -> Html {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ConstellationVariant {
     Tx,
     Rx,
@@ -1071,6 +1071,31 @@ fn draw_constellation_svg(
     title: &str,
     variant: ConstellationVariant,
 ) -> String {
+    // Count finite values
+    let finite_count = symbols_i
+        .iter()
+        .zip(symbols_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    
+    web_sys::console::info_1(
+        &format!(
+            "Drawing constellation '{}' ({:?}) with {} points ({} finite)",
+            title,
+            variant,
+            symbols_i.len(),
+            finite_count
+        )
+        .into(),
+    );
+    
+    if finite_count == 0 {
+        web_sys::console::warn_1(
+            &format!("Skipping constellation '{}' due to lack of finite samples", title).into(),
+        );
+        return String::new();
+    }
+    
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
@@ -1148,6 +1173,16 @@ fn draw_constellation_svg(
         let _ = root.present();
     }
 
+    web_sys::console::info_1(
+        &format!(
+            "Generated SVG for '{}' with {} bytes, contains '<circle': {}",
+            title,
+            svg_string.len(),
+            svg_string.contains("<circle")
+        )
+        .into(),
+    );
+    
     svg_string
 }
 
@@ -1158,6 +1193,37 @@ fn draw_combined_constellation_svg(
     rx_q: &[f64],
     title: &str,
 ) -> String {
+    // Count finite values
+    let tx_finite = tx_i
+        .iter()
+        .zip(tx_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    let rx_finite = rx_i
+        .iter()
+        .zip(rx_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    
+    web_sys::console::info_1(
+        &format!(
+            "Drawing combined constellation '{}' with {} TX points ({} finite) and {} RX points ({} finite)",
+            title,
+            tx_i.len(),
+            tx_finite,
+            rx_i.len(),
+            rx_finite
+        )
+        .into(),
+    );
+    
+    if tx_finite == 0 && rx_finite == 0 {
+        web_sys::console::warn_1(
+            &format!("Skipping combined constellation '{}' due to lack of finite samples", title).into(),
+        );
+        return String::new();
+    }
+    
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
@@ -1252,6 +1318,16 @@ fn draw_combined_constellation_svg(
         let _ = root.present();
     }
 
+    web_sys::console::info_1(
+        &format!(
+            "Generated combined SVG for '{}' with {} bytes, contains '<circle': {}",
+            title,
+            svg_string.len(),
+            svg_string.contains("<circle")
+        )
+        .into(),
+    );
+    
     svg_string
 }
 
