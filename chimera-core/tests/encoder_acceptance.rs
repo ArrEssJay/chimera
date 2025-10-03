@@ -151,7 +151,6 @@ fn run_simulation_emits_audio_waveforms() {
 fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
     let sim = SimulationConfig {
         sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
         snr_db: -5.0,                            // Without processing gain, LDPC fails at this Es/N0
@@ -181,7 +180,7 @@ fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
 fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig{
+    let sim = SimulationConfig{
         sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
         snr_db: -1.0, // Without processing gain, marginal Es/N0 but LDPC succeeds
         plaintext_source: "Hello Chimera".into(),

@@ -18,7 +18,7 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{
-    AudioBufferSourceNode, AudioContext, Document, Event, HtmlCanvasElement, HtmlElement,
+    AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement,
 };
 use yew::events::InputEvent;
 use yew::prelude::*;
@@ -1543,7 +1543,7 @@ fn stop_audio(
     state: &UseStateHandle<AudioPlaybackState>,
 ) {
     if let Some(source) = source_node_ref.borrow_mut().take() {
-        let _ = source.stop_with_when(0.0);
+        let _ = source.stop();
     }
     state.set(AudioPlaybackState::Stopped);
 }
