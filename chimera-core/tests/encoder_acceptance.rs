@@ -162,9 +162,14 @@ fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
     let demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
 
     // At -5 dB SNR, LDPC should fail to recover the message
-    assert!(demodulation.report.pre_fec_errors > 0, "Expected pre-FEC errors at low SNR");
-    assert_ne!(demodulation.recovered_message, sim.plaintext_source, 
-        "LDPC should fail to recover message at -5 dB SNR");
+    assert!(
+        demodulation.report.pre_fec_errors > 0,
+        "Expected pre-FEC errors at low SNR"
+    );
+    assert_ne!(
+        demodulation.recovered_message, sim.plaintext_source,
+        "LDPC should fail to recover message at -5 dB SNR"
+    );
 }
 
 #[test]
@@ -184,5 +189,8 @@ fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
     let demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
 
     // At -1 dB SNR, some pre-FEC errors are expected but LDPC should still recover
-    assert!(demodulation.report.pre_fec_errors > 0, "Expected pre-FEC errors at -1 dB SNR");
+    assert!(
+        demodulation.report.pre_fec_errors > 0,
+        "Expected pre-FEC errors at -1 dB SNR"
+    );
 }

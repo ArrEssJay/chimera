@@ -252,9 +252,9 @@ pub fn app() -> Html {
                                     html! { <span class="badge badge-live idle">{"Up to date"}</span> }
                                 }
                             }
-                            <button 
+                            <button
                                 class={if has_pending_changes && !*is_running { "primary highlight" } else { "primary" }}
-                                onclick={on_run.clone()} 
+                                onclick={on_run.clone()}
                                 disabled={*is_running}
                             >
                                 { if *is_running { "Running…" } else { "Run Now" } }
@@ -632,7 +632,7 @@ fn draw_constellation(
 
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
+            .caption(title, ("Share Tech Mono", 16, &RGBColor(150, 220, 150)))
             .margin(5)
             .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
 
@@ -645,10 +645,12 @@ fn draw_constellation(
 
         let (point_color, halo_color, radius) = match variant {
             ConstellationVariant::Tx => {
-                (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+                // Tactical green for TX
+                (RGBColor(120, 220, 150), RGBAColor(120, 220, 150, 0.3), 6)
             }
             ConstellationVariant::Rx => {
-                (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 3)
+                // Tactical cyan for RX
+                (RGBColor(120, 200, 240), RGBAColor(120, 200, 240, 0.3), 3)
             }
         };
 
@@ -724,21 +726,21 @@ fn draw_line_chart(
 
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
+            .caption(title, ("Share Tech Mono", 16, &RGBColor(150, 220, 150)))
             .margin(5)
             .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
 
         chart
             .configure_mesh()
-            .bold_line_style(&RGBColor(40, 60, 90).mix(0.4))
-            .light_line_style(&RGBColor(40, 60, 90).mix(0.2))
+            .bold_line_style(&RGBColor(80, 140, 100).mix(0.5))
+            .light_line_style(&RGBColor(60, 100, 80).mix(0.3))
             .x_labels(5)
             .y_labels(5)
             .draw()?;
 
         let line_color = accent
             .map(|(r, g, b)| RGBColor(r, g, b))
-            .unwrap_or_else(|| RGBColor(94, 214, 255));
+            .unwrap_or_else(|| RGBColor(120, 220, 150));
 
         let points: Vec<(f64, f64)> = values
             .iter()
