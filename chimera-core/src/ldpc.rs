@@ -126,7 +126,7 @@ fn sparse_to_array(matrix: &SparseBinMat) -> Array2<u8> {
 
 #[inline]
 fn words_for_bits(bits: usize) -> usize {
-    (bits + 63) / 64
+    bits.div_ceil(64)
 }
 
 #[inline]
@@ -240,8 +240,8 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
         }
 
         // Find a row with a leading 1 in this column.
-        if let Some(pivot_idx) = (pivot_row..augmented.len())
-            .find(|&r| get_bit(&augmented[r], col) == 1)
+        if let Some(pivot_idx) =
+            (pivot_row..augmented.len()).find(|&r| get_bit(&augmented[r], col) == 1)
         {
             augmented.swap(pivot_row, pivot_idx);
 
