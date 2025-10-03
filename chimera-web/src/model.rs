@@ -9,6 +9,7 @@ pub const FIXED_SAMPLE_RATE: usize = 48_000;
 pub struct SimulationInput {
     pub plaintext: String,
     pub snr_db: f64,
+    pub link_loss_db: f64,
     pub preset: FramePreset,
 }
 
@@ -24,6 +25,7 @@ impl SimulationInput {
         Self {
             plaintext: defaults.plaintext_source,
             snr_db: defaults.snr_db,
+            link_loss_db: defaults.link_loss_db,
             preset,
         }
     }
@@ -45,6 +47,7 @@ pub fn run_pipeline(input: SimulationInput) -> SimulationOutput {
     let mut sim = simulation;
     sim.plaintext_source = input.plaintext;
     sim.snr_db = input.snr_db;
+    sim.link_loss_db = input.link_loss_db;
     sim.sample_rate = FIXED_SAMPLE_RATE;
 
     let output = run_simulation(&sim, &protocol, &ldpc);

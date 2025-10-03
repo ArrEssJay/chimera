@@ -10,8 +10,9 @@ This guide explains the key signal processing terminology and concepts used in C
 4. [Signal-to-Noise Ratio (SNR)](#signal-to-noise-ratio-snr)
 5. [Energy Ratios (Es/N0 and Eb/N0)](#energy-ratios-esn0-and-ebn0)
 6. [Additive White Gaussian Noise (AWGN)](#additive-white-gaussian-noise-awgn)
-7. [Bit Error Rate (BER)](#bit-error-rate-ber)
-8. [Forward Error Correction (FEC)](#forward-error-correction-fec)
+7. [Link Loss vs. Noise](#link-loss-vs-noise)
+8. [Bit Error Rate (BER)](#bit-error-rate-ber)
+9. [Forward Error Correction (FEC)](#forward-error-correction-fec)
 
 ---
 
@@ -303,6 +304,114 @@ Chimera's simulation applies AWGN to model the communication channel:
 - Noise is added separately to I and Q components
 - Noise power is controlled by the SNR setting
 - Higher SNR = less noise variance = tighter constellation clusters
+
+---
+
+## Link Loss vs. Noise
+
+In a real communication system, the received signal is degraded by **two distinct mechanisms**:
+
+### Link Loss (Path Loss)
+
+**Link Loss** represents the reduction in signal power as it travels from transmitter to receiver:
+
+- **Deterministic**: Same loss every time (for a given scenario)
+- **Multiplicative**: Scales the entire signal uniformly
+- **Sources**: Free-space path loss, antenna gains, cable losses, atmospheric absorption
+
+**Mathematical Model:**
+```
+P_received = P_transmitted / Loss_Factor
+
+In dB: P_received (dBm) = P_transmitted (dBm) - Link_Loss (dB)
+```
+
+**Example Link Budget:**
+```
+Transmit Power:        +30 dBm
+Antenna Gain (TX):     +10 dB
+Free-Space Loss:       -120 dB
+Antenna Gain (RX):     +5 dB
+Cable/Implementation:  -5 dB
+─────────────────────────────
+Received Signal Power: -80 dBm
+Total Link Loss:       100 dB
+```
+
+### Additive Noise
+
+**AWGN** adds random fluctuations on top of the received signal:
+
+- **Random**: Different every time, unpredictable
+- **Additive**: Added to the signal (not multiplicative)
+- **Sources**: Thermal noise, amplifier noise, interference
+
+**Mathematical Model:**
+```
+Received Signal = (Transmitted Signal / √Link_Loss) + Noise
+
+where Noise has power determined by SNR or N₀
+```
+
+### Combined Channel Model
+
+In Chimera's simulation, both effects are applied:
+
+```
+1. Transmit Signal (Power = P_tx)
+        ↓
+2. Apply Link Loss (Power reduced to P_tx / 10^(Loss_dB/10))
+        ↓
+3. Add AWGN (Noise power = Attenuated_Signal_Power / SNR)
+        ↓
+4. Received Signal (Attenuated + Noisy)
+```
+
+### Why Both Matter
+
+**Link Loss** affects the **signal power** at the receiver:
+- High link loss (100+ dB) is typical in many systems
+- Reduces signal level but doesn't add randomness
+- Can be compensated with amplification (but amplifies noise too!)
+
+**Noise** affects the **signal quality** (SNR):
+- Adds random errors that can't be predicted
+- Sets the fundamental limit on achievable BER
+- Can be improved with processing gain, error correction
+
+### Link Budget and SNR
+
+The combination determines receiver performance:
+
+```
+Received Signal Power = P_tx - Link_Loss_dB
+Noise Power = N₀ × Bandwidth
+
+SNR (dB) = Received_Signal_Power (dBm) - Noise_Power (dBm)
+```
+
+**Example:**
+- Transmit power: +30 dBm
+- Link loss: 100 dB
+- Received signal: -70 dBm
+- Noise floor: -90 dBm
+- **Resulting SNR: 20 dB** (Good!)
+
+But if link loss increases to 120 dB:
+- Received signal: -90 dBm
+- Noise floor: -90 dBm
+- **Resulting SNR: 0 dB** (Very challenging!)
+
+### Link Loss in Chimera
+
+Chimera allows you to model link loss separately from SNR:
+- **Link Loss**: Simulates the signal power reduction (path loss, antenna gains, etc.)
+- **SNR**: Controls the additive noise level
+- Both combine to determine the received signal quality
+- This separation helps understand link budget analysis
+
+With 0 dB link loss, the SNR setting directly determines signal quality.
+With 100 dB link loss, the signal is attenuated by 10^10, but the SNR still controls the noise-to-signal ratio at the receiver input.
 
 ---
 

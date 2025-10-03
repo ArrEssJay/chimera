@@ -60,6 +60,7 @@ pub fn app() -> Html {
                     next.preset = preset;
                     next.plaintext = defaults.plaintext_source;
                     next.snr_db = defaults.snr_db;
+                    next.link_loss_db = defaults.link_loss_db;
                     simulation.set(next);
                     external_audio_name.set(None);
                 }
@@ -85,6 +86,19 @@ pub fn app() -> Html {
                 if let Ok(value) = input.value().parse::<f64>() {
                     let mut next = (*simulation).clone();
                     next.snr_db = value;
+                    simulation.set(next);
+                }
+            }
+        })
+    };
+
+    let on_link_loss_change = {
+        let simulation = simulation.clone();
+        Callback::from(move |event: InputEvent| {
+            if let Some(input) = event.target_dyn_into::<web_sys::HtmlInputElement>() {
+                if let Ok(value) = input.value().parse::<f64>() {
+                    let mut next = (*simulation).clone();
+                    next.link_loss_db = value;
                     simulation.set(next);
                 }
             }
@@ -387,8 +401,17 @@ pub fn app() -> Html {
                             </span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
                             <p class="muted small">
-                                {"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
+                                {"AWGN noise level (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
                                 <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#energy-ratios-esn0-and-ebn0" target="_blank" rel="noopener noreferrer">{"Learn about Es/N₀"}</a>
+                            </p>
+                        </label>
+
+                        <label class="field">
+                            <span title="Path loss and signal attenuation - deterministic reduction in signal power from transmission">{"Link Loss (dB)"}</span>
+                            <input type="number" min="0" max="150" step="1" value={format!("{:.1}", current_input.link_loss_db)} oninput={on_link_loss_change} />
+                            <p class="muted small">
+                                {"Signal attenuation from path loss, antenna gains, etc. Typical radio links have 100+ dB loss. "}
+                                <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#link-loss-vs-noise" target="_blank" rel="noopener noreferrer">{"Learn about link loss"}</a>
                             </p>
                         </label>
 
@@ -630,7 +653,7 @@ pub fn app() -> Html {
                                     {format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}
                                 </p>
                                 <p class="muted small">
-                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#additive-white-gaussian-noise-awgn" target="_blank" rel="noopener noreferrer">{"Learn about AWGN channel"}</a>
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#link-loss-vs-noise" target="_blank" rel="noopener noreferrer">{"Learn about link loss & noise"}</a>
                                 </p>
                             </div>
                         </div>
