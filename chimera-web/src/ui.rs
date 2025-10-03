@@ -1049,7 +1049,7 @@ fn draw_constellation_svg(
 
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
                 .margin(15)
                 .x_label_area_size(40)
                 .y_label_area_size(50)
@@ -1057,24 +1057,26 @@ fn draw_constellation_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .bold_line_style(&RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(&RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(7)
                 .y_labels(7)
                 .x_label_formatter(&|x| format!("{:.1}", x))
                 .y_label_formatter(&|y| format!("{:.1}", y))
                 .x_desc("In-Phase (I)")
                 .y_desc("Quadrature (Q)")
-                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
-                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .label_style(("Share Tech Mono", 12, &RGBColor(150, 220, 150)))
+                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
                 .draw()?;
 
             let (point_color, halo_color, radius) = match variant {
                 ConstellationVariant::Tx => {
-                    (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+                    // Tactical green for TX
+                    (RGBColor(120, 220, 150), RGBAColor(120, 220, 150, 0.3), 6)
                 }
                 ConstellationVariant::Rx => {
-                    (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 4)
+                    // Tactical cyan for RX
+                    (RGBColor(120, 200, 240), RGBAColor(120, 200, 240, 0.3), 4)
                 }
             };
 
@@ -1262,7 +1264,7 @@ fn draw_line_chart_svg(
 
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
                 .margin(15)
                 .x_label_area_size(45)
                 .y_label_area_size(60)
@@ -1270,21 +1272,21 @@ fn draw_line_chart_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .bold_line_style(&RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(&RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(6)
                 .y_labels(6)
                 .x_label_formatter(&|x| format!("{:.0}", x))
                 .y_label_formatter(&|y| format!("{:.2}", y))
                 .x_desc(x_label)
                 .y_desc(y_label)
-                .label_style(("Inter", 13, &RGBColor(180, 180, 190)))
-                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .label_style(("Share Tech Mono", 13, &RGBColor(150, 220, 150)))
+                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
                 .draw()?;
 
             let line_color = accent
                 .map(|(r, g, b)| RGBColor(r, g, b))
-                .unwrap_or_else(|| RGBColor(94, 214, 255));
+                .unwrap_or_else(|| RGBColor(120, 220, 150));
 
             let points: Vec<(f64, f64)> = values
                 .iter()
