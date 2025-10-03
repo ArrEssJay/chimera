@@ -117,6 +117,62 @@ Potential future improvements:
 - Keyboard shortcuts reference
 - Dark/light theme toggle
 
+## Recent Enhancements (2024)
+
+### 5. SVG Chart Rendering with Axis Labels
+
+**Problem**: Previous charts used HTML Canvas, which:
+- Cannot be saved/exported as vector graphics
+- Had no axis labels or ranges
+- Were fixed size and not scalable
+- Did not match the UI font
+
+**Solution**: Converted all charts to SVG backend with comprehensive labeling:
+
+**Chart Improvements**:
+- **Line Charts**: Now 500×280px (up from 320×220px) with proper axis labels
+  - Timing Error: Sample Index vs Error (samples)
+  - NCO Frequency Offset: Sample Index vs Offset (Hz)
+  - PSD Charts: Frequency Bin vs Power (dBFS)
+  - Running BER: Symbol Index vs BER
+- **Constellation Diagrams**: Now 400×400px with I/Q axis labels and ranges (-1.5 to 1.5)
+- **Combined Constellation**: New 500×450px view showing both TX and RX symbols
+- All charts use Inter font to match UI
+- SVG format allows right-click save and infinite scaling
+
+### 6. Combined Constellation Plot
+
+**Problem**: TX and RX constellations were in separate locations, requiring scrolling to compare
+
+**Solution**: Created unified `CombinedConstellation` component:
+- Shows both TX (ideal) and RX (recovered) symbols on same plot
+- TX symbols: Cyan/green, larger (5px), with reference QPSK constellation halos
+- RX symbols: Pink/magenta, smaller (3px)
+- Legend clearly identifies both symbol types
+- Placed in dedicated section for easy access
+
+### 7. Further Spacing Optimizations
+
+Building on previous reductions, additional vertical space saved:
+
+| Element | Previous | New | Additional Savings |
+|---------|----------|-----|-------------------|
+| Main grid padding (top) | 16px | 12px | 4px |
+| Main grid gap | 20px | 16px | 4px per gap |
+| Panel padding | 20px | 18px | 2px per panel |
+| Panel header margin | 16px | 12px | 4px per header |
+| Node graph gap | 20px | 16px | 4px |
+| Node column gap | 16px | 12px | 4px |
+| Node padding | 14px | 12px | 2px per node |
+| Chart grid gap | 16px | 12px | 4px |
+| Control grid gap | 20px | 16px | 4px |
+| Metrics grid gap | 20px | 16px | 4px |
+| Log viewer height | 180px | 150px | 30px |
+
+**Total additional vertical space saved**: ~60-80 pixels
+
+**Cumulative total saved**: ~160-180 pixels from original layout
+
 ## Screenshot
 
 See the improved layout here:

@@ -8,14 +8,14 @@ use gloo_file::Blob;
 use plotters::prelude::*;
 use plotters::style::colors::TRANSPARENT;
 use plotters::style::RGBAColor;
-use plotters_canvas::CanvasBackend;
+use plotters::backend::SVGBackend;
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
 use std::f64::consts::FRAC_1_SQRT_2;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{Document, Event, HtmlCanvasElement, HtmlElement};
+use web_sys::{Document, Event, HtmlElement};
 use yew::events::InputEvent;
 use yew::prelude::*;
 use yew::TargetCast;
@@ -569,6 +569,20 @@ pub fn app() -> Html {
                     </div>
                 </section>
 
+                <section class="panel constellation-comparison-panel">
+                    <header>
+                        <h2>{"Constellation Diagram"}</h2>
+                        <p class="muted">{"Combined view of transmitted (TX) and received (RX) QPSK symbols."}</p>
+                    </header>
+                    <CombinedConstellation 
+                        title="TX vs RX Constellation" 
+                        tx_i_samples={tx_i.clone()} 
+                        tx_q_samples={tx_q.clone()} 
+                        rx_i_samples={rx_i.clone()} 
+                        rx_q_samples={rx_q.clone()} 
+                    />
+                </section>
+
                 <section class="panel frame-panel">
                     <header>
                         <h2>{"Frame Inspector"}</h2>
@@ -703,11 +717,21 @@ pub struct ConstellationProps {
     pub tooltip: Option<AttrValue>,
 }
 
+#[derive(Properties, PartialEq)]
+pub struct CombinedConstellationProps {
+    pub title: AttrValue,
+    pub tx_i_samples: Vec<f64>,
+    pub tx_q_samples: Vec<f64>,
+    pub rx_i_samples: Vec<f64>,
+    pub rx_q_samples: Vec<f64>,
+}
+
 #[function_component(ConstellationChart)]
 pub fn constellation_chart(props: &ConstellationProps) -> Html {
-    let canvas_ref = use_node_ref();
+    let svg_content = use_state(String::new);
+    
     {
-        let canvas_ref = canvas_ref.clone();
+        let svg_content = svg_content.clone();
         let i_samples = props.i_samples.clone();
         let q_samples = props.q_samples.clone();
         let title = props.title.clone();
@@ -722,9 +746,8 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
             ),
             move |(i_samples, q_samples, variant, title)| {
                 if !i_samples.is_empty() && !q_samples.is_empty() {
-                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_constellation(&canvas, i_samples, q_samples, title, variant.clone());
-                    }
+                    let svg = draw_constellation_svg(i_samples, q_samples, title.as_str(), variant.clone());
+                    svg_content.set(svg);
                 }
                 || ()
             },
@@ -745,7 +768,52 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
                 } else {
-                    html! { <canvas ref={canvas_ref} width="220" height="220" /> }
+                    html! { 
+                        <div class="svg-chart-container" 
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
+                }
+            }
+        </div>
+    }
+}
+
+#[function_component(CombinedConstellation)]
+pub fn combined_constellation(props: &CombinedConstellationProps) -> Html {
+    let svg_content = use_state(String::new);
+    
+    {
+        let svg_content = svg_content.clone();
+        let tx_i = props.tx_i_samples.clone();
+        let tx_q = props.tx_q_samples.clone();
+        let rx_i = props.rx_i_samples.clone();
+        let rx_q = props.rx_q_samples.clone();
+        let title = props.title.clone();
+
+        use_effect_with(
+            (tx_i.clone(), tx_q.clone(), rx_i.clone(), rx_q.clone(), title.clone()),
+            move |(tx_i, tx_q, rx_i, rx_q, title)| {
+                if (!tx_i.is_empty() && !tx_q.is_empty()) || (!rx_i.is_empty() && !rx_q.is_empty()) {
+                    let svg = draw_combined_constellation_svg(tx_i, tx_q, rx_i, rx_q, title.as_str());
+                    svg_content.set(svg);
+                }
+                || ()
+            },
+        );
+    }
+
+    let is_empty = (props.tx_i_samples.is_empty() || props.tx_q_samples.is_empty()) 
+                    && (props.rx_i_samples.is_empty() || props.rx_q_samples.is_empty());
+    html! {
+        <div class="constellation-panel panel constellation-combined">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No constellation samples."}</div> }
+                } else {
+                    html! { 
+                        <div class="svg-chart-container" 
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
                 }
             }
         </div>
@@ -760,24 +828,29 @@ pub struct LineChartProps {
     pub accent_rgb: Option<(u8, u8, u8)>,
     #[prop_or_default]
     pub tooltip: Option<AttrValue>,
+    pub x_label: AttrValue,
+    #[prop_or_default]
+    pub y_label: AttrValue,
 }
 
 #[function_component(LineChart)]
 fn line_chart(props: &LineChartProps) -> Html {
-    let canvas_ref = use_node_ref();
+    let svg_content = use_state(String::new);
+    
     {
-        let canvas_ref = canvas_ref.clone();
+        let svg_content = svg_content.clone();
         let values = props.values.clone();
         let title = props.title.clone();
         let accent = props.accent_rgb;
+        let x_label = props.x_label.clone();
+        let y_label = props.y_label.clone();
 
         use_effect_with(
-            (values.clone(), accent, title.clone()),
-            move |(values, accent, title)| {
+            (values.clone(), accent, title.clone(), x_label.clone(), y_label.clone()),
+            move |(values, accent, title, x_label, y_label)| {
                 if !values.is_empty() {
-                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_line_chart(&canvas, values, title, *accent);
-                    }
+                    let svg = draw_line_chart_svg(values, title.as_str(), *accent, x_label.as_str(), y_label.as_str());
+                    svg_content.set(svg);
                 }
                 || ()
             },
@@ -798,156 +871,268 @@ fn line_chart(props: &LineChartProps) -> Html {
                 if is_empty {
                     html! { <div class="chart-empty">{"No samples available."}</div> }
                 } else {
-                    html! { <canvas ref={canvas_ref} width="320" height="220" /> }
+                    html! { 
+                        <div class="svg-chart-container" 
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
                 }
             }
         </div>
     }
 }
 
-fn draw_constellation(
-    canvas: &HtmlCanvasElement,
+fn draw_constellation_svg(
     symbols_i: &[f64],
     symbols_q: &[f64],
     title: &str,
     variant: ConstellationVariant,
-) {
-    let backend = if let Some(backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
-        backend
-    } else {
-        web_sys::console::error_1(&"Failed to create canvas backend".into());
-        return;
-    };
-    let root = backend.into_drawing_area();
+) -> String {
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
+        let root = backend.into_drawing_area();
 
-    root.fill(&TRANSPARENT).unwrap_or_else(|e| {
-        web_sys::console::error_1(&format!("Failed to fill chart background: {:?}", e).into());
-    });
+        let _ = root.fill(&TRANSPARENT);
 
-    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
-            .margin(5)
-            .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(15)
+                .x_label_area_size(40)
+                .y_label_area_size(50)
+                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
 
-        chart
-            .configure_mesh()
-            .disable_x_mesh()
-            .disable_y_mesh()
-            .disable_axes()
-            .draw()?;
+            chart
+                .configure_mesh()
+                .bold_line_style(&RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(&RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(7)
+                .y_labels(7)
+                .x_label_formatter(&|x| format!("{:.1}", x))
+                .y_label_formatter(&|y| format!("{:.1}", y))
+                .x_desc("In-Phase (I)")
+                .y_desc("Quadrature (Q)")
+                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
 
-        let (point_color, halo_color, radius) = match variant {
-            ConstellationVariant::Tx => {
-                (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+            let (point_color, halo_color, radius) = match variant {
+                ConstellationVariant::Tx => {
+                    (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+                }
+                ConstellationVariant::Rx => {
+                    (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 4)
+                }
+            };
+
+            // Draw reference constellation for TX
+            if matches!(variant, ConstellationVariant::Tx) {
+                let reference = [
+                    (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                    (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                ];
+                chart.draw_series(
+                    reference
+                        .iter()
+                        .map(|&(i, q)| Circle::new((i, q), radius + 2, halo_color.filled())),
+                )?;
             }
-            ConstellationVariant::Rx => {
-                (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 3)
-            }
-        };
 
-        if matches!(variant, ConstellationVariant::Tx) {
+            // Draw actual symbols
+            let symbols = symbols_i
+                .iter()
+                .zip(symbols_q.iter())
+                .map(|(&i, &q)| (i, q));
+
+            chart.draw_series(symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())))?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(&format!("Failed to draw constellation chart: {:?}", e).into());
+        }
+
+        let _ = root.present();
+    }
+
+    svg_string
+}
+
+fn draw_combined_constellation_svg(
+    tx_i: &[f64],
+    tx_q: &[f64],
+    rx_i: &[f64],
+    rx_q: &[f64],
+    title: &str,
+) -> String {
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
+        let root = backend.into_drawing_area();
+
+        let _ = root.fill(&TRANSPARENT);
+
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(20)
+                .x_label_area_size(40)
+                .y_label_area_size(50)
+                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+
+            chart
+                .configure_mesh()
+                .bold_line_style(&RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(&RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(7)
+                .y_labels(7)
+                .x_label_formatter(&|x| format!("{:.1}", x))
+                .y_label_formatter(&|y| format!("{:.1}", y))
+                .x_desc("In-Phase (I)")
+                .y_desc("Quadrature (Q)")
+                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
+
+            // Draw reference QPSK constellation points
             let reference = [
                 (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
                 (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
                 (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
                 (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
             ];
+            let tx_halo_color = RGBAColor(126, 240, 196, 0.3);
             chart.draw_series(
                 reference
                     .iter()
-                    .map(|&(i, q)| Circle::new((i, q), radius + 2, halo_color.filled())),
+                    .map(|&(i, q)| Circle::new((i, q), 8, tx_halo_color.filled())),
             )?;
+
+            // Draw TX symbols (ideal, larger, cyan/green)
+            if !tx_i.is_empty() && !tx_q.is_empty() {
+                let tx_color = RGBColor(126, 240, 196);
+                let tx_symbols = tx_i.iter().zip(tx_q.iter()).map(|(&i, &q)| (i, q));
+                chart.draw_series(
+                    tx_symbols.map(|(i, q)| Circle::new((i, q), 5, tx_color.filled()))
+                )?;
+            }
+
+            // Draw RX symbols (received, smaller, pink/magenta)
+            if !rx_i.is_empty() && !rx_q.is_empty() {
+                let rx_color = RGBColor(255, 168, 250);
+                let rx_symbols = rx_i.iter().zip(rx_q.iter()).map(|(&i, &q)| (i, q));
+                chart.draw_series(
+                    rx_symbols.map(|(i, q)| Circle::new((i, q), 3, rx_color.filled()))
+                )?;
+            }
+
+            // Add legend with text
+            chart.draw_series(vec![
+                EmptyElement::at((0.9, 1.3))
+                    + Circle::new((0, 0), 5, RGBColor(126, 240, 196).filled())
+                    + Text::new(" TX Symbols", (10, 0), ("Inter", 14).into_font().color(&RGBColor(180, 180, 190))),
+            ])?;
+
+            chart.draw_series(vec![
+                EmptyElement::at((0.9, 1.1))
+                    + Circle::new((0, 0), 3, RGBColor(255, 168, 250).filled())
+                    + Text::new(" RX Symbols", (10, 0), ("Inter", 14).into_font().color(&RGBColor(180, 180, 190))),
+            ])?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(&format!("Failed to draw combined constellation: {:?}", e).into());
         }
 
-        let symbols = symbols_i
-            .iter()
-            .zip(symbols_q.iter())
-            .map(|(&i, &q)| (i, q));
-
-        chart
-            .draw_series(symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())))?;
-
-        Ok(())
-    })();
-
-    if let Err(e) = result {
-        web_sys::console::error_1(&format!("Failed to draw constellation chart: {:?}", e).into());
+        let _ = root.present();
     }
+
+    svg_string
 }
 
-fn draw_line_chart(
-    canvas: &HtmlCanvasElement,
+fn draw_line_chart_svg(
     values: &[f64],
     title: &str,
     accent: Option<(u8, u8, u8)>,
-) {
-    let backend = if let Some(backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
-        backend
-    } else {
-        web_sys::console::error_1(&"Failed to create canvas backend".into());
-        return;
-    };
-
-    let root = backend.into_drawing_area();
-    root.fill(&TRANSPARENT).unwrap_or_else(|e| {
-        web_sys::console::error_1(&format!("Failed to fill chart background: {:?}", e).into());
-    });
-
+    x_label: &str,
+    y_label: &str,
+) -> String {
     if values.is_empty() {
-        return;
+        return String::new();
     }
 
-    let y_min = values
-        .iter()
-        .cloned()
-        .fold(f64::INFINITY, |acc, v| acc.min(v));
-    let y_max = values
-        .iter()
-        .cloned()
-        .fold(f64::NEG_INFINITY, |acc, v| acc.max(v));
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (500, 280));
+        let root = backend.into_drawing_area();
 
-    let (y_lower, y_upper) = if (y_max - y_min).abs() < f64::EPSILON {
-        (y_min - 1.0, y_max + 1.0)
-    } else {
-        (y_min, y_max)
-    };
+        let _ = root.fill(&TRANSPARENT);
 
-    let len = values.len();
-    let x_upper = if len > 1 { (len - 1) as f64 } else { 1.0 };
+        let y_min = values.iter().cloned().fold(f64::INFINITY, |acc, v| acc.min(v));
+        let y_max = values.iter().cloned().fold(f64::NEG_INFINITY, |acc, v| acc.max(v));
 
-    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
-            .margin(5)
-            .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
+        let (y_lower, y_upper) = if (y_max - y_min).abs() < f64::EPSILON {
+            (y_min - 1.0, y_max + 1.0)
+        } else {
+            // Add 5% padding to the range for better visualization
+            let padding = (y_max - y_min) * 0.05;
+            (y_min - padding, y_max + padding)
+        };
 
-        chart
-            .configure_mesh()
-            .bold_line_style(RGBColor(40, 60, 90).mix(0.4))
-            .light_line_style(RGBColor(40, 60, 90).mix(0.2))
-            .x_labels(5)
-            .y_labels(5)
-            .draw()?;
+        let len = values.len();
+        let x_upper = if len > 1 { (len - 1) as f64 } else { 1.0 };
 
-        let line_color = accent
-            .map(|(r, g, b)| RGBColor(r, g, b))
-            .unwrap_or_else(|| RGBColor(94, 214, 255));
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(15)
+                .x_label_area_size(45)
+                .y_label_area_size(60)
+                .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
 
-        let points: Vec<(f64, f64)> = values
-            .iter()
-            .enumerate()
-            .map(|(i, &v)| (i as f64, v))
-            .collect();
-        let line_style = ShapeStyle::from(&line_color).stroke_width(2);
-        chart.draw_series(std::iter::once(PathElement::new(points, line_style)))?;
+            chart
+                .configure_mesh()
+                .bold_line_style(&RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(&RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(6)
+                .y_labels(6)
+                .x_label_formatter(&|x| format!("{:.0}", x))
+                .y_label_formatter(&|y| format!("{:.2}", y))
+                .x_desc(x_label)
+                .y_desc(y_label)
+                .label_style(("Inter", 13, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
 
-        Ok(())
-    })();
+            let line_color = accent
+                .map(|(r, g, b)| RGBColor(r, g, b))
+                .unwrap_or_else(|| RGBColor(94, 214, 255));
 
-    if let Err(e) = result {
-        web_sys::console::error_1(&format!("Failed to draw line chart: {:?}", e).into());
+            let points: Vec<(f64, f64)> = values
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (i as f64, v))
+                .collect();
+            
+            let line_style = ShapeStyle::from(&line_color).stroke_width(2);
+            chart.draw_series(std::iter::once(PathElement::new(points, line_style)))?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(&format!("Failed to draw line chart: {:?}", e).into());
+        }
+
+        let _ = root.present();
     }
+
+    svg_string
 }
 
 fn decimate_series(series: &[f64], max_points: usize) -> Vec<f64> {
