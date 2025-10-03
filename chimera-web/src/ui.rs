@@ -252,9 +252,9 @@ pub fn app() -> Html {
                                     html! { <span class="badge badge-live idle">{"Up to date"}</span> }
                                 }
                             }
-                            <button 
+                            <button
                                 class={if has_pending_changes && !*is_running { "primary highlight" } else { "primary" }}
-                                onclick={on_run.clone()} 
+                                onclick={on_run.clone()}
                                 disabled={*is_running}
                             >
                                 { if *is_running { "Running…" } else { "Run Now" } }
