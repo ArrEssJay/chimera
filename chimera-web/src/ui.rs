@@ -5,10 +5,10 @@ use crate::presets::FramePreset;
 use chimera_core::diagnostics::{FrameDescriptor, SymbolDecision};
 use gloo_file::callbacks::{read_as_data_url, FileReader};
 use gloo_file::Blob;
+use plotters::backend::SVGBackend;
 use plotters::prelude::*;
 use plotters::style::colors::TRANSPARENT;
 use plotters::style::RGBAColor;
-use plotters_canvas::CanvasBackend;
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
@@ -325,10 +325,6 @@ pub fn app() -> Html {
             <div class="main-grid">
                 <section class="panel controls-panel">
                     <header class="panel-header">
-                        <div>
-                            <h1>{"Simulation Controls"}</h1>
-                            <p class="muted">{"Configure presets and channel parameters, then click \"Run Now\" to execute the simulation."}</p>
-                        </div>
                         <div class="run-controls">
                             {
                                 if *is_running {
@@ -349,11 +345,16 @@ pub fn app() -> Html {
                         </div>
                     </header>
 
-                    <p class="control-hint">{"Click \"Run Now\" to execute the simulation with the current parameters."}</p>
-
                     <div class="control-grid">
                         <label class="field">
-                            <span>{"Preset"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Selects a preconfigured link budget and frame layout profile."
+                                title="Selects a preconfigured link budget and frame layout profile."
+                                tabindex="0"
+                            >
+                                {"Preset"}
+                            </span>
                             <select value={current_input.preset.key()} onchange={on_preset_change}>
                                 { for FramePreset::all().iter().map(|preset| {
                                     let key = preset.key();
@@ -365,13 +366,27 @@ pub fn app() -> Html {
                         </label>
 
                         <label class="field">
-                            <span>{"Plaintext"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Text payload that will be encoded into frames prior to modulation."
+                                title="Text payload that will be encoded into frames prior to modulation."
+                                tabindex="0"
+                            >
+                                {"Plaintext"}
+                            </span>
                             <textarea value={current_input.plaintext.clone()} oninput={on_plaintext_change} />
                             <p class="muted">{format!("{} chars", plaintext_len)}</p>
                         </label>
 
                         <label class="field">
-                            <span>{"Channel SNR (dB)"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Adjusts the additive white Gaussian noise level applied before decoding."
+                                title="Adjusts the additive white Gaussian noise level applied before decoding."
+                                tabindex="0"
+                            >
+                                {"Channel SNR (dB)"}
+                            </span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
                             <p class="muted small">
                                 {"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
@@ -380,7 +395,14 @@ pub fn app() -> Html {
                         </label>
 
                         <div class="field">
-                            <span>{"External Audio Payload"}</span>
+                            <span
+                                class="info-rollover"
+                                data-tooltip="Upload a small WAV or MP3 file to embed as a base64 payload across frames."
+                                title="Upload a small WAV or MP3 file to embed as a base64 payload across frames."
+                                tabindex="0"
+                            >
+                                {"External Audio Payload"}
+                            </span>
                             <input type="file" accept="audio/*" onchange={on_audio_upload} />
                             <div class="audio-actions">
                                 {
@@ -415,22 +437,50 @@ pub fn app() -> Html {
                             html! {
                                 <div class="metrics-grid">
                                     <div class="metric">
-                                        <span class="label">{"Pre-FEC BER"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Bit-error ratio measured before the LDPC decoder applies forward error correction."
+                                            title="Bit-error ratio measured before the LDPC decoder applies forward error correction."
+                                            tabindex="0"
+                                        >
+                                            {"Pre-FEC BER"}
+                                        </span>
                                         <span class="value">{format_sci(report.pre_fec_ber)}</span>
                                         <span class="detail">{format!("{} symbol errors", report.pre_fec_errors)}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="label">{"Post-FEC BER"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Residual bit-error ratio after LDPC decoding and error correction."
+                                            title="Residual bit-error ratio after LDPC decoding and error correction."
+                                            tabindex="0"
+                                        >
+                                            {"Post-FEC BER"}
+                                        </span>
                                         <span class="value">{format_sci(report.post_fec_ber)}</span>
                                         <span class="detail">{format!("{} residual errors", report.post_fec_errors)}</span>
                                     </div>
                                     <div class="metric">
-                                        <span class="label">{"Recovered Message"}</span>
+                                        <span
+                                            class="label info-rollover"
+                                            data-tooltip="Decoded plaintext recovered from the LDPC decoder and descrambler."
+                                            title="Decoded plaintext recovered from the LDPC decoder and descrambler."
+                                            tabindex="0"
+                                        >
+                                            {"Recovered Message"}
+                                        </span>
                                         <span class="value value-long">{&report.recovered_message}</span>
                                     </div>
                                     if let Some(ref audio) = modulation_audio {
                                         <div class="metric">
-                                            <span class="label">{"Modulation Audio"}</span>
+                                            <span
+                                                class="label info-rollover"
+                                                data-tooltip="Synthetic audio preview generated from the complex baseband waveform."
+                                                title="Synthetic audio preview generated from the complex baseband waveform."
+                                                tabindex="0"
+                                            >
+                                                {"Modulation Audio"}
+                                            </span>
                                             <span class="value">{format!("{} Hz", audio.sample_rate)}</span>
                                             <span class="detail">{format!("Carrier {:.1} Hz", audio.carrier_freq_hz)}</span>
                                         </div>
@@ -488,29 +538,64 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Input"}</h3>
-                                <p>{format!("Payload: {} chars", plaintext_len)}</p>
-                                <p>
-                                    <span title="Energy per symbol to noise power spectral density ratio">{"Es/N₀"}</span>
-                                    {format!(": {:.1} dB", current_input.snr_db)}
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Total characters currently staged for transmission in the payload field."
+                                    title="Total characters currently staged for transmission in the payload field."
+                                    tabindex="0"
+                                >
+                                    {format!("Payload: {} chars", plaintext_len)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Energy per symbol to noise-power spectral density ratio applied ahead of receiver processing."
+                                    title="Energy per symbol to noise-power spectral density ratio applied ahead of receiver processing."
+                                    tabindex="0"
+                                >
+                                    {format!("Es/N₀: {:.1} dB", current_input.snr_db)}
                                 </p>
                             </div>
                         </div>
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Encoder"}</h3>
-                                <p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Total QPSK symbols per frame including sync, payload, and parity symbols."
+                                    title="Total QPSK symbols per frame including sync, payload, and parity symbols."
+                                    tabindex="0"
+                                >
                                     {format!("Total symbols: {}", frame_layout.total_symbols)}
-                                    <span class="info-bubble" title="Each symbol represents 2 bits (QPSK). Total symbols = Payload + ECC.">{"?"}</span>
                                 </p>
-                                <p>{format!("Payload symbols: {}", frame_layout.data_payload_symbols)}</p>
-                                <p>{format!("ECC symbols: {}", frame_layout.ecc_symbols)}</p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Symbols dedicated to framing the user payload before forward-error correction."
+                                    title="Symbols dedicated to framing the user payload before forward-error correction."
+                                    tabindex="0"
+                                >
+                                    {format!("Payload symbols: {}", frame_layout.data_payload_symbols)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Parity symbols generated by the LDPC encoder to enable error correction."
+                                    title="Parity symbols generated by the LDPC encoder to enable error correction."
+                                    tabindex="0"
+                                >
+                                    {format!("ECC symbols: {}", frame_layout.ecc_symbols)}
+                                </p>
                                 <p class="muted small">
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#symbols" target="_blank" rel="noopener noreferrer">{"What are symbols?"}</a>
                                 </p>
                             </div>
                             <div class="node">
                                 <h3>{"Transmitter"}</h3>
-                                <ConstellationChart title="TX Symbols" i_samples={tx_i.clone()} q_samples={tx_q.clone()} variant={ConstellationVariant::Tx} />
+                                <ConstellationChart
+                                    title="TX Symbols"
+                                    i_samples={tx_i.clone()}
+                                    q_samples={tx_q.clone()}
+                                    variant={ConstellationVariant::Tx}
+                                    tooltip={Some(AttrValue::from("Transmitted QPSK symbols prior to channel noise and impairment injection."))}
+                                />
                                 <p class="muted small">
                                     {"Ideal QPSK constellation produced by the framing encoder. "}
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
@@ -522,9 +607,30 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Channel"}</h3>
-                                <p>{format!("Carrier: {:.1} Hz", preset_bundle.protocol.carrier_freq_hz)}</p>
-                                <p>{format!("QPSK rate: {} sym/s", preset_bundle.protocol.qpsk_symbol_rate)}</p>
-                                <p>{format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}</p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Center carrier frequency used for QPSK modulation of this preset."
+                                    title="Center carrier frequency used for QPSK modulation of this preset."
+                                    tabindex="0"
+                                >
+                                    {format!("Carrier: {:.1} Hz", preset_bundle.protocol.carrier_freq_hz)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Symbol rate of the quadrature phase-shift keying waveform in symbols per second."
+                                    title="Symbol rate of the quadrature phase-shift keying waveform in symbols per second."
+                                    tabindex="0"
+                                >
+                                    {format!("QPSK rate: {} sym/s", preset_bundle.protocol.qpsk_symbol_rate)}
+                                </p>
+                                <p
+                                    class="info-rollover"
+                                    data-tooltip="Maximum number of frames allowed in a single transmission burst for this preset."
+                                    title="Maximum number of frames allowed in a single transmission burst for this preset."
+                                    tabindex="0"
+                                >
+                                    {format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}
+                                </p>
                                 <p class="muted small">
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#additive-white-gaussian-noise-awgn" target="_blank" rel="noopener noreferrer">{"Learn about AWGN channel"}</a>
                                 </p>
@@ -533,7 +639,13 @@ pub fn app() -> Html {
                         <div class="node-column">
                             <div class="node">
                                 <h3>{"Receiver"}</h3>
-                                <ConstellationChart title="RX Symbols" i_samples={rx_i.clone()} q_samples={rx_q.clone()} variant={ConstellationVariant::Rx} />
+                                <ConstellationChart
+                                    title="RX Symbols"
+                                    i_samples={rx_i.clone()}
+                                    q_samples={rx_q.clone()}
+                                    variant={ConstellationVariant::Rx}
+                                    tooltip={Some(AttrValue::from("Recovered constellation after receiver timing, carrier, and phase correction."))}
+                                />
                                 <p class="muted small">
                                     {"Recovered constellation after timing/frequency correction. "}
                                     <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#constellation-diagrams" target="_blank" rel="noopener noreferrer">{"Learn about constellations"}</a>
@@ -545,8 +657,22 @@ pub fn app() -> Html {
                                     if let Some(ref report) = report {
                                         html! {
                                             <>
-                                                <p>{format!("Residual errors: {}", report.post_fec_errors)}</p>
-                                                <p>{format!("Post-FEC BER: {}", format_sci(report.post_fec_ber))}</p>
+                                                <p
+                                                    class="info-rollover"
+                                                    data-tooltip="Remaining bit errors that persisted after LDPC decoding across the entire burst."
+                                                    title="Remaining bit errors that persisted after LDPC decoding across the entire burst."
+                                                    tabindex="0"
+                                                >
+                                                    {format!("Residual errors: {}", report.post_fec_errors)}
+                                                </p>
+                                                <p
+                                                    class="info-rollover"
+                                                    data-tooltip="Bit-error ratio after LDPC decoding and frame reassembly."
+                                                    title="Bit-error ratio after LDPC decoding and frame reassembly."
+                                                    tabindex="0"
+                                                >
+                                                    {format!("Post-FEC BER: {}", format_sci(report.post_fec_ber))}
+                                                </p>
                                             </>
                                         }
                                     } else {
@@ -570,6 +696,20 @@ pub fn app() -> Html {
                     </div>
                 </section>
 
+                <section class="panel constellation-comparison-panel">
+                    <header>
+                        <h2>{"Constellation Diagram"}</h2>
+                        <p class="muted">{"Combined view of transmitted (TX) and received (RX) QPSK symbols."}</p>
+                    </header>
+                    <CombinedConstellation
+                        title="TX vs RX Constellation"
+                        tx_i_samples={tx_i.clone()}
+                        tx_q_samples={tx_q.clone()}
+                        rx_i_samples={rx_i.clone()}
+                        rx_q_samples={rx_q.clone()}
+                    />
+                </section>
+
                 <section class="panel frame-panel">
                     <header>
                         <h2>{"Frame Inspector"}</h2>
@@ -584,11 +724,11 @@ pub fn app() -> Html {
                                     <table class="frame-table">
                                         <thead>
                                             <tr>
-                                                <th>{"Index"}</th>
-                                                <th>{"Label"}</th>
-                                                <th>{"Opcode"}</th>
-                                                <th>{"Command Word"}</th>
-                                                <th>{"Payload Preview"}</th>
+                                                <th class="info-rollover" data-tooltip="Ordinal position of this frame within the burst." title="Ordinal position of this frame within the burst." tabindex="0">{"Index"}</th>
+                                                <th class="info-rollover" data-tooltip="Human-readable label describing the frame type." title="Human-readable label describing the frame type." tabindex="0">{"Label"}</th>
+                                                <th class="info-rollover" data-tooltip="Operational opcode embedded in the command word for this frame." title="Operational opcode embedded in the command word for this frame." tabindex="0">{"Opcode"}</th>
+                                                <th class="info-rollover" data-tooltip="Full command word including frame counters and addressing information." title="Full command word including frame counters and addressing information." tabindex="0">{"Command Word"}</th>
+                                                <th class="info-rollover" data-tooltip="Hex preview of the frame payload contents (truncated)." title="Hex preview of the frame payload contents (truncated)." tabindex="0">{"Payload Preview"}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -620,11 +760,36 @@ pub fn app() -> Html {
                         </p>
                     </header>
                     <div class="chart-grid">
-                        <LineChart title="Timing Error" values={timing_error.clone()} accent_rgb={Some((94, 214, 255))} />
-                        <LineChart title="NCO Frequency Offset" values={freq_offset.clone()} accent_rgb={Some((255, 168, 112))} />
-                        <LineChart title="Clean Signal PSD (dBFS)" values={psd_clean.clone()} accent_rgb={Some((126, 240, 180))} />
-                        <LineChart title="Noisy Signal PSD (dBFS)" values={psd_noisy.clone()} accent_rgb={Some((255, 132, 220))} />
-                        <LineChart title="Running BER" values={ber_trend.clone()} accent_rgb={Some((255, 238, 96))} />
+                        <LineChart
+                            title="Timing Error"
+                            values={timing_error.clone()}
+                            accent_rgb={Some((94, 214, 255))}
+                            tooltip={Some(AttrValue::from("Timing-loop error for each processed symbol, expressed in fractional samples."))}
+                        />
+                        <LineChart
+                            title="NCO Frequency Offset"
+                            values={freq_offset.clone()}
+                            accent_rgb={Some((255, 168, 112))}
+                            tooltip={Some(AttrValue::from("Residual carrier offset tracked by the numerically controlled oscillator in Hertz."))}
+                        />
+                        <LineChart
+                            title="Clean Signal PSD (dBFS)"
+                            values={psd_clean.clone()}
+                            accent_rgb={Some((126, 240, 180))}
+                            tooltip={Some(AttrValue::from("Power spectral density of the synthesized clean baseband waveform."))}
+                        />
+                        <LineChart
+                            title="Noisy Signal PSD (dBFS)"
+                            values={psd_noisy.clone()}
+                            accent_rgb={Some((255, 132, 220))}
+                            tooltip={Some(AttrValue::from("Power spectral density of the received waveform after AWGN injection."))}
+                        />
+                        <LineChart
+                            title="Running BER"
+                            values={ber_trend.clone()}
+                            accent_rgb={Some((255, 238, 96))}
+                            tooltip={Some(AttrValue::from("Cumulative bit-error ratio computed as symbols are demodulated."))}
+                        />
                     </div>
                     <div class="log-columns">
                         <div class="log-pane">
@@ -675,13 +840,25 @@ pub struct ConstellationProps {
     pub q_samples: Vec<f64>,
     #[prop_or(ConstellationVariant::Rx)]
     pub variant: ConstellationVariant,
+    #[prop_or_default]
+    pub tooltip: Option<AttrValue>,
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CombinedConstellationProps {
+    pub title: AttrValue,
+    pub tx_i_samples: Vec<f64>,
+    pub tx_q_samples: Vec<f64>,
+    pub rx_i_samples: Vec<f64>,
+    pub rx_q_samples: Vec<f64>,
 }
 
 #[function_component(ConstellationChart)]
 pub fn constellation_chart(props: &ConstellationProps) -> Html {
-    let canvas_ref = use_node_ref();
+    let svg_content = use_state(String::new);
+
     {
-        let canvas_ref = canvas_ref.clone();
+        let svg_content = svg_content.clone();
         let i_samples = props.i_samples.clone();
         let q_samples = props.q_samples.clone();
         let title = props.title.clone();
@@ -696,9 +873,13 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
             ),
             move |(i_samples, q_samples, variant, title)| {
                 if !i_samples.is_empty() && !q_samples.is_empty() {
-                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_constellation(&canvas, i_samples, q_samples, title, variant.clone());
-                    }
+                    let svg = draw_constellation_svg(
+                        i_samples,
+                        q_samples,
+                        title.as_str(),
+                        variant.clone(),
+                    );
+                    svg_content.set(svg);
                 }
                 || ()
             },
@@ -706,13 +887,73 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
     }
 
     let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
+    let panel_class = if props.tooltip.is_some() {
+        "constellation-panel panel has-tooltip"
+    } else {
+        "constellation-panel panel"
+    };
+    let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
     html! {
-        <div class="constellation-panel panel">
+    <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
                 } else {
-                    html! { <canvas ref={canvas_ref} width="220" height="220" /> }
+                    html! {
+                        <div class="svg-chart-container"
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
+                }
+            }
+        </div>
+    }
+}
+
+#[function_component(CombinedConstellation)]
+pub fn combined_constellation(props: &CombinedConstellationProps) -> Html {
+    let svg_content = use_state(String::new);
+
+    {
+        let svg_content = svg_content.clone();
+        let tx_i = props.tx_i_samples.clone();
+        let tx_q = props.tx_q_samples.clone();
+        let rx_i = props.rx_i_samples.clone();
+        let rx_q = props.rx_q_samples.clone();
+        let title = props.title.clone();
+
+        use_effect_with(
+            (
+                tx_i.clone(),
+                tx_q.clone(),
+                rx_i.clone(),
+                rx_q.clone(),
+                title.clone(),
+            ),
+            move |(tx_i, tx_q, rx_i, rx_q, title)| {
+                if (!tx_i.is_empty() && !tx_q.is_empty()) || (!rx_i.is_empty() && !rx_q.is_empty())
+                {
+                    let svg =
+                        draw_combined_constellation_svg(tx_i, tx_q, rx_i, rx_q, title.as_str());
+                    svg_content.set(svg);
+                }
+                || ()
+            },
+        );
+    }
+
+    let is_empty = (props.tx_i_samples.is_empty() || props.tx_q_samples.is_empty())
+        && (props.rx_i_samples.is_empty() || props.rx_q_samples.is_empty());
+    html! {
+        <div class="constellation-panel panel constellation-combined">
+            {
+                if is_empty {
+                    html! { <div class="chart-empty">{"No constellation samples."}</div> }
+                } else {
+                    html! {
+                        <div class="svg-chart-container"
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
                 }
             }
         </div>
@@ -725,24 +966,44 @@ pub struct LineChartProps {
     pub values: Vec<f64>,
     #[prop_or(None)]
     pub accent_rgb: Option<(u8, u8, u8)>,
+    #[prop_or_default]
+    pub tooltip: Option<AttrValue>,
+    #[prop_or_default]
+    pub x_label: AttrValue,
+    #[prop_or_default]
+    pub y_label: AttrValue,
 }
 
 #[function_component(LineChart)]
 fn line_chart(props: &LineChartProps) -> Html {
-    let canvas_ref = use_node_ref();
+    let svg_content = use_state(String::new);
+
     {
-        let canvas_ref = canvas_ref.clone();
+        let svg_content = svg_content.clone();
         let values = props.values.clone();
         let title = props.title.clone();
         let accent = props.accent_rgb;
+        let x_label = props.x_label.clone();
+        let y_label = props.y_label.clone();
 
         use_effect_with(
-            (values.clone(), accent, title.clone()),
-            move |(values, accent, title)| {
+            (
+                values.clone(),
+                accent,
+                title.clone(),
+                x_label.clone(),
+                y_label.clone(),
+            ),
+            move |(values, accent, title, x_label, y_label)| {
                 if !values.is_empty() {
-                    if let Some(canvas) = canvas_ref.cast::<HtmlCanvasElement>() {
-                        draw_line_chart(&canvas, values, title, *accent);
-                    }
+                    let svg = draw_line_chart_svg(
+                        values,
+                        title.as_str(),
+                        *accent,
+                        x_label.as_str(),
+                        y_label.as_str(),
+                    );
+                    svg_content.set(svg);
                 }
                 || ()
             },
@@ -750,162 +1011,301 @@ fn line_chart(props: &LineChartProps) -> Html {
     }
 
     let is_empty = props.values.is_empty();
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
+    let panel_class = if props.tooltip.is_some() {
+        "chart-panel panel has-tooltip"
+    } else {
+        "chart-panel panel"
+    };
+    let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
     html! {
-        <div class="chart-panel panel">
+        <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No samples available."}</div> }
                 } else {
-                    html! { <canvas ref={canvas_ref} width="320" height="220" /> }
+                    html! {
+                        <div class="svg-chart-container"
+                             dangerously_set_inner_html={(*svg_content).clone()} />
+                    }
                 }
             }
         </div>
     }
 }
 
-fn draw_constellation(
-    canvas: &HtmlCanvasElement,
+fn draw_constellation_svg(
     symbols_i: &[f64],
     symbols_q: &[f64],
     title: &str,
     variant: ConstellationVariant,
-) {
-    let backend = if let Some(backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
-        backend
-    } else {
-        web_sys::console::error_1(&"Failed to create canvas backend".into());
-        return;
-    };
-    let root = backend.into_drawing_area();
+) -> String {
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
+        let root = backend.into_drawing_area();
 
-    root.fill(&TRANSPARENT).unwrap_or_else(|e| {
-        web_sys::console::error_1(&format!("Failed to fill chart background: {:?}", e).into());
-    });
+        let _ = root.fill(&TRANSPARENT);
 
-    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
-            .margin(5)
-            .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(15)
+                .x_label_area_size(40)
+                .y_label_area_size(50)
+                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
 
-        chart
-            .configure_mesh()
-            .disable_x_mesh()
-            .disable_y_mesh()
-            .disable_axes()
-            .draw()?;
+            chart
+                .configure_mesh()
+                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(7)
+                .y_labels(7)
+                .x_label_formatter(&|x| format!("{:.1}", x))
+                .y_label_formatter(&|y| format!("{:.1}", y))
+                .x_desc("In-Phase (I)")
+                .y_desc("Quadrature (Q)")
+                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
 
-        let (point_color, halo_color, radius) = match variant {
-            ConstellationVariant::Tx => {
-                (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+            let (point_color, halo_color, radius) = match variant {
+                ConstellationVariant::Tx => {
+                    (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+                }
+                ConstellationVariant::Rx => {
+                    (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 4)
+                }
+            };
+
+            // Draw reference constellation for TX
+            if matches!(variant, ConstellationVariant::Tx) {
+                let reference = [
+                    (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                    (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                ];
+                chart.draw_series(
+                    reference
+                        .iter()
+                        .map(|&(i, q)| Circle::new((i, q), radius + 2, halo_color.filled())),
+                )?;
             }
-            ConstellationVariant::Rx => {
-                (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 3)
-            }
-        };
 
-        if matches!(variant, ConstellationVariant::Tx) {
+            // Draw actual symbols
+            let symbols = symbols_i
+                .iter()
+                .zip(symbols_q.iter())
+                .map(|(&i, &q)| (i, q));
+
+            chart.draw_series(
+                symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())),
+            )?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(
+                &format!("Failed to draw constellation chart: {:?}", e).into(),
+            );
+        }
+
+        let _ = root.present();
+    }
+
+    svg_string
+}
+
+fn draw_combined_constellation_svg(
+    tx_i: &[f64],
+    tx_q: &[f64],
+    rx_i: &[f64],
+    rx_q: &[f64],
+    title: &str,
+) -> String {
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
+        let root = backend.into_drawing_area();
+
+        let _ = root.fill(&TRANSPARENT);
+
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(20)
+                .x_label_area_size(40)
+                .y_label_area_size(50)
+                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+
+            chart
+                .configure_mesh()
+                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(7)
+                .y_labels(7)
+                .x_label_formatter(&|x| format!("{:.1}", x))
+                .y_label_formatter(&|y| format!("{:.1}", y))
+                .x_desc("In-Phase (I)")
+                .y_desc("Quadrature (Q)")
+                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
+
+            // Draw reference QPSK constellation points
             let reference = [
                 (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
                 (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
                 (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
                 (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
             ];
+            let tx_halo_color = RGBAColor(126, 240, 196, 0.3);
             chart.draw_series(
                 reference
                     .iter()
-                    .map(|&(i, q)| Circle::new((i, q), radius + 2, halo_color.filled())),
+                    .map(|&(i, q)| Circle::new((i, q), 8, tx_halo_color.filled())),
             )?;
+
+            // Draw TX symbols (ideal, larger, cyan/green)
+            if !tx_i.is_empty() && !tx_q.is_empty() {
+                let tx_color = RGBColor(126, 240, 196);
+                let tx_symbols = tx_i.iter().zip(tx_q.iter()).map(|(&i, &q)| (i, q));
+                chart.draw_series(
+                    tx_symbols.map(|(i, q)| Circle::new((i, q), 5, tx_color.filled())),
+                )?;
+            }
+
+            // Draw RX symbols (received, smaller, pink/magenta)
+            if !rx_i.is_empty() && !rx_q.is_empty() {
+                let rx_color = RGBColor(255, 168, 250);
+                let rx_symbols = rx_i.iter().zip(rx_q.iter()).map(|(&i, &q)| (i, q));
+                chart.draw_series(
+                    rx_symbols.map(|(i, q)| Circle::new((i, q), 3, rx_color.filled())),
+                )?;
+            }
+
+            // Add legend with text
+            chart.draw_series(vec![
+                EmptyElement::at((0.9, 1.3))
+                    + Circle::new((0, 0), 5, RGBColor(126, 240, 196).filled())
+                    + Text::new(
+                        " TX Symbols",
+                        (10, 0),
+                        ("Inter", 14).into_font().color(&RGBColor(180, 180, 190)),
+                    ),
+            ])?;
+
+            chart.draw_series(vec![
+                EmptyElement::at((0.9, 1.1))
+                    + Circle::new((0, 0), 3, RGBColor(255, 168, 250).filled())
+                    + Text::new(
+                        " RX Symbols",
+                        (10, 0),
+                        ("Inter", 14).into_font().color(&RGBColor(180, 180, 190)),
+                    ),
+            ])?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(
+                &format!("Failed to draw combined constellation: {:?}", e).into(),
+            );
         }
 
-        let symbols = symbols_i
-            .iter()
-            .zip(symbols_q.iter())
-            .map(|(&i, &q)| (i, q));
-
-        chart
-            .draw_series(symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())))?;
-
-        Ok(())
-    })();
-
-    if let Err(e) = result {
-        web_sys::console::error_1(&format!("Failed to draw constellation chart: {:?}", e).into());
+        let _ = root.present();
     }
+
+    svg_string
 }
 
-fn draw_line_chart(
-    canvas: &HtmlCanvasElement,
+fn draw_line_chart_svg(
     values: &[f64],
     title: &str,
     accent: Option<(u8, u8, u8)>,
-) {
-    let backend = if let Some(backend) = CanvasBackend::with_canvas_object(canvas.clone()) {
-        backend
-    } else {
-        web_sys::console::error_1(&"Failed to create canvas backend".into());
-        return;
-    };
-
-    let root = backend.into_drawing_area();
-    root.fill(&TRANSPARENT).unwrap_or_else(|e| {
-        web_sys::console::error_1(&format!("Failed to fill chart background: {:?}", e).into());
-    });
-
+    x_label: &str,
+    y_label: &str,
+) -> String {
     if values.is_empty() {
-        return;
+        return String::new();
     }
 
-    let y_min = values
-        .iter()
-        .cloned()
-        .fold(f64::INFINITY, |acc, v| acc.min(v));
-    let y_max = values
-        .iter()
-        .cloned()
-        .fold(f64::NEG_INFINITY, |acc, v| acc.max(v));
+    let mut svg_string = String::new();
+    {
+        let backend = SVGBackend::with_string(&mut svg_string, (500, 280));
+        let root = backend.into_drawing_area();
 
-    let (y_lower, y_upper) = if (y_max - y_min).abs() < f64::EPSILON {
-        (y_min - 1.0, y_max + 1.0)
-    } else {
-        (y_min, y_max)
-    };
+        let _ = root.fill(&TRANSPARENT);
 
-    let len = values.len();
-    let x_upper = if len > 1 { (len - 1) as f64 } else { 1.0 };
-
-    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let mut chart = ChartBuilder::on(&root)
-            .caption(title, ("Inter", 16, &RGBColor(200, 200, 200)))
-            .margin(5)
-            .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
-
-        chart
-            .configure_mesh()
-            .bold_line_style(RGBColor(40, 60, 90).mix(0.4))
-            .light_line_style(RGBColor(40, 60, 90).mix(0.2))
-            .x_labels(5)
-            .y_labels(5)
-            .draw()?;
-
-        let line_color = accent
-            .map(|(r, g, b)| RGBColor(r, g, b))
-            .unwrap_or_else(|| RGBColor(94, 214, 255));
-
-        let points: Vec<(f64, f64)> = values
+        let y_min = values
             .iter()
-            .enumerate()
-            .map(|(i, &v)| (i as f64, v))
-            .collect();
-        let line_style = ShapeStyle::from(&line_color).stroke_width(2);
-        chart.draw_series(std::iter::once(PathElement::new(points, line_style)))?;
+            .cloned()
+            .fold(f64::INFINITY, |acc, v| acc.min(v));
+        let y_max = values
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, |acc, v| acc.max(v));
 
-        Ok(())
-    })();
+        let (y_lower, y_upper) = if (y_max - y_min).abs() < f64::EPSILON {
+            (y_min - 1.0, y_max + 1.0)
+        } else {
+            // Add 5% padding to the range for better visualization
+            let padding = (y_max - y_min) * 0.05;
+            (y_min - padding, y_max + padding)
+        };
 
-    if let Err(e) = result {
-        web_sys::console::error_1(&format!("Failed to draw line chart: {:?}", e).into());
+        let len = values.len();
+        let x_upper = if len > 1 { (len - 1) as f64 } else { 1.0 };
+
+        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+            let mut chart = ChartBuilder::on(&root)
+                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .margin(15)
+                .x_label_area_size(45)
+                .y_label_area_size(60)
+                .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
+
+            chart
+                .configure_mesh()
+                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
+                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .x_labels(6)
+                .y_labels(6)
+                .x_label_formatter(&|x| format!("{:.0}", x))
+                .y_label_formatter(&|y| format!("{:.2}", y))
+                .x_desc(x_label)
+                .y_desc(y_label)
+                .label_style(("Inter", 13, &RGBColor(180, 180, 190)))
+                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .draw()?;
+
+            let line_color = accent
+                .map(|(r, g, b)| RGBColor(r, g, b))
+                .unwrap_or_else(|| RGBColor(94, 214, 255));
+
+            let points: Vec<(f64, f64)> = values
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| (i as f64, v))
+                .collect();
+
+            let line_style = ShapeStyle::from(&line_color).stroke_width(2);
+            chart.draw_series(std::iter::once(PathElement::new(points, line_style)))?;
+
+            Ok(())
+        })();
+
+        if let Err(e) = result {
+            web_sys::console::error_1(&format!("Failed to draw line chart: {:?}", e).into());
+        }
+
+        let _ = root.present();
     }
+
+    svg_string
 }
 
 fn decimate_series(series: &[f64], max_points: usize) -> Vec<f64> {
