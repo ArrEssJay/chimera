@@ -84,6 +84,7 @@ This repository is a Cargo workspace containing several crates:
 ## 📚 Documentation
 
 -   📖 [Chimera Technical Overview](docs/chimera_technical_overview.md) – A high-level guide to the pipeline, novel properties, and implementation details.
+-   📡 [Signal Processing Concepts Guide](docs/signal_processing_concepts.md) – Comprehensive explanations of symbols, QPSK, constellation diagrams, SNR, Es/N0, BER, and FEC with visual aids.
 -   🌐 [Live Web Dashboard](https://impermanent.io/) – Interactive WASM-based visualization
 
 ## 🔬 Core Concepts
@@ -160,6 +161,22 @@ The protocol is analogous to Submarine ELF (Extremely Low Frequency) communicati
 
 Contributions are welcome! Please feel free to open an issue or submit a pull request.
 
-## 📄 License
+### Development Workflow
+
+This project uses a GitOps workflow with automated testing and deployment:
+
+1. Create a feature branch from `main`
+2. Make your changes and ensure they pass local tests
+3. Push your changes - CI will run automatically
+4. Create a pull request to `main`
+5. All status checks must pass before merging:
+   - Unit and integration tests
+   - Code formatting (`cargo fmt`)
+   - Linting (`cargo clippy`)
+   - Web dashboard build and verification
+
+See [Branch Protection Documentation](docs/branch-protection.md) for detailed information about our CI/CD pipeline and quality gates.
+
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.

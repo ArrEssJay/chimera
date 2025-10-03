@@ -3,8 +3,10 @@ use chimera_web::{run_pipeline, FramePreset, SimulationInput};
 
 #[test]
 fn pipeline_runs_with_defaults() {
-    let mut input = SimulationInput::default();
-    input.plaintext = "Test message".into();
+    let input = SimulationInput {
+        plaintext: "Test message".into(),
+        ..Default::default()
+    };
     let output = run_pipeline(input);
 
     assert_eq!(output.report.post_fec_errors, 0);

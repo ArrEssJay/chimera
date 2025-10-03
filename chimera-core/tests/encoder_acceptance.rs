@@ -62,7 +62,7 @@ fn given_large_payload_when_build_frames_then_metadata_tracks_frame_progression(
 
     let frame_stream = build_frame_stream(&payload_bits, &protocol, &suite.matrices, &mut logger);
 
-    let expected_frames = (payload_bits.len() + message_bits - 1) / message_bits;
+    let expected_frames = payload_bits.len().div_ceil(message_bits);
     assert_eq!(frame_stream.frame_count, expected_frames);
     assert_eq!(
         frame_stream.frames_bitstream.len(),
@@ -100,11 +100,13 @@ fn given_large_payload_when_build_frames_then_metadata_tracks_frame_progression(
 fn given_high_snr_when_pipeline_runs_then_plaintext_roundtrips() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
-    sim.sample_rate = protocol.qpsk_symbol_rate;
-    sim.snr_db = 30.0;
-    sim.plaintext_source = "Hello Chimera".into();
-    sim.rng_seed = Some(1337);
+    let sim = SimulationConfig {
+        sample_rate: protocol.qpsk_symbol_rate,
+        snr_db: 30.0,
+        plaintext_source: "Hello Chimera".into(),
+        rng_seed: Some(1337),
+        ..Default::default()
+    };
 
     let ldpc_cfg = LDPCConfig::default();
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
