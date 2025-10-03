@@ -170,20 +170,35 @@ pub fn generate_modulated_signal(
     let signal_power: f64 =
         qpsk_symbols.iter().map(|c| c.norm_sqr()).sum::<f64>() / qpsk_symbols.len().max(1) as f64;
 
+    // Apply link loss (signal attenuation) - reduces signal power
+    // Link loss represents path loss, free-space loss, antenna gains, etc.
+    let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
+    let attenuated_signal_power = signal_power / link_loss_linear;
+    
+    // Apply link loss to clean signal
+    let attenuation_factor = if link_loss_linear > 0.0 {
+        1.0 / link_loss_linear.sqrt()
+    } else {
+        1.0
+    };
+    let attenuated_iq: Vec<f64> = clean_iq.iter().map(|&x| x * attenuation_factor).collect();
+
+    // Calculate noise based on SNR (Es/N0) and attenuated signal power
     // Note: sim.snr_db represents Es/N0 (symbol energy to noise density ratio), not Eb/N0.
     // For QPSK with 2 bits/symbol: Eb/N0 = Es/N0 - 3.01 dB.
     // Processing gain from oversampling: ~34.77 dB with sample_rate=48kHz, symbol_rate=16.
     let snr_linear = 10f64.powf(sim.snr_db / 10.0);
     let noise_variance = if snr_linear > 0.0 {
-        signal_power / snr_linear
+        attenuated_signal_power / snr_linear
     } else {
         0.0
     };
     let noise_std = (noise_variance / 2.0).sqrt();
 
-    let mut noisy_iq = Vec::with_capacity(clean_iq.len());
+    // Add AWGN to attenuated signal
+    let mut noisy_iq = Vec::with_capacity(attenuated_iq.len());
     let normal = StandardNormal;
-    for chunk in clean_iq.chunks_exact(2) {
+    for chunk in attenuated_iq.chunks_exact(2) {
         let noise_i: f64 = rng.sample::<f64, _>(normal) * noise_std;
         let noise_q: f64 = rng.sample::<f64, _>(normal) * noise_std;
         noisy_iq.push(chunk[0] + noise_i);
@@ -195,8 +210,14 @@ pub fn generate_modulated_signal(
         qpsk_symbols.len(),
         frame_stream.frame_count
     ));
+    if sim.link_loss_db != 0.0 {
+        logger.log(format!(
+            "Applied link loss: {:.2} dB (signal attenuation).",
+            sim.link_loss_db
+        ));
+    }
     logger.log(format!(
-        "Applied AWGN channel with SNR = {:.2} dB.",
+        "Applied AWGN with SNR = {:.2} dB (Es/N₀).",
         sim.snr_db
     ));
 
