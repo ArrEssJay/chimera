@@ -27,9 +27,24 @@ test.describe('Chart Rendering and Axis Labels', () => {
     expect(txSvgContent).toContain('In-Phase (I)');
     expect(txSvgContent).toContain('Quadrature (Q)');
     
+    // CRITICAL: Verify TX constellation actually contains data points (circles)
+    expect(txSvgContent).toContain('<circle');
+    const txCircleCount = (txSvgContent.match(/<circle/g) || []).length;
+    expect(txCircleCount).toBeGreaterThan(0);
+    console.log(`TX constellation has ${txCircleCount} circles`);
+    
     const rxSvgContent = await rxConstellation.innerHTML();
     expect(rxSvgContent).toContain('In-Phase (I)');
     expect(rxSvgContent).toContain('Quadrature (Q)');
+    
+    // CRITICAL: Verify RX constellation actually contains data points (circles)
+    expect(rxSvgContent).toContain('<circle');
+    const rxCircleCount = (rxSvgContent.match(/<circle/g) || []).length;
+    expect(rxCircleCount).toBeGreaterThan(0);
+    console.log(`RX constellation has ${rxCircleCount} circles`);
+    
+    // Take a screenshot to visually verify
+    await page.screenshot({ path: 'test-results/constellation-charts.png', fullPage: true });
   });
 
   test('should render combined constellation chart with legend', async ({ page }) => {
@@ -48,6 +63,15 @@ test.describe('Chart Rendering and Axis Labels', () => {
     expect(svgContent).toContain('RX Symbols');
     expect(svgContent).toContain('In-Phase (I)');
     expect(svgContent).toContain('Quadrature (Q)');
+    
+    // CRITICAL: Verify combined constellation actually contains data points (circles)
+    expect(svgContent).toContain('<circle');
+    const circleCount = (svgContent.match(/<circle/g) || []).length;
+    expect(circleCount).toBeGreaterThan(0);
+    console.log(`Combined constellation has ${circleCount} circles`);
+    
+    // Take a screenshot to visually verify
+    await page.screenshot({ path: 'test-results/combined-constellation.png', fullPage: true });
   });
 
   test('should render diagnostics charts with proper axis labels', async ({ page }) => {

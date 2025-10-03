@@ -858,7 +858,7 @@ fn render_log(entries: &[String]) -> Html {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ConstellationVariant {
     Tx,
     Rx,
@@ -1071,6 +1071,31 @@ fn draw_constellation_svg(
     title: &str,
     variant: ConstellationVariant,
 ) -> String {
+    // Count finite values
+    let finite_count = symbols_i
+        .iter()
+        .zip(symbols_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    
+    web_sys::console::info_1(
+        &format!(
+            "Drawing constellation '{}' ({:?}) with {} points ({} finite)",
+            title,
+            variant,
+            symbols_i.len(),
+            finite_count
+        )
+        .into(),
+    );
+    
+    if finite_count == 0 {
+        web_sys::console::warn_1(
+            &format!("Skipping constellation '{}' due to lack of finite samples", title).into(),
+        );
+        return String::new();
+    }
+    
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
@@ -1148,6 +1173,16 @@ fn draw_constellation_svg(
         let _ = root.present();
     }
 
+    web_sys::console::info_1(
+        &format!(
+            "Generated SVG for '{}' with {} bytes, contains '<circle': {}",
+            title,
+            svg_string.len(),
+            svg_string.contains("<circle")
+        )
+        .into(),
+    );
+    
     svg_string
 }
 
@@ -1158,6 +1193,37 @@ fn draw_combined_constellation_svg(
     rx_q: &[f64],
     title: &str,
 ) -> String {
+    // Count finite values
+    let tx_finite = tx_i
+        .iter()
+        .zip(tx_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    let rx_finite = rx_i
+        .iter()
+        .zip(rx_q.iter())
+        .filter(|(i, q)| i.is_finite() && q.is_finite())
+        .count();
+    
+    web_sys::console::info_1(
+        &format!(
+            "Drawing combined constellation '{}' with {} TX points ({} finite) and {} RX points ({} finite)",
+            title,
+            tx_i.len(),
+            tx_finite,
+            rx_i.len(),
+            rx_finite
+        )
+        .into(),
+    );
+    
+    if tx_finite == 0 && rx_finite == 0 {
+        web_sys::console::warn_1(
+            &format!("Skipping combined constellation '{}' due to lack of finite samples", title).into(),
+        );
+        return String::new();
+    }
+    
     let mut svg_string = String::new();
     {
         let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
@@ -1252,6 +1318,16 @@ fn draw_combined_constellation_svg(
         let _ = root.present();
     }
 
+    web_sys::console::info_1(
+        &format!(
+            "Generated combined SVG for '{}' with {} bytes, contains '<circle': {}",
+            title,
+            svg_string.len(),
+            svg_string.contains("<circle")
+        )
+        .into(),
+    );
+    
     svg_string
 }
 
@@ -1601,4 +1677,114 @@ pub fn mount_app() {
         .unwrap();
 
     yew::Renderer::<App>::with_root(root.into()).render();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn test_constellation_svg_generation() {
+        // Test data: QPSK constellation points
+        let symbols_i = vec![
+            0.707, 0.707, -0.707, -0.707,
+            0.707, 0.707, -0.707, -0.707,
+        ];
+        let symbols_q = vec![
+            0.707, -0.707, 0.707, -0.707,
+            0.707, -0.707, 0.707, -0.707,
+        ];
+
+        let svg = draw_constellation_svg(
+            &symbols_i,
+            &symbols_q,
+            "Test Chart",
+            ConstellationVariant::Tx,
+        );
+
+        // Verify SVG is not empty
+        assert!(!svg.is_empty(), "SVG should not be empty");
+        
+        // Verify SVG has proper structure
+        assert!(svg.contains("<svg"), "SVG should contain opening tag");
+        assert!(svg.contains("</svg>"), "SVG should contain closing tag");
+        
+        // Verify it contains data points (circles)
+        assert!(svg.contains("<circle"), "SVG should contain circle elements");
+        
+        // Count circles - should have data points plus reference points
+        let circle_count = svg.matches("<circle").count();
+        assert!(circle_count > 0, "Should have at least one circle");
+        
+        web_sys::console::log_1(&format!("Generated SVG with {} circles, {} bytes", circle_count, svg.len()).into());
+    }
+
+    #[wasm_bindgen_test]
+    fn test_combined_constellation_svg_generation() {
+        // Test data
+        let tx_i = vec![0.707, 0.707, -0.707, -0.707];
+        let tx_q = vec![0.707, -0.707, 0.707, -0.707];
+        let rx_i = vec![0.71, 0.69, -0.71, -0.69];
+        let rx_q = vec![0.71, -0.69, 0.71, -0.69];
+
+        let svg = draw_combined_constellation_svg(
+            &tx_i,
+            &tx_q,
+            &rx_i,
+            &rx_q,
+            "Combined Test",
+        );
+
+        // Verify SVG structure
+        assert!(!svg.is_empty(), "SVG should not be empty");
+        assert!(svg.contains("<svg"), "SVG should contain opening tag");
+        assert!(svg.contains("</svg>"), "SVG should contain closing tag");
+        assert!(svg.contains("<circle"), "SVG should contain circle elements");
+        
+        // Verify legend text
+        assert!(svg.contains("TX Symbols"), "Should have TX legend");
+        assert!(svg.contains("RX Symbols"), "Should have RX legend");
+        
+        let circle_count = svg.matches("<circle").count();
+        web_sys::console::log_1(&format!("Generated combined SVG with {} circles", circle_count).into());
+    }
+
+    #[wasm_bindgen_test]
+    fn test_empty_constellation_returns_empty_svg() {
+        // Test with no data
+        let empty_i: Vec<f64> = vec![];
+        let empty_q: Vec<f64> = vec![];
+
+        let svg = draw_constellation_svg(
+            &empty_i,
+            &empty_q,
+            "Empty Test",
+            ConstellationVariant::Rx,
+        );
+
+        // Should return empty string when no data
+        assert!(svg.is_empty(), "SVG should be empty when no data points");
+    }
+
+    #[wasm_bindgen_test]
+    fn test_non_finite_values_are_handled() {
+        // Test with NaN and Inf values
+        let symbols_i = vec![f64::NAN, f64::INFINITY, 0.707, -0.707];
+        let symbols_q = vec![0.707, f64::NEG_INFINITY, f64::NAN, -0.707];
+
+        let svg = draw_constellation_svg(
+            &symbols_i,
+            &symbols_q,
+            "Non-finite Test",
+            ConstellationVariant::Tx,
+        );
+
+        // Should still generate SVG if there are some finite values
+        // We have 2 finite pairs out of 4
+        assert!(!svg.is_empty(), "SVG should be generated with partial finite data");
+        assert!(svg.contains("<circle"), "Should contain circles for finite points");
+    }
 }
