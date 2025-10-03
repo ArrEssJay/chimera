@@ -112,7 +112,7 @@ fn test_constellation_points_within_ui_axis_range() {
     // Count points outside visible range
     let mut tx_outside = 0;
     for (&i, &q) in tx_i.iter().zip(tx_q.iter()) {
-        if i < -1.5 || i > 1.5 || q < -1.5 || q > 1.5 {
+        if !(-1.5..=1.5).contains(&i) || !(-1.5..=1.5).contains(&q) {
             tx_outside += 1;
         }
     }
@@ -130,7 +130,7 @@ fn test_constellation_points_within_ui_axis_range() {
     
     let mut rx_outside = 0;
     for (&i, &q) in rx_i.iter().zip(rx_q.iter()) {
-        if i < -1.5 || i > 1.5 || q < -1.5 || q > 1.5 {
+        if !(-1.5..=1.5).contains(&i) || !(-1.5..=1.5).contains(&q) {
             rx_outside += 1;
         }
     }
