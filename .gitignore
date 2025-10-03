@@ -4,4 +4,13 @@ debug
 target
 
 
-chimera-web/dist/** 
+chimera-web/dist/**
+
+# Node.js and npm
+chimera-web/node_modules/
+chimera-web/package-lock.json
+
+# Playwright
+chimera-web/playwright-report/
+chimera-web/test-results/
+chimera-web/.playwright/ 

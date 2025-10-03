@@ -785,30 +785,40 @@ pub fn app() -> Html {
                             title="Timing Error"
                             values={timing_error.clone()}
                             accent_rgb={Some((94, 214, 255))}
+                            x_label="Sample Index"
+                            y_label="Error (samples)"
                             tooltip={Some(AttrValue::from("Timing-loop error for each processed symbol, expressed in fractional samples."))}
                         />
                         <LineChart
                             title="NCO Frequency Offset"
                             values={freq_offset.clone()}
                             accent_rgb={Some((255, 168, 112))}
+                            x_label="Sample Index"
+                            y_label="Offset (Hz)"
                             tooltip={Some(AttrValue::from("Residual carrier offset tracked by the numerically controlled oscillator in Hertz."))}
                         />
                         <LineChart
-                            title="Clean Signal PSD (dBFS)"
+                            title="Clean Signal PSD"
                             values={psd_clean.clone()}
                             accent_rgb={Some((126, 240, 180))}
+                            x_label="Frequency Bin"
+                            y_label="Power (dBFS)"
                             tooltip={Some(AttrValue::from("Power spectral density of the synthesized clean baseband waveform."))}
                         />
                         <LineChart
-                            title="Noisy Signal PSD (dBFS)"
+                            title="Noisy Signal PSD"
                             values={psd_noisy.clone()}
                             accent_rgb={Some((255, 132, 220))}
+                            x_label="Frequency Bin"
+                            y_label="Power (dBFS)"
                             tooltip={Some(AttrValue::from("Power spectral density of the received waveform after AWGN injection."))}
                         />
                         <LineChart
                             title="Running BER"
                             values={ber_trend.clone()}
                             accent_rgb={Some((255, 238, 96))}
+                            x_label="Symbol Index"
+                            y_label="BER"
                             tooltip={Some(AttrValue::from("Cumulative bit-error ratio computed as symbols are demodulated."))}
                         />
                     </div>
