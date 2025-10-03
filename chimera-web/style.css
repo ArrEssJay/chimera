@@ -291,10 +291,10 @@ input[type="range"]::-moz-range-thumb {
 .main-grid {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 40px 60px;
+  padding: 12px 40px 50px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .panel {
@@ -302,7 +302,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 16px;
   border: 1px solid var(--panel-border);
   box-shadow: 0 20px 55px lch(0% 0 0 / 0.25);
-  padding: 20px;
+  padding: 18px;
   position: relative;
   overflow: hidden;
 }
@@ -322,7 +322,7 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .run-controls {
   display: flex;
@@ -367,10 +367,10 @@ input[type="range"]::-moz-range-thumb {
 .control-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 .control-hint {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   font-size: 0.85rem;
   color: var(--text-soft);
 }
@@ -378,7 +378,7 @@ input[type="range"]::-moz-range-thumb {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field span {
@@ -392,7 +392,7 @@ input[type="range"]::-moz-range-thumb {
 .field-inline {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
+  gap: 20px;
   grid-column: span 2;
 }
 
@@ -420,15 +420,15 @@ input[type="range"]::-moz-range-thumb {
 .telemetry-panel .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin-top: 16px;
+  gap: 16px;
+  margin-top: 12px;
 }
 
 .metric {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 16px;
+  padding: 14px;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
   background: linear-gradient(160deg, lch(72% 48 260 / 0.12) 0%, lch(32% 8 250 / 0.08) 100%);
@@ -466,15 +466,15 @@ input[type="range"]::-moz-range-thumb {
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 .chart-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 280px;
   background: radial-gradient(circle at top, lch(74% 42 260 / 0.12), transparent 65%), var(--panel);
 }
 
@@ -482,8 +482,12 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 400px;
   background: radial-gradient(circle at center, lch(74% 42 260 / 0.08), transparent 65%), var(--panel);
+}
+
+.constellation-panel.constellation-combined {
+  min-height: 450px;
 }
 
 .chart-panel canvas,
@@ -495,6 +499,21 @@ input[type="range"]::-moz-range-thumb {
   background: var(--bg);
 }
 
+.svg-chart-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.svg-chart-container svg {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
 .chart-empty {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -503,14 +522,14 @@ input[type="range"]::-moz-range-thumb {
 .log-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .log-pane {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .log-pane h3 {
@@ -519,8 +538,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .log-viewer {
-  max-height: 180px;
-  padding: 12px;
+  max-height: 150px;
+  padding: 10px;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
   background: lch(12% 6 250 / 0.65);
@@ -574,7 +593,7 @@ input[type="range"]::-moz-range-thumb {
 .node-graph {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
+  gap: 16px;
   align-items: start;
   position: relative;
 }
@@ -582,7 +601,7 @@ input[type="range"]::-moz-range-thumb {
 .node-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   position: relative;
   z-index: 1;
 }
@@ -608,7 +627,7 @@ input[type="range"]::-moz-range-thumb {
 .node {
   background-color: var(--panel);
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--border-color);
   box-shadow: 0 10px 30px lch(0% 0 0 / 0.2);
 }
