@@ -1,0 +1,21 @@
+{
+  "name": "chimera-web",
+  "version": "1.0.0",
+  "description": "WebAssembly-based visualization for the Chimera modulation/demodulation pipeline. Built with [Yew](https://yew.rs/) and integrates the shared `chimera-core` crate.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.55.1"
+  }
+}
