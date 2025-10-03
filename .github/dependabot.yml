@@ -1,0 +1,46 @@
+version: 2
+updates:
+  # npm dependencies for chimera-web
+  - package-ecosystem: "npm"
+    directory: "/chimera-web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automated"
+      - "javascript"
+    commit-message:
+      prefix: "chore(deps)"
+  
+  # Cargo dependencies for Rust workspace
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automated"
+      - "rust"
+    commit-message:
+      prefix: "chore(deps)"
+  
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "automated"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
