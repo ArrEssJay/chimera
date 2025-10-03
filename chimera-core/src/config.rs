@@ -116,6 +116,7 @@ pub struct SimulationConfig {
     pub sample_rate: usize,
     pub bit_depth: BitDepth,
     pub snr_db: f64,
+    pub link_loss_db: f64,
     pub plaintext_source: String,
     pub rng_seed: Option<u64>,
 }
@@ -126,6 +127,7 @@ impl Default for SimulationConfig {
             sample_rate: 48_000,
             bit_depth: BitDepth::default(),
             snr_db: -3.0,
+            link_loss_db: 0.0,
             plaintext_source: "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into(),
             rng_seed: None,
         }

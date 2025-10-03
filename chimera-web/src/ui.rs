@@ -17,9 +17,7 @@ use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{
-    AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement,
-};
+use web_sys::{AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement};
 use yew::events::InputEvent;
 use yew::prelude::*;
 use yew::TargetCast;
@@ -62,6 +60,7 @@ pub fn app() -> Html {
                     next.preset = preset;
                     next.plaintext = defaults.plaintext_source;
                     next.snr_db = defaults.snr_db;
+                    next.link_loss_db = defaults.link_loss_db;
                     simulation.set(next);
                     external_audio_name.set(None);
                 }
@@ -87,6 +86,19 @@ pub fn app() -> Html {
                 if let Ok(value) = input.value().parse::<f64>() {
                     let mut next = (*simulation).clone();
                     next.snr_db = value;
+                    simulation.set(next);
+                }
+            }
+        })
+    };
+
+    let on_link_loss_change = {
+        let simulation = simulation.clone();
+        Callback::from(move |event: InputEvent| {
+            if let Some(input) = event.target_dyn_into::<web_sys::HtmlInputElement>() {
+                if let Ok(value) = input.value().parse::<f64>() {
+                    let mut next = (*simulation).clone();
+                    next.link_loss_db = value;
                     simulation.set(next);
                 }
             }
@@ -162,7 +174,7 @@ pub fn app() -> Html {
             }
             // Stop any currently playing audio before running new simulation
             stop_audio(&audio_source, &audio_playback);
-            
+
             running_handle.set(true);
             let input = (*simulation_handle).clone();
             let output_state = output_handle.clone();
@@ -389,8 +401,17 @@ pub fn app() -> Html {
                             </span>
                             <input type="number" min="-30" max="0" step="0.5" value={format!("{:.2}", current_input.snr_db)} oninput={on_snr_change} />
                             <p class="muted small">
-                                {"Pre-processing channel SNR (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
+                                {"AWGN noise level (Es/N₀). System achieves ~35 dB processing gain through averaging. LDPC fails below -27 dB channel SNR. "}
                                 <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#energy-ratios-esn0-and-ebn0" target="_blank" rel="noopener noreferrer">{"Learn about Es/N₀"}</a>
+                            </p>
+                        </label>
+
+                        <label class="field">
+                            <span title="Path loss and signal attenuation - deterministic reduction in signal power from transmission">{"Link Loss (dB)"}</span>
+                            <input type="number" min="0" max="150" step="1" value={format!("{:.1}", current_input.link_loss_db)} oninput={on_link_loss_change} />
+                            <p class="muted small">
+                                {"Signal attenuation from path loss, antenna gains, etc. Typical radio links have 100+ dB loss. "}
+                                <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#link-loss-vs-noise" target="_blank" rel="noopener noreferrer">{"Learn about link loss"}</a>
                             </p>
                         </label>
 
@@ -632,7 +653,7 @@ pub fn app() -> Html {
                                     {format!("Frame ceiling: {}", preset_bundle.protocol.max_frames)}
                                 </p>
                                 <p class="muted small">
-                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#additive-white-gaussian-noise-awgn" target="_blank" rel="noopener noreferrer">{"Learn about AWGN channel"}</a>
+                                    <a href="https://github.com/ArrEssJay/chimera/blob/main/docs/signal_processing_concepts.md#link-loss-vs-noise" target="_blank" rel="noopener noreferrer">{"Learn about link loss & noise"}</a>
                                 </p>
                             </div>
                         </div>
@@ -1059,7 +1080,7 @@ fn draw_constellation_svg(
 
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
                 .margin(15)
                 .x_label_area_size(40)
                 .y_label_area_size(50)
@@ -1067,24 +1088,26 @@ fn draw_constellation_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(7)
                 .y_labels(7)
                 .x_label_formatter(&|x| format!("{:.1}", x))
                 .y_label_formatter(&|y| format!("{:.1}", y))
                 .x_desc("In-Phase (I)")
                 .y_desc("Quadrature (Q)")
-                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
-                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .label_style(("Share Tech Mono", 12, &RGBColor(150, 220, 150)))
+                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
                 .draw()?;
 
             let (point_color, halo_color, radius) = match variant {
                 ConstellationVariant::Tx => {
-                    (RGBColor(126, 240, 196), RGBAColor(126, 240, 196, 0.25), 6)
+                    // Tactical green for TX
+                    (RGBColor(120, 220, 150), RGBAColor(120, 220, 150, 0.3), 6)
                 }
                 ConstellationVariant::Rx => {
-                    (RGBColor(255, 168, 250), RGBAColor(255, 168, 250, 0.25), 4)
+                    // Tactical cyan for RX
+                    (RGBColor(120, 200, 240), RGBAColor(120, 200, 240, 0.3), 4)
                 }
             };
 
@@ -1272,7 +1295,7 @@ fn draw_line_chart_svg(
 
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
+                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
                 .margin(15)
                 .x_label_area_size(45)
                 .y_label_area_size(60)
@@ -1280,21 +1303,21 @@ fn draw_line_chart_svg(
 
             chart
                 .configure_mesh()
-                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
+                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
+                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
                 .x_labels(6)
                 .y_labels(6)
                 .x_label_formatter(&|x| format!("{:.0}", x))
                 .y_label_formatter(&|y| format!("{:.2}", y))
                 .x_desc(x_label)
                 .y_desc(y_label)
-                .label_style(("Inter", 13, &RGBColor(180, 180, 190)))
-                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
+                .label_style(("Share Tech Mono", 13, &RGBColor(150, 220, 150)))
+                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
                 .draw()?;
 
             let line_color = accent
                 .map(|(r, g, b)| RGBColor(r, g, b))
-                .unwrap_or_else(|| RGBColor(94, 214, 255));
+                .unwrap_or_else(|| RGBColor(120, 220, 150));
 
             let points: Vec<(f64, f64)> = values
                 .iter()
@@ -1468,18 +1491,18 @@ fn play_audio(
 
     let ctx = match (*context_ref.borrow()).as_ref() {
         Some(existing) => existing.clone(),
-        None => {
-            match AudioContext::new() {
-                Ok(new_ctx) => {
-                    *context_ref.borrow_mut() = Some(new_ctx.clone());
-                    new_ctx
-                }
-                Err(e) => {
-                    web_sys::console::error_1(&format!("Failed to create AudioContext: {:?}", e).into());
-                    return;
-                }
+        None => match AudioContext::new() {
+            Ok(new_ctx) => {
+                *context_ref.borrow_mut() = Some(new_ctx.clone());
+                new_ctx
             }
-        }
+            Err(e) => {
+                web_sys::console::error_1(
+                    &format!("Failed to create AudioContext: {:?}", e).into(),
+                );
+                return;
+            }
+        },
     };
 
     // Resume context if suspended
@@ -1527,7 +1550,9 @@ fn play_audio(
     }
 
     if let Err(e) = gain_node.connect_with_audio_node(&ctx.destination()) {
-        web_sys::console::error_1(&format!("Failed to connect gain to destination: {:?}", e).into());
+        web_sys::console::error_1(
+            &format!("Failed to connect gain to destination: {:?}", e).into(),
+        );
         return;
     }
 
@@ -1553,7 +1578,8 @@ fn stop_audio(
     state: &UseStateHandle<AudioPlaybackState>,
 ) {
     if let Some(source) = source_node_ref.borrow_mut().take() {
-        let _ = source.stop_with_when(0.0);
+        #[allow(deprecated)]
+        let _ = source.stop();
     }
     state.set(AudioPlaybackState::Stopped);
 }

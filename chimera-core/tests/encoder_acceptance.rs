@@ -151,10 +151,9 @@ fn run_simulation_emits_audio_waveforms() {
 fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
     let sim = SimulationConfig {
         sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
-        snr_db: -5.0,                            // Without processing gain, LDPC fails at this Es/N0
+        snr_db: -5.0,                           // Without processing gain, LDPC fails at this Es/N0
         plaintext_source: "Hello Chimera".into(),
         rng_seed: Some(1337),
         ..Default::default()
@@ -181,7 +180,7 @@ fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
 fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig{
+    let sim = SimulationConfig {
         sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
         snr_db: -1.0, // Without processing gain, marginal Es/N0 but LDPC succeeds
         plaintext_source: "Hello Chimera".into(),
@@ -199,5 +198,74 @@ fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
     assert!(
         demodulation.report.pre_fec_errors > 0,
         "Expected pre-FEC errors at -1 dB SNR"
+    );
+}
+
+#[test]
+fn given_link_loss_when_pipeline_runs_then_signal_is_attenuated() {
+    let protocol = ProtocolConfig::default();
+
+    let mut sim = SimulationConfig::default();
+    sim.sample_rate = protocol.qpsk_symbol_rate;
+    sim.snr_db = 30.0; // High SNR, minimal noise
+    sim.link_loss_db = 20.0; // 20 dB link loss (100x power reduction)
+    sim.plaintext_source = "Test".into();
+    sim.rng_seed = Some(1337);
+
+    let ldpc_cfg = LDPCConfig::default();
+    let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
+
+    let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
+    
+    // Verify that the noisy signal has lower power than clean signal due to link loss
+    let clean_power: f64 = encoding.clean_signal.iter()
+        .map(|&x| x * x)
+        .sum::<f64>() / encoding.clean_signal.len() as f64;
+    
+    let noisy_power: f64 = encoding.noisy_signal.iter()
+        .map(|&x| x * x)
+        .sum::<f64>() / encoding.noisy_signal.len() as f64;
+    
+    // With 20 dB link loss, the power should be reduced by 100x
+    let expected_attenuation = 10f64.powf(20.0 / 10.0); // 100x
+    let measured_attenuation = clean_power / noisy_power;
+    
+    // Allow some tolerance for noise addition
+    assert!(
+        measured_attenuation > expected_attenuation * 0.8,
+        "Expected attenuation ~{}, got {}",
+        expected_attenuation,
+        measured_attenuation
+    );
+}
+
+#[test]
+fn given_link_loss_and_noise_when_pipeline_runs_then_both_applied() {
+    let protocol = ProtocolConfig::default();
+
+    let mut sim = SimulationConfig::default();
+    sim.sample_rate = protocol.qpsk_symbol_rate;
+    sim.snr_db = 10.0; // Moderate SNR
+    sim.link_loss_db = 10.0; // 10 dB link loss
+    sim.plaintext_source = "Hello".into();
+    sim.rng_seed = Some(1337);
+
+    let ldpc_cfg = LDPCConfig::default();
+    let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
+
+    let encoding = generate_modulated_signal(&sim, &protocol, &suite.matrices);
+    let _demodulation = demodulate_and_decode(&encoding, &suite.matrices, &sim, &protocol);
+    
+    // Verify logs mention both link loss and AWGN
+    let has_link_loss_log = encoding.logs.iter().any(|log| log.contains("link loss"));
+    let has_awgn_log = encoding.logs.iter().any(|log| log.contains("AWGN"));
+    
+    assert!(has_link_loss_log, "Expected log mentioning link loss");
+    assert!(has_awgn_log, "Expected log mentioning AWGN");
+    
+    // With moderate SNR and link loss, some errors are expected but LDPC might still recover
+    assert!(
+        encoding.noisy_signal.len() > 0,
+        "Noisy signal should be generated"
     );
 }

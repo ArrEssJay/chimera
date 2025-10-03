@@ -102,7 +102,13 @@ The `chimera-core` library is organized into several key modules:
 
 ### Build from Source
 
-Clone the repository and use Cargo to build the project:
+Clone the repository and use Cargo to build the project. Chimera now targets Rust nightly; install it once if you have not already:
+
+```sh
+rustup toolchain install nightly
+```
+
+The included `rust-toolchain.toml` pins commands run inside the workspace to nightly automatically.
 
 ```sh
 git clone https://github.com/arressjay/chimera.git
