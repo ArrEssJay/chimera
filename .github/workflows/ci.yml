@@ -20,7 +20,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.84.0
+          toolchain: nightly
 
       - name: Run tests
         run: cargo test --workspace --all-features
@@ -35,7 +35,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.84.0
+          toolchain: nightly
           components: rustfmt
 
       - name: Check formatting
@@ -51,7 +51,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.84.0
+          toolchain: nightly
           components: clippy
 
       - name: Rust version info
@@ -88,7 +88,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.84.0
+          toolchain: nightly
           targets: wasm32-unknown-unknown
 
       - name: Cache cargo registry

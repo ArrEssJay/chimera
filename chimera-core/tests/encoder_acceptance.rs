@@ -151,11 +151,13 @@ fn run_simulation_emits_audio_waveforms() {
 fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
-    sim.sample_rate = protocol.qpsk_symbol_rate; // No oversampling (samples_per_symbol = 1)
-    sim.snr_db = -5.0; // Without processing gain, LDPC fails at this Es/N0
-    sim.plaintext_source = "Hello Chimera".into();
-    sim.rng_seed = Some(1337);
+    let sim = SimulationConfig {
+        sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
+        snr_db: -5.0,                           // Without processing gain, LDPC fails at this Es/N0
+        plaintext_source: "Hello Chimera".into(),
+        rng_seed: Some(1337),
+        ..Default::default()
+    };
 
     let ldpc_cfg = LDPCConfig::default();
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);
@@ -178,11 +180,13 @@ fn given_low_snr_when_pipeline_runs_then_ldpc_fails() {
 fn given_near_zero_snr_when_pipeline_runs_then_ldpc_succeeds() {
     let protocol = ProtocolConfig::default();
 
-    let mut sim = SimulationConfig::default();
-    sim.sample_rate = protocol.qpsk_symbol_rate; // No oversampling (samples_per_symbol = 1)
-    sim.snr_db = -1.0; // Without processing gain, marginal Es/N0 but LDPC succeeds
-    sim.plaintext_source = "Hello Chimera".into();
-    sim.rng_seed = Some(1337);
+    let sim = SimulationConfig {
+        sample_rate: protocol.qpsk_symbol_rate, // No oversampling (samples_per_symbol = 1)
+        snr_db: -1.0, // Without processing gain, marginal Es/N0 but LDPC succeeds
+        plaintext_source: "Hello Chimera".into(),
+        rng_seed: Some(1337),
+        ..Default::default()
+    };
 
     let ldpc_cfg = LDPCConfig::default();
     let suite = LDPCSuite::new(&protocol.frame_layout, &ldpc_cfg);

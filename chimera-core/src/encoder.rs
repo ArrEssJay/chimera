@@ -132,7 +132,7 @@ pub fn generate_modulated_signal(
 
     let qpsk_bitstream = frame_stream.frames_bitstream.clone();
     assert!(
-        qpsk_bitstream.len() % 2 == 0,
+        qpsk_bitstream.len().is_multiple_of(2),
         "QPSK bitstream must have even length"
     );
 
