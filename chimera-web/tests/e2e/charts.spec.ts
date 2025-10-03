@@ -13,7 +13,9 @@ test.describe('Chart Rendering and Axis Labels', () => {
     page.on('console', (msg) => {
       try {
         logs.push(msg.text());
-      } catch (e) {}
+      } catch (e) {
+        console.error('Error pushing console message to logs:', e);
+      }
     });
 
   // Click the Run button to execute simulation. Use JS click to avoid
