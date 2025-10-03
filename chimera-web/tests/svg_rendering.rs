@@ -85,3 +85,74 @@ fn test_constellation_data_within_expected_range() {
         rx_outlier_ratio * 100.0
     );
 }
+
+#[test]
+fn test_constellation_points_within_ui_axis_range() {
+    // The UI uses fixed axis ranges of -1.5 to 1.5
+    // This test verifies that constellation points fall within this range
+    let input = SimulationInput {
+        plaintext: "Testing axis ranges".into(),
+        ..Default::default()
+    };
+    let output = run_pipeline(input);
+    
+    let tx_i = &output.diagnostics.tx_symbols_i;
+    let tx_q = &output.diagnostics.tx_symbols_q;
+    
+    // Calculate ranges
+    let min_tx_i = tx_i.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_tx_i = tx_i.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let min_tx_q = tx_q.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_tx_q = tx_q.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    
+    println!("TX I range: [{:.4}, {:.4}]", min_tx_i, max_tx_i);
+    println!("TX Q range: [{:.4}, {:.4}]", min_tx_q, max_tx_q);
+    println!("UI axis range: [-1.5, 1.5]");
+    
+    // Count points outside visible range
+    let mut tx_outside = 0;
+    for (&i, &q) in tx_i.iter().zip(tx_q.iter()) {
+        if i < -1.5 || i > 1.5 || q < -1.5 || q > 1.5 {
+            tx_outside += 1;
+        }
+    }
+    
+    let rx_i = &output.diagnostics.demodulation.received_symbols_i;
+    let rx_q = &output.diagnostics.demodulation.received_symbols_q;
+    
+    let min_rx_i = rx_i.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_rx_i = rx_i.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let min_rx_q = rx_q.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_rx_q = rx_q.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    
+    println!("\nRX I range: [{:.4}, {:.4}]", min_rx_i, max_rx_i);
+    println!("RX Q range: [{:.4}, {:.4}]", min_rx_q, max_rx_q);
+    
+    let mut rx_outside = 0;
+    for (&i, &q) in rx_i.iter().zip(rx_q.iter()) {
+        if i < -1.5 || i > 1.5 || q < -1.5 || q > 1.5 {
+            rx_outside += 1;
+        }
+    }
+    
+    println!("\nTX points outside visible range: {}/{}", tx_outside, tx_i.len());
+    println!("RX points outside visible range: {}/{}", rx_outside, rx_i.len());
+    
+    // TX symbols should all be within the visible range (they're ideal QPSK at ±0.707)
+    assert_eq!(
+        tx_outside, 0,
+        "TX constellation points outside UI axis range [-1.5, 1.5]: {}/{}",
+        tx_outside,
+        tx_i.len()
+    );
+    
+    // With default SNR, most RX points should be visible
+    let rx_visible_ratio = 1.0 - (rx_outside as f64 / rx_i.len() as f64);
+    println!("\nRX visibility ratio: {:.1}%", rx_visible_ratio * 100.0);
+    
+    assert!(
+        rx_visible_ratio > 0.8,
+        "Too many RX points outside visible range: only {:.1}% visible",
+        rx_visible_ratio * 100.0
+    );
+}
