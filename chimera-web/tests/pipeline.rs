@@ -70,13 +70,17 @@ fn simulation_input_equality_for_change_detection() {
     assert_eq!(input1, input2);
 
     // Different plaintext should not be equal
-    let mut input3 = SimulationInput::default();
-    input3.plaintext = "Different text".into();
+    let input3 = SimulationInput {
+        plaintext: "Different text".into(),
+        ..SimulationInput::default()
+    };
     assert_ne!(input1, input3);
 
     // Different SNR should not be equal
-    let mut input4 = SimulationInput::default();
-    input4.snr_db = 10.0;
+    let input4 = SimulationInput {
+        snr_db: 10.0,
+        ..SimulationInput::default()
+    };
     assert_ne!(input1, input4);
 
     // Different preset should not be equal
