@@ -1350,7 +1350,8 @@ fn draw_line_chart_svg(
     let y_max = if y_max == f64::NEG_INFINITY { 0.0 } else { y_max };
     let y_range = (y_max - y_min).abs().max(1e-6);
 
-    let map_x = |idx: usize| padding + (idx as f64 / (finite.len().saturating_sub(1) as f64).max(1.0)) * plot_w;
+    let x_denominator = (finite.len().saturating_sub(1) as f64).max(1.0);
+    let map_x = |idx: usize| padding + (idx as f64 / x_denominator) * plot_w;
     let map_y = |v: f64| padding + (1.0 - (v - y_min) / y_range) * plot_h;
 
     let accent = accent_rgb.unwrap_or((120, 220, 150));
