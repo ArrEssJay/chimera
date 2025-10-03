@@ -70,7 +70,7 @@ pub fn int_to_bitstream(value: u64, bits: usize) -> Vec<u8> {
 }
 
 pub fn hex_to_bitstream(hex: &str, expected_bits: usize) -> Vec<u8> {
-    assert!(expected_bits % 8 == 0, "expected_bits must be byte aligned");
+    assert!(expected_bits.is_multiple_of(8), "expected_bits must be byte aligned");
     let padded = if hex.len() * 4 < expected_bits {
         format!("{:0>width$}", hex, width = expected_bits / 4)
     } else {
