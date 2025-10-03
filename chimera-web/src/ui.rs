@@ -732,10 +732,7 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
     }
 
     let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
-    let tooltip_attr = props
-        .tooltip
-        .clone()
-        .unwrap_or_else(|| AttrValue::from(""));
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
     let panel_class = if props.tooltip.is_some() {
         "constellation-panel panel has-tooltip"
     } else {
@@ -788,10 +785,7 @@ fn line_chart(props: &LineChartProps) -> Html {
     }
 
     let is_empty = props.values.is_empty();
-    let tooltip_attr = props
-        .tooltip
-        .clone()
-        .unwrap_or_else(|| AttrValue::from(""));
+    let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
     let panel_class = if props.tooltip.is_some() {
         "chart-panel panel has-tooltip"
     } else {
