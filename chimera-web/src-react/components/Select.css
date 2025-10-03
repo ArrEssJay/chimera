@@ -1,0 +1,123 @@
+/* Select Component Styles */
+
+.chimera-select {
+  position: relative;
+  display: inline-block;
+  min-width: 200px;
+  font-family: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+.chimera-select:focus-visible {
+  outline: 2px solid var(--accent, lch(65% 40 210));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.chimera-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--panel, lch(16% 0 0));
+  border: 1px solid var(--border-color, lch(28% 0 0));
+  border-radius: 4px;
+  color: var(--text-primary, lch(92% 0 0));
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.1s ease, background 0.1s ease;
+}
+
+.chimera-select__trigger:hover {
+  border-color: var(--accent, lch(65% 40 210));
+  background: var(--bg-overlay, lch(14% 0 0));
+}
+
+.chimera-select--open .chimera-select__trigger {
+  border-color: var(--accent, lch(65% 40 210));
+  background: var(--bg-overlay, lch(14% 0 0));
+}
+
+.chimera-select--disabled .chimera-select__trigger {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.chimera-select__value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chimera-select__arrow {
+  margin-left: 8px;
+  font-size: 10px;
+  color: var(--text-muted, lch(60% 0 0));
+  transition: transform 0.2s ease;
+}
+
+.chimera-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--panel, lch(16% 0 0));
+  border: 1px solid var(--accent, lch(65% 40 210));
+  border-radius: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.chimera-select__option {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-primary, lch(92% 0 0));
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease;
+}
+
+.chimera-select__option:hover {
+  background: var(--bg-overlay, lch(14% 0 0));
+}
+
+.chimera-select__option--highlighted {
+  background: var(--bg-overlay, lch(14% 0 0));
+}
+
+.chimera-select__option--selected {
+  background: var(--accent, lch(65% 40 210));
+  color: var(--text-primary, lch(92% 0 0));
+  font-weight: 600;
+}
+
+.chimera-select__option--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Scrollbar styling */
+.chimera-select__dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chimera-select__dropdown::-webkit-scrollbar-track {
+  background: var(--bg, lch(12% 0 0));
+}
+
+.chimera-select__dropdown::-webkit-scrollbar-thumb {
+  background: var(--border-color, lch(28% 0 0));
+  border-radius: 4px;
+}
+
+.chimera-select__dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--accent, lch(65% 40 210));
+}
