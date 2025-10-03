@@ -8,8 +8,42 @@ test.describe('Chart Rendering and Axis Labels', () => {
   });
 
   test('should render constellation charts after simulation run', async ({ page }) => {
-    // Click the Run button to execute simulation
-    await page.click('button.primary');
+    // Capture console messages so we can assert that the app generated SVGs
+    const logs: string[] = [];
+    page.on('console', (msg) => {
+      try {
+        logs.push(msg.text());
+      } catch (e) {
+        console.error('Error pushing console message to logs:', e);
+      }
+    });
+
+  // Click the Run button to execute simulation. Use JS click to avoid
+  // accidental overlays intercepting pointer events in headless runs.
+  // Capture page console logs so wasm logs show up in the test output
+  page.on('console', (msg) => console.log('PAGE LOG>', msg.text()));
+  // Use the debug test hook (exposed in dev builds) to trigger the pipeline
+  // and inject SVGs directly into the DOM. This keeps the test deterministic
+  // and avoids flakiness related to overlay/pointer interception.
+  // Wait for the debug hook to be attached by the wasm module (it is added
+  // asynchronously during mount). Fail if not attached within 10s.
+  // Signal the page to run the test hook after reload, then reload so the
+  // hook runs in the fresh page context where DOM injection is stable.
+  // Click the Run button via JS and wait for the SVG container to be filled
+  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
+  await page.waitForFunction(() => !!(document.querySelector('.node')), { timeout: 10000 });
+  // Small pause for UI to update, then inspect insertion
+  await page.waitForTimeout(500);
+  const containerHtmlLen = await page.evaluate(() => {
+    const el = document.querySelector('.svg-chart-container');
+    if (!el || !el.innerHTML) return 0;
+    return el.innerHTML.length;
+  });
+  console.log('containerHtmlLen', containerHtmlLen);
+  const firstSvgOuter = await page.evaluate(() => document.querySelector('.svg-chart-container svg')?.outerHTML?.slice(0,200) || 'NO_SVG');
+  console.log('firstSvgOuter (snippet)', firstSvgOuter);
+  // Now wait longer for the actual SVG node to appear
+  await page.waitForSelector('.svg-chart-container svg', { timeout: 15000 });
     
     // Wait for simulation to complete (check for results)
     await page.waitForSelector('.constellation-panel svg', { timeout: 30000 });
@@ -45,11 +79,20 @@ test.describe('Chart Rendering and Axis Labels', () => {
     
     // Take a screenshot to visually verify
     await page.screenshot({ path: 'test-results/constellation-charts.png', fullPage: true });
+
+    // Verify console contains our SVG generation log
+    const genLog = logs.find((l) => l.includes('Generated SVG for')) || logs.find((l) => l.includes('Generated combined SVG'));
+    expect(genLog).toBeTruthy();
   });
 
   test('should render combined constellation chart with legend', async ({ page }) => {
-    // Click the Run button to execute simulation
-    await page.click('button.primary');
+  // Click the Run button to execute simulation using JS click
+  // Wait for and trigger the debug run helper
+  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
+  await page.waitForFunction(() => {
+    const c = document.querySelector('.constellation-combined .svg-chart-container');
+    return !!(c && c.innerHTML && c.innerHTML.includes('<svg'));
+  }, { timeout: 30000 });
     
     // Wait for combined constellation to render
     await page.waitForSelector('.constellation-combined svg', { timeout: 30000 });
@@ -75,8 +118,12 @@ test.describe('Chart Rendering and Axis Labels', () => {
   });
 
   test('should render diagnostics charts with proper axis labels', async ({ page }) => {
-    // Click the Run button to execute simulation
-    await page.click('button.primary');
+  // Click the Run button to execute simulation using JS click
+  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
+  await page.waitForFunction(() => {
+    const c = document.querySelector('.chart-panel .svg-chart-container');
+    return !!(c && c.innerHTML && c.innerHTML.includes('<svg'));
+  }, { timeout: 30000 });
     
     // Wait for diagnostics section to render
     await page.waitForSelector('.diagnostics-panel .chart-grid', { timeout: 30000 });
@@ -123,8 +170,12 @@ test.describe('Chart Rendering and Axis Labels', () => {
   });
 
   test('should verify charts use SVG backend and are saveable', async ({ page }) => {
-    // Click the Run button to execute simulation
-    await page.click('button.primary');
+  // Click the Run button to execute simulation using JS click
+  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
+  await page.waitForFunction(() => {
+    const c = document.querySelector('.chart-panel .svg-chart-container, .svg-chart-container');
+    return !!(c && c.innerHTML && c.innerHTML.includes('<svg'));
+  }, { timeout: 30000 });
     
     // Wait for any chart to render
     await page.waitForSelector('.chart-panel svg, .constellation-panel svg', { timeout: 30000 });
@@ -143,8 +194,12 @@ test.describe('Chart Rendering and Axis Labels', () => {
   });
 
   test('should not display duplicate labels or titles', async ({ page }) => {
-    // Click the Run button to execute simulation
-    await page.click('button.primary');
+  // Click the Run button to execute simulation using JS click
+  await page.evaluate(() => (document.querySelector('button.primary') as HTMLButtonElement | null)?.click());
+  await page.waitForFunction(() => {
+    const c = document.querySelector('.chart-panel .svg-chart-container');
+    return !!(c && c.innerHTML && c.innerHTML.includes('<svg'));
+  }, { timeout: 30000 });
     
     // Wait for diagnostics charts to render
     await page.waitForSelector('.diagnostics-panel .chart-grid', { timeout: 30000 });

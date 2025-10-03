@@ -5,16 +5,19 @@ use crate::presets::FramePreset;
 use chimera_core::diagnostics::{FrameDescriptor, SymbolDecision};
 use gloo_file::callbacks::{read_as_data_url, FileReader};
 use gloo_file::Blob;
-use plotters::backend::SVGBackend;
-use plotters::prelude::*;
-use plotters::style::colors::TRANSPARENT;
-use plotters::style::RGBAColor;
+// Lightweight SVG generation is used for charts in the web UI. The previous
+// implementation relied on `plotters` SVG backend which pulled in native
+// font/IO dependencies that are incompatible with the WebAssembly target.
+// We now generate minimal SVG markup directly to ensure deterministic
+// rendering in the browser without requiring system fonts.
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
 use std::f64::consts::FRAC_1_SQRT_2;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
+use gloo_timers::callback::Timeout;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{AudioBufferSourceNode, AudioContext, Document, Event, HtmlElement};
@@ -169,6 +172,7 @@ pub fn app() -> Html {
         let audio_playback = audio_playback_state.clone();
         let audio_source = audio_source_node.clone();
         Callback::from(move |_event: MouseEvent| {
+            web_sys::console::info_1(&"on_run handler invoked".into());
             if *running_handle {
                 return;
             }
@@ -181,12 +185,16 @@ pub fn app() -> Html {
             let running_state = running_handle.clone();
             let last_run_state = last_run_handle.clone();
             let input_clone = input.clone();
-            spawn_local(async move {
-                let result = run_pipeline(input);
-                output_state.set(Some(result));
-                running_state.set(false);
-                last_run_state.set(Some(input_clone));
-            });
+                spawn_local(async move {
+                    web_sys::console::info_1(&"Run Now clicked: starting pipeline".into());
+                    // run_pipeline is synchronous CPU-bound; log around it so we can see progress
+                    let result = run_pipeline(input);
+                    web_sys::console::info_1(&"Pipeline completed: setting output".into());
+                    output_state.set(Some(result));
+                    running_state.set(false);
+                    last_run_state.set(Some(input_clone));
+                    web_sys::console::info_1(&"Output stored and UI state updated".into());
+                });
         })
     };
 
@@ -886,37 +894,6 @@ pub struct CombinedConstellationProps {
 
 #[function_component(ConstellationChart)]
 pub fn constellation_chart(props: &ConstellationProps) -> Html {
-    let svg_content = use_state(String::new);
-
-    {
-        let svg_content = svg_content.clone();
-        let i_samples = props.i_samples.clone();
-        let q_samples = props.q_samples.clone();
-        let title = props.title.clone();
-        let variant = props.variant.clone();
-
-        use_effect_with(
-            (
-                i_samples.clone(),
-                q_samples.clone(),
-                variant.clone(),
-                title.clone(),
-            ),
-            move |(i_samples, q_samples, variant, title)| {
-                if !i_samples.is_empty() && !q_samples.is_empty() {
-                    let svg = draw_constellation_svg(
-                        i_samples,
-                        q_samples,
-                        title.as_str(),
-                        variant.clone(),
-                    );
-                    svg_content.set(svg);
-                }
-                || ()
-            },
-        );
-    }
-
     let is_empty = props.i_samples.is_empty() || props.q_samples.is_empty();
     let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
     let panel_class = if props.tooltip.is_some() {
@@ -925,15 +902,23 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
         "constellation-panel panel"
     };
     let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
+    
     html! {
-    <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
+        <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
                 } else {
+                    let svg = draw_constellation_svg(
+                        &props.i_samples,
+                        &props.q_samples,
+                        props.title.as_str(),
+                        props.variant.clone(),
+                    );
                     html! {
-                        <div class="svg-chart-container"
-                             dangerously_set_inner_html={(*svg_content).clone()} />
+                        <div class="svg-chart-container">
+                            { yew::virtual_dom::VNode::from_html_unchecked(svg.into()) }
+                        </div>
                     }
                 }
             }
@@ -943,47 +928,26 @@ pub fn constellation_chart(props: &ConstellationProps) -> Html {
 
 #[function_component(CombinedConstellation)]
 pub fn combined_constellation(props: &CombinedConstellationProps) -> Html {
-    let svg_content = use_state(String::new);
-
-    {
-        let svg_content = svg_content.clone();
-        let tx_i = props.tx_i_samples.clone();
-        let tx_q = props.tx_q_samples.clone();
-        let rx_i = props.rx_i_samples.clone();
-        let rx_q = props.rx_q_samples.clone();
-        let title = props.title.clone();
-
-        use_effect_with(
-            (
-                tx_i.clone(),
-                tx_q.clone(),
-                rx_i.clone(),
-                rx_q.clone(),
-                title.clone(),
-            ),
-            move |(tx_i, tx_q, rx_i, rx_q, title)| {
-                if (!tx_i.is_empty() && !tx_q.is_empty()) || (!rx_i.is_empty() && !rx_q.is_empty())
-                {
-                    let svg =
-                        draw_combined_constellation_svg(tx_i, tx_q, rx_i, rx_q, title.as_str());
-                    svg_content.set(svg);
-                }
-                || ()
-            },
-        );
-    }
-
     let is_empty = (props.tx_i_samples.is_empty() || props.tx_q_samples.is_empty())
         && (props.rx_i_samples.is_empty() || props.rx_q_samples.is_empty());
+    
     html! {
         <div class="constellation-panel panel constellation-combined">
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No constellation samples."}</div> }
                 } else {
+                    let svg = draw_combined_constellation_svg(
+                        &props.tx_i_samples,
+                        &props.tx_q_samples,
+                        &props.rx_i_samples,
+                        &props.rx_q_samples,
+                        props.title.as_str(),
+                    );
                     html! {
-                        <div class="svg-chart-container"
-                             dangerously_set_inner_html={(*svg_content).clone()} />
+                        <div class="svg-chart-container">
+                            { yew::virtual_dom::VNode::from_html_unchecked(svg.into()) }
+                        </div>
                     }
                 }
             }
@@ -1007,40 +971,6 @@ pub struct LineChartProps {
 
 #[function_component(LineChart)]
 fn line_chart(props: &LineChartProps) -> Html {
-    let svg_content = use_state(String::new);
-
-    {
-        let svg_content = svg_content.clone();
-        let values = props.values.clone();
-        let title = props.title.clone();
-        let accent = props.accent_rgb;
-        let x_label = props.x_label.clone();
-        let y_label = props.y_label.clone();
-
-        use_effect_with(
-            (
-                values.clone(),
-                accent,
-                title.clone(),
-                x_label.clone(),
-                y_label.clone(),
-            ),
-            move |(values, accent, title, x_label, y_label)| {
-                if !values.is_empty() {
-                    let svg = draw_line_chart_svg(
-                        values,
-                        title.as_str(),
-                        *accent,
-                        x_label.as_str(),
-                        y_label.as_str(),
-                    );
-                    svg_content.set(svg);
-                }
-                || ()
-            },
-        );
-    }
-
     let is_empty = props.values.is_empty();
     let tooltip_attr = props.tooltip.clone().unwrap_or_else(|| AttrValue::from(""));
     let panel_class = if props.tooltip.is_some() {
@@ -1049,15 +979,24 @@ fn line_chart(props: &LineChartProps) -> Html {
         "chart-panel panel"
     };
     let tab_index = props.tooltip.is_some().then(|| AttrValue::from("0"));
+    
     html! {
         <div class={panel_class} data-tooltip={tooltip_attr} tabindex={tab_index}>
             {
                 if is_empty {
                     html! { <div class="chart-empty">{"No samples available."}</div> }
                 } else {
+                    let svg = draw_line_chart_svg(
+                        &props.values,
+                        props.title.as_str(),
+                        props.x_label.as_str(),
+                        props.y_label.as_str(),
+                        props.accent_rgb,
+                    );
                     html! {
-                        <div class="svg-chart-container"
-                             dangerously_set_inner_html={(*svg_content).clone()} />
+                        <div class="svg-chart-container">
+                            { yew::virtual_dom::VNode::from_html_unchecked(svg.into()) }
+                        </div>
                     }
                 }
             }
@@ -1071,119 +1010,157 @@ fn draw_constellation_svg(
     title: &str,
     variant: ConstellationVariant,
 ) -> String {
-    // Count finite values
-    let finite_count = symbols_i
+    // Filter finite symbol pairs
+    let finite: Vec<(f64, f64)> = symbols_i
         .iter()
         .zip(symbols_q.iter())
-        .filter(|(i, q)| i.is_finite() && q.is_finite())
-        .count();
-    
+        .filter_map(|(&i, &q)| {
+            if i.is_finite() && q.is_finite() {
+                Some((i, q))
+            } else {
+                None
+            }
+        })
+        .collect();
+
     web_sys::console::info_1(
         &format!(
             "Drawing constellation '{}' ({:?}) with {} points ({} finite)",
             title,
             variant,
             symbols_i.len(),
-            finite_count
+            finite.len()
         )
         .into(),
     );
-    
-    if finite_count == 0 {
+
+    if finite.is_empty() {
         web_sys::console::warn_1(
             &format!("Skipping constellation '{}' due to lack of finite samples", title).into(),
         );
         return String::new();
     }
-    
-    let mut svg_string = String::new();
-    {
-        let backend = SVGBackend::with_string(&mut svg_string, (400, 400));
-        let root = backend.into_drawing_area();
 
-        let _ = root.fill(&TRANSPARENT);
+    // SVG dimensions and padding
+    let width = 400.0;
+    let height = 400.0;
+    let padding = 30.0;
+    let plot_w = width - padding * 2.0;
+    let plot_h = height - padding * 2.0;
 
-        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-            let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
-                .margin(15)
-                .x_label_area_size(40)
-                .y_label_area_size(50)
-                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+    // Fixed axis range for QPSK (keep centered around 0)
+    let x_min = -1.5;
+    let x_max = 1.5;
+    let y_min = -1.5;
+    let y_max = 1.5;
 
-            chart
-                .configure_mesh()
-                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
-                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
-                .x_labels(7)
-                .y_labels(7)
-                .x_label_formatter(&|x| format!("{:.1}", x))
-                .y_label_formatter(&|y| format!("{:.1}", y))
-                .x_desc("In-Phase (I)")
-                .y_desc("Quadrature (Q)")
-                .label_style(("Share Tech Mono", 12, &RGBColor(150, 220, 150)))
-                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
-                .draw()?;
+    let map_x = |x: f64| {
+        padding + ((x - x_min) / (x_max - x_min)) * plot_w
+    };
+    let map_y = |y: f64| {
+        // SVG Y axis goes down so invert
+        padding + (1.0 - (y - y_min) / (y_max - y_min)) * plot_h
+    };
 
-            let (point_color, halo_color, radius) = match variant {
-                ConstellationVariant::Tx => {
-                    // Tactical green for TX
-                    (RGBColor(120, 220, 150), RGBAColor(120, 220, 150, 0.3), 6)
-                }
-                ConstellationVariant::Rx => {
-                    // Tactical cyan for RX
-                    (RGBColor(120, 200, 240), RGBAColor(120, 200, 240, 0.3), 4)
-                }
-            };
+    // Start building simple SVG string (avoid using plotters in wasm)
+    let mut svg = String::new();
+    svg.push_str(&format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\">",
+        width, height, width as i32, height as i32
+    ));
 
-            // Draw reference constellation for TX
-            if matches!(variant, ConstellationVariant::Tx) {
-                let reference = [
-                    (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                    (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                    (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-                    (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-                ];
-                chart.draw_series(
-                    reference
-                        .iter()
-                        .map(|&(i, q)| Circle::new((i, q), radius + 2, halo_color.filled())),
-                )?;
-            }
+    // Background
+    svg.push_str(&format!(
+        "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>"
+    ));
 
-            // Draw actual symbols
-            let symbols = symbols_i
-                .iter()
-                .zip(symbols_q.iter())
-                .map(|(&i, &q)| (i, q));
+    // Title
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"monospace\" font-size=14 fill=\"#96DC96\">{title}</text>",
+        x = padding,
+        y = padding - 8.0,
+        title = html_escape::encode_text(title)
+    ));
 
-            chart.draw_series(
-                symbols.map(|(i, q)| Circle::new((i, q), radius, point_color.filled())),
-            )?;
+    // Axes (center lines)
+    let cx = map_x(0.0);
+    let cy = map_y(0.0);
+    svg.push_str(&format!(
+        "<line x1=\"{x1}\" y1=\"{y}\" x2=\"{x2}\" y2=\"{y}\" stroke=\"#507061\" stroke-width=1/>",
+        x1 = map_x(x_min),
+        x2 = map_x(x_max),
+        y = cy
+    ));
+    svg.push_str(&format!(
+        "<line x1=\"{x}\" y1=\"{y1}\" x2=\"{x}\" y2=\"{y2}\" stroke=\"#507061\" stroke-width=1/>",
+        x = cx,
+        y1 = map_y(y_min),
+        y2 = map_y(y_max)
+    ));
 
-            Ok(())
-        })();
+    // Axis labels
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">In-Phase (I)</text>",
+        x = map_x(x_max) - 80.0,
+        y = cy - 6.0
+    ));
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">Quadrature (Q)</text>",
+        x = cx + 8.0,
+        y = map_y(y_max) + 15.0
+    ));
 
-        if let Err(e) = result {
-            web_sys::console::error_1(
-                &format!("Failed to draw constellation chart: {:?}", e).into(),
-            );
+    // Reference constellation for TX
+    if matches!(variant, ConstellationVariant::Tx) {
+        let ref_pts = [
+            (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+            (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+            (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+            (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+        ];
+        for &(i, q) in ref_pts.iter() {
+            let x = map_x(i);
+            let y = map_y(q);
+            svg.push_str(&format!(
+                "<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"#78DC96\" fill-opacity=\"0.5\" stroke=\"#78DC96\" stroke-width=1/>",
+                x = x,
+                y = y,
+                r = 6
+            ));
         }
-
-        let _ = root.present();
     }
+
+    // Draw symbol points
+    let (point_color, r) = match variant {
+        ConstellationVariant::Tx => ("#78DC96", 4),
+        ConstellationVariant::Rx => ("#78C8F0", 3),
+    };
+
+    for (i, q) in finite.iter() {
+        let x = map_x(*i);
+        let y = map_y(*q);
+        svg.push_str(&format!(
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"{color}\" />",
+            x = x,
+            y = y,
+            r = r,
+            color = point_color
+        ));
+    }
+
+    svg.push_str("</svg>");
 
     web_sys::console::info_1(
         &format!(
             "Generated SVG for '{}' with {} bytes, contains '<circle': {}",
             title,
-            svg_string.len(),
-            svg_string.contains("<circle")
+            svg.len(),
+            svg.contains("<circle")
         )
         .into(),
     );
-    
-    svg_string
+
+    svg
 }
 
 fn draw_combined_constellation_svg(
@@ -1193,228 +1170,277 @@ fn draw_combined_constellation_svg(
     rx_q: &[f64],
     title: &str,
 ) -> String {
-    // Count finite values
-    let tx_finite = tx_i
+    // Collect finite points
+    let tx: Vec<(f64, f64)> = tx_i
         .iter()
         .zip(tx_q.iter())
-        .filter(|(i, q)| i.is_finite() && q.is_finite())
-        .count();
-    let rx_finite = rx_i
+        .filter_map(|(&i, &q)| if i.is_finite() && q.is_finite() { Some((i, q)) } else { None })
+        .collect();
+    let rx: Vec<(f64, f64)> = rx_i
         .iter()
         .zip(rx_q.iter())
-        .filter(|(i, q)| i.is_finite() && q.is_finite())
-        .count();
-    
+        .filter_map(|(&i, &q)| if i.is_finite() && q.is_finite() { Some((i, q)) } else { None })
+        .collect();
+
     web_sys::console::info_1(
         &format!(
             "Drawing combined constellation '{}' with {} TX points ({} finite) and {} RX points ({} finite)",
             title,
             tx_i.len(),
-            tx_finite,
+            tx.len(),
             rx_i.len(),
-            rx_finite
+            rx.len()
         )
         .into(),
     );
-    
-    if tx_finite == 0 && rx_finite == 0 {
+
+    if tx.is_empty() && rx.is_empty() {
         web_sys::console::warn_1(
             &format!("Skipping combined constellation '{}' due to lack of finite samples", title).into(),
         );
         return String::new();
     }
-    
-    let mut svg_string = String::new();
-    {
-        let backend = SVGBackend::with_string(&mut svg_string, (500, 450));
-        let root = backend.into_drawing_area();
 
-        let _ = root.fill(&TRANSPARENT);
+    let width = 500.0;
+    let height = 450.0;
+    let padding = 40.0;
+    let plot_w = width - padding * 2.0;
+    let plot_h = height - padding * 2.0;
 
-        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-            let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Inter", 18, &RGBColor(200, 200, 200)))
-                .margin(20)
-                .x_label_area_size(40)
-                .y_label_area_size(50)
-                .build_cartesian_2d(-1.5..1.5, -1.5..1.5)?;
+    let x_min = -1.5;
+    let x_max = 1.5;
+    let y_min = -1.5;
+    let y_max = 1.5;
 
-            chart
-                .configure_mesh()
-                .bold_line_style(RGBColor(60, 80, 110).mix(0.5))
-                .light_line_style(RGBColor(40, 60, 90).mix(0.3))
-                .x_labels(7)
-                .y_labels(7)
-                .x_label_formatter(&|x| format!("{:.1}", x))
-                .y_label_formatter(&|y| format!("{:.1}", y))
-                .x_desc("In-Phase (I)")
-                .y_desc("Quadrature (Q)")
-                .label_style(("Inter", 12, &RGBColor(180, 180, 190)))
-                .axis_desc_style(("Inter", 14, &RGBColor(200, 200, 210)))
-                .draw()?;
+    let map_x = |x: f64| padding + ((x - x_min) / (x_max - x_min)) * plot_w;
+    let map_y = |y: f64| padding + (1.0 - (y - y_min) / (y_max - y_min)) * plot_h;
 
-            // Draw reference QPSK constellation points
-            let reference = [
-                (-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                (FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                (-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-                (FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-            ];
-            let tx_halo_color = RGBAColor(126, 240, 196, 0.3);
-            chart.draw_series(
-                reference
-                    .iter()
-                    .map(|&(i, q)| Circle::new((i, q), 8, tx_halo_color.filled())),
-            )?;
+    let mut svg = String::new();
+    svg.push_str(&format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\">",
+        width, height, width as i32, height as i32
+    ));
+    svg.push_str("<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>");
 
-            // Draw TX symbols (ideal, larger, cyan/green)
-            if !tx_i.is_empty() && !tx_q.is_empty() {
-                let tx_color = RGBColor(126, 240, 196);
-                let tx_symbols = tx_i.iter().zip(tx_q.iter()).map(|(&i, &q)| (i, q));
-                chart.draw_series(
-                    tx_symbols.map(|(i, q)| Circle::new((i, q), 5, tx_color.filled())),
-                )?;
-            }
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"monospace\" font-size=14 fill=\"#96DC96\">{title}</text>",
+        x = padding,
+        y = padding - 8.0,
+        title = html_escape::encode_text(title)
+    ));
 
-            // Draw RX symbols (received, smaller, pink/magenta)
-            if !rx_i.is_empty() && !rx_q.is_empty() {
-                let rx_color = RGBColor(255, 168, 250);
-                let rx_symbols = rx_i.iter().zip(rx_q.iter()).map(|(&i, &q)| (i, q));
-                chart.draw_series(
-                    rx_symbols.map(|(i, q)| Circle::new((i, q), 3, rx_color.filled())),
-                )?;
-            }
+    // Axes center
+    let cx = map_x(0.0);
+    let cy = map_y(0.0);
+    svg.push_str(&format!(
+        "<line x1=\"{x1}\" y1=\"{y}\" x2=\"{x2}\" y2=\"{y}\" stroke=\"#507061\" stroke-width=1/>",
+        x1 = map_x(x_min),
+        x2 = map_x(x_max),
+        y = cy
+    ));
+    svg.push_str(&format!(
+        "<line x1=\"{x}\" y1=\"{y1}\" x2=\"{x}\" y2=\"{y2}\" stroke=\"#507061\" stroke-width=1/>",
+        x = cx,
+        y1 = map_y(y_min),
+        y2 = map_y(y_max)
+    ));
 
-            // Add legend with text
-            chart.draw_series(vec![
-                EmptyElement::at((0.9, 1.3))
-                    + Circle::new((0, 0), 5, RGBColor(126, 240, 196).filled())
-                    + Text::new(
-                        " TX Symbols",
-                        (10, 0),
-                        ("Inter", 14).into_font().color(&RGBColor(180, 180, 190)),
-                    ),
-            ])?;
+    // Axis labels
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">In-Phase (I)</text>",
+        x = map_x(x_max) - 80.0,
+        y = cy - 6.0
+    ));
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">Quadrature (Q)</text>",
+        x = cx + 8.0,
+        y = map_y(y_max) + 15.0
+    ));
 
-            chart.draw_series(vec![
-                EmptyElement::at((0.9, 1.1))
-                    + Circle::new((0, 0), 3, RGBColor(255, 168, 250).filled())
-                    + Text::new(
-                        " RX Symbols",
-                        (10, 0),
-                        ("Inter", 14).into_font().color(&RGBColor(180, 180, 190)),
-                    ),
-            ])?;
+    // Legend
+    svg.push_str(&format!(
+        "<rect x=\"{x}\" y=\"{y}\" width=\"12\" height=\"12\" fill=\"#78DC96\" /> <text x=\"{tx}\" y=\"{ty}\" font-size=12 fill=\"#96DC96\">TX Symbols</text>",
+        x = width - padding - 120.0,
+        y = padding,
+        tx = width - padding - 100.0,
+        ty = padding + 10.0
+    ));
+    svg.push_str(&format!(
+        "<rect x=\"{x}\" y=\"{y}\" width=\"12\" height=\"12\" fill=\"#78C8F0\" /> <text x=\"{tx}\" y=\"{ty}\" font-size=12 fill=\"#96DC96\">RX Symbols</text>",
+        x = width - padding - 120.0,
+        y = padding + 18.0,
+        tx = width - padding - 100.0,
+        ty = padding + 28.0
+    ));
 
-            Ok(())
-        })();
-
-        if let Err(e) = result {
-            web_sys::console::error_1(
-                &format!("Failed to draw combined constellation: {:?}", e).into(),
-            );
-        }
-
-        let _ = root.present();
+    // Draw TX
+    for (i, q) in tx.iter() {
+        let x = map_x(*i);
+        let y = map_y(*q);
+        svg.push_str(&format!(
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"4\" fill=\"#78DC96\" />",
+            x = x,
+            y = y
+        ));
     }
+
+    // Draw RX
+    for (i, q) in rx.iter() {
+        let x = map_x(*i);
+        let y = map_y(*q);
+        svg.push_str(&format!(
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"3\" fill=\"#78C8F0\" />",
+            x = x,
+            y = y
+        ));
+    }
+
+    svg.push_str("</svg>");
 
     web_sys::console::info_1(
         &format!(
             "Generated combined SVG for '{}' with {} bytes, contains '<circle': {}",
             title,
-            svg_string.len(),
-            svg_string.contains("<circle")
+            svg.len(),
+            svg.contains("<circle")
         )
         .into(),
     );
-    
-    svg_string
+
+    svg
 }
 
 fn draw_line_chart_svg(
     values: &[f64],
     title: &str,
-    accent: Option<(u8, u8, u8)>,
     x_label: &str,
     y_label: &str,
+    accent_rgb: Option<(u8, u8, u8)>,
 ) -> String {
-    if values.is_empty() {
+    // Filter finite values and remember original length
+    let finite: Vec<f64> = values.iter().cloned().filter(|v| v.is_finite()).collect();
+
+    web_sys::console::info_1(
+        &format!(
+            "Drawing line chart '{}' with {} values ({} finite)",
+            title,
+            values.len(),
+            finite.len()
+        )
+        .into(),
+    );
+
+    if finite.is_empty() {
+        web_sys::console::warn_1(
+            &format!("Skipping line chart '{}' due to lack of finite samples", title).into(),
+        );
         return String::new();
     }
 
-    let mut svg_string = String::new();
-    {
-        let backend = SVGBackend::with_string(&mut svg_string, (500, 280));
-        let root = backend.into_drawing_area();
+    let width = 500.0;
+    let height = 280.0;
+    let padding = 40.0;
+    let plot_w = width - padding * 2.0;
+    let plot_h = height - padding * 2.0;
 
-        let _ = root.fill(&TRANSPARENT);
+    // Compute min/max for y axis
+    let y_min = finite.iter().cloned().fold(f64::INFINITY, f64::min);
+    let y_max = finite.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    let y_min = if y_min == f64::INFINITY { 0.0 } else { y_min };
+    let y_max = if y_max == f64::NEG_INFINITY { 0.0 } else { y_max };
+    let y_range = (y_max - y_min).abs().max(1e-6);
 
-        let y_min = values
-            .iter()
-            .cloned()
-            .fold(f64::INFINITY, |acc, v| acc.min(v));
-        let y_max = values
-            .iter()
-            .cloned()
-            .fold(f64::NEG_INFINITY, |acc, v| acc.max(v));
+    let x_denominator = (finite.len().saturating_sub(1) as f64).max(1.0);
+    let map_x = |idx: usize| padding + (idx as f64 / x_denominator) * plot_w;
+    let map_y = |v: f64| padding + (1.0 - (v - y_min) / y_range) * plot_h;
 
-        let (y_lower, y_upper) = if (y_max - y_min).abs() < f64::EPSILON {
-            (y_min - 1.0, y_max + 1.0)
-        } else {
-            // Add 5% padding to the range for better visualization
-            let padding = (y_max - y_min) * 0.05;
-            (y_min - padding, y_max + padding)
-        };
+    let accent = accent_rgb.unwrap_or((120, 220, 150));
+    let accent_color = format!("rgb({},{},{})", accent.0, accent.1, accent.2);
 
-        let len = values.len();
-        let x_upper = if len > 1 { (len - 1) as f64 } else { 1.0 };
+    let mut svg = String::new();
+    svg.push_str(&format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\">",
+        width, height, width as i32, height as i32
+    ));
 
-        let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-            let mut chart = ChartBuilder::on(&root)
-                .caption(title, ("Share Tech Mono", 18, &RGBColor(150, 220, 150)))
-                .margin(15)
-                .x_label_area_size(45)
-                .y_label_area_size(60)
-                .build_cartesian_2d(0f64..x_upper, y_lower..y_upper)?;
+    svg.push_str("<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>");
 
-            chart
-                .configure_mesh()
-                .bold_line_style(RGBColor(80, 140, 100).mix(0.5))
-                .light_line_style(RGBColor(60, 100, 80).mix(0.3))
-                .x_labels(6)
-                .y_labels(6)
-                .x_label_formatter(&|x| format!("{:.0}", x))
-                .y_label_formatter(&|y| format!("{:.2}", y))
-                .x_desc(x_label)
-                .y_desc(y_label)
-                .label_style(("Share Tech Mono", 13, &RGBColor(150, 220, 150)))
-                .axis_desc_style(("Share Tech Mono", 14, &RGBColor(150, 220, 150)))
-                .draw()?;
+    // Title
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"monospace\" font-size=14 fill=\"#96DC96\">{title}</text>",
+        x = padding,
+        y = padding - 8.0,
+        title = html_escape::encode_text(title)
+    ));
 
-            let line_color = accent
-                .map(|(r, g, b)| RGBColor(r, g, b))
-                .unwrap_or_else(|| RGBColor(120, 220, 150));
+    // Axis labels
+    svg.push_str(&format!(
+        "<text x=\"{x}\" y=\"{y}\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">{x_label}</text>",
+        x = padding + plot_w / 2.0,
+        y = height - 6.0,
+        x_label = html_escape::encode_text(x_label)
+    ));
+    svg.push_str(&format!(
+        "<text transform=\"translate(12 {ty}) rotate(-90)\" font-family=\"sans-serif\" font-size=11 fill=\"#96DC96\">{y_label}</text>",
+        ty = padding + plot_h / 2.0,
+        y_label = html_escape::encode_text(y_label)
+    ));
 
-            let points: Vec<(f64, f64)> = values
-                .iter()
-                .enumerate()
-                .map(|(i, &v)| (i as f64, v))
-                .collect();
+    // Draw axes lines
+    let x1 = map_x(0);
+    let x2 = map_x(finite.len().saturating_sub(1));
+    svg.push_str(&format!(
+        "<line x1=\"{x1}\" y1=\"{y2}\" x2=\"{x2}\" y2=\"{y2}\" stroke=\"#507061\" />",
+        x1 = x1,
+        x2 = x2,
+        y2 = map_y(y_min)
+    ));
+    svg.push_str(&format!(
+        "<line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x1}\" y2=\"{y2}\" stroke=\"#507061\" />",
+        x1 = map_x(0),
+        y1 = map_y(y_min),
+        y2 = map_y(y_max)
+    ));
 
-            let line_style = ShapeStyle::from(&line_color).stroke_width(2);
-            chart.draw_series(std::iter::once(PathElement::new(points, line_style)))?;
-
-            Ok(())
-        })();
-
-        if let Err(e) = result {
-            web_sys::console::error_1(&format!("Failed to draw line chart: {:?}", e).into());
-        }
-
-        let _ = root.present();
+    // Build polyline points
+    let mut points = String::new();
+    for (idx, &v) in finite.iter().enumerate() {
+        let px = map_x(idx);
+        let py = map_y(v);
+        points.push_str(&format!("{:.2},{:.2} ", px, py));
     }
 
-    svg_string
+    svg.push_str(&format!(
+        "<polyline points=\"{points}\" fill=\"none\" stroke=\"{color}\" stroke-width=1.5 />",
+        points = points,
+        color = accent_color
+    ));
+
+    // Draw small circles on points for visibility
+    for (idx, &v) in finite.iter().enumerate() {
+        let px = map_x(idx);
+        let py = map_y(v);
+        svg.push_str(&format!(
+            "<circle cx=\"{x}\" cy=\"{y}\" r=\"2\" fill=\"{color}\" />",
+            x = px,
+            y = py,
+            color = accent_color
+        ));
+    }
+
+    svg.push_str("</svg>");
+
+    web_sys::console::info_1(
+        &format!(
+            "Generated line-chart SVG for '{}' with {} bytes, contains 'polyline': {}",
+            title,
+            svg.len(),
+            svg.contains("polyline")
+        )
+        .into(),
+    );
+
+    svg
 }
 
 fn decimate_series(series: &[f64], max_points: usize) -> Vec<f64> {
@@ -1677,6 +1703,127 @@ pub fn mount_app() {
         .unwrap();
 
     yew::Renderer::<App>::with_root(root.into()).render();
+
+    // Test hook: expose a test helper to trigger a synchronous pipeline run
+    // and inject generated SVG directly into the DOM. Tests call
+    // `window.__test_trigger_run()` to deterministically produce the charts.
+    {
+        // Create a Closure that calls the Rust helper and attach it to window.__test_trigger_run
+        let cb = Closure::wrap(Box::new(move || {
+            // Ignore errors; test harness will check DOM
+            let _ = __test_trigger_run();
+        }) as Box<dyn Fn()>);
+        let _ = js_sys::Reflect::set(
+            &web_sys::window().unwrap(),
+            &JsValue::from_str("__test_trigger_run"),
+            cb.as_ref().unchecked_ref(),
+        );
+        cb.forget();
+    }
+    // Check for localStorage-triggered runs (tests may set this before reloading)
+    if let Some(window) = web_sys::window() {
+        if let Ok(Some(storage)) = window.local_storage() {
+                if let Ok(Some(val)) = storage.get_item("chimera_test_run_now") {
+                    if val == "1" {
+                        // Delay the trigger slightly so the Yew app has time to mount
+                        let _ = storage.remove_item("chimera_test_run_now");
+                        Timeout::new(250, || {
+                            let _ = __test_trigger_run();
+                        })
+                        .forget();
+                    }
+                }
+        }
+    }
+}
+
+/// Debug helper: run the pipeline and inject chart SVGs directly into the DOM.
+#[wasm_bindgen]
+pub fn __test_trigger_run() -> Result<(), JsValue> {
+    // Run pipeline synchronously with default input
+    let input = SimulationInput::default();
+    let output = run_pipeline(input);
+    let diag = output.diagnostics;
+
+    let document = web_sys::window()
+        .ok_or_else(|| JsValue::from_str("no window"))?
+        .document()
+        .ok_or_else(|| JsValue::from_str("no document"))?;
+
+    // Helper to set inner HTML of a container within a node that contains a header
+    let set_node_svg = |node_text: &str, svg: String| {
+        if let Ok(nodes) = document.query_selector_all(".node") {
+            for i in 0..nodes.length() {
+                if let Some(node) = nodes.item(i) {
+                    if let Ok(el) = node.dyn_into::<web_sys::Element>() {
+                        if el.text_content().unwrap_or_default().contains(node_text) {
+                            let coll = el.get_elements_by_class_name("svg-chart-container");
+                            if let Some(container) = coll.item(0) {
+                                container.set_inner_html(&svg);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // Inject TX and RX constellations
+    web_sys::console::info_1(&format!(
+        "Test hook diagnostics: tx={} tx_finite={}, rx={} rx_finite={}",
+        diag.tx_symbols_i.len(),
+        diag.tx_symbols_i.iter().filter(|v| v.is_finite()).count(),
+        diag.demodulation.received_symbols_i.len(),
+        diag.demodulation.received_symbols_i.iter().filter(|v| v.is_finite()).count()
+    ).into());
+    let tx_svg = draw_constellation_svg(&diag.tx_symbols_i, &diag.tx_symbols_q, "TX Symbols", ConstellationVariant::Tx);
+    let rx_svg = draw_constellation_svg(&diag.demodulation.received_symbols_i, &diag.demodulation.received_symbols_q, "RX Symbols", ConstellationVariant::Rx);
+    set_node_svg("Transmitter", tx_svg);
+    set_node_svg("Receiver", rx_svg);
+
+    // Inject combined constellation
+    if let Ok(Some(combined)) = document.query_selector(".constellation-combined .svg-chart-container") {
+        let combined_svg = draw_combined_constellation_svg(&diag.tx_symbols_i, &diag.tx_symbols_q, &diag.demodulation.received_symbols_i, &diag.demodulation.received_symbols_q, "TX vs RX Constellation");
+        combined.set_inner_html(&combined_svg);
+    }
+
+    // Inject diagnostics line charts by title
+    let inject_line_by_title = |title: &str, svg: String| {
+        if let Ok(nodes) = document.query_selector_all(".chart-panel") {
+            for i in 0..nodes.length() {
+                if let Some(node) = nodes.item(i) {
+                    if let Ok(el) = node.dyn_into::<web_sys::Element>() {
+                        if el.text_content().unwrap_or_default().contains(title) {
+                            let coll = el.get_elements_by_class_name("svg-chart-container");
+                            if let Some(container) = coll.item(0) {
+                                container.set_inner_html(&svg);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // Create and inject some diagnostics charts
+    let timing_svg = draw_line_chart_svg(&diag.demodulation.timing_error, "Timing Error", "Sample Index", "Error (samples)", Some((94, 214, 255)));
+    inject_line_by_title("Timing Error", timing_svg);
+
+    let nco_svg = draw_line_chart_svg(&diag.demodulation.nco_freq_offset, "NCO Frequency Offset", "Sample Index", "Offset (Hz)", Some((255, 168, 112)));
+    inject_line_by_title("NCO Frequency Offset", nco_svg);
+
+    let clean_svg = draw_line_chart_svg(&compute_psd(&diag.clean_baseband, FIXED_SAMPLE_RATE), "Clean Signal PSD", "Frequency Bin", "Power (dBFS)", Some((126, 240, 180)));
+    inject_line_by_title("Clean Signal PSD", clean_svg);
+
+    let noisy_svg = draw_line_chart_svg(&compute_psd(&diag.noisy_baseband, FIXED_SAMPLE_RATE), "Noisy Signal PSD", "Frequency Bin", "Power (dBFS)", Some((255, 132, 220)));
+    inject_line_by_title("Noisy Signal PSD", noisy_svg);
+
+    let ber_svg = draw_line_chart_svg(&compute_ber_trend(&diag.tx_bits, &diag.demodulation.symbol_decisions), "Running BER", "Symbol Index", "BER", Some((255, 238, 96)));
+    inject_line_by_title("Running BER", ber_svg);
+
+    Ok(())
 }
 
 #[cfg(test)]
