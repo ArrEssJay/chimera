@@ -44,7 +44,14 @@
 - Keep Yew components pure and derive `Properties` with `Clone + PartialEq` to reduce re-renders.
 - Store large buffers in `Rc`/`Arc` to prevent cloning; pass slices to canvas drawing routines.
 - Use `spawn_local` for async work; ensure error handling logs to `console` instead of panicking.
-- Style via the shared `style.css` variables; avoid hardcoded colors to preserve theming.
+- **MANDATORY: All CSS colors MUST use LCH color space** - see SIGINT_THEME.md for details
+  - ✅ Use: `lch(75% 65 140)`, `lch(92% 8 140 / 0.5)`
+  - ❌ Never use: `#00ff00`, `rgb(200, 200, 200)`, `rgba(10, 10, 15, 0.9)`
+  - Exception: `transparent` keyword is allowed
+  - Reference CSS variables from `:root` whenever possible
+- For Plotters charts in Rust: RGB colors are acceptable as they approximate LCH tactical colors
+  - Document LCH → RGB mapping in comments when adding new colors
+  - Example: `RGBColor(120, 220, 150) // Tactical green ≈ lch(75% 65 140)`
 
 ## 8. Diagnostics & Logging
 - Extend `DiagnosticsBundle` for new insights; prefer structured logs (`tracing`, `log`) over `println!`.
