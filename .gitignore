@@ -5,6 +5,9 @@ target
 
 
 chimera-web/dist/**
+chimera-web/dist-react/**
+chimera-web/storybook-static/**
+chimera-web/coverage/**
 
 # Node.js and npm
 chimera-web/node_modules/
