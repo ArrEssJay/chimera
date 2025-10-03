@@ -1212,9 +1212,12 @@ fn draw_constellation_svg(
             }
 
             // Draw actual symbols
-            chart.draw_series(points.iter().copied().map(|(i, q)| {
-                Circle::new((i, q), radius, point_color.filled())
-            }))?;
+            chart.draw_series(
+                points
+                    .iter()
+                    .copied()
+                    .map(|(i, q)| Circle::new((i, q), radius, point_color.filled())),
+            )?;
 
             Ok(())
         })();
