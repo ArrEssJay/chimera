@@ -1,8 +1,134 @@
 # Military & Covert Communications
 
-**Classification**: UNCLASSIFIED//FOUO (For Official Use Only)
-
 Military communications systems prioritize **anti-jamming (AJ)**, **low probability of intercept (LPI)**, **low probability of detection (LPD)**, and **secure transmission (TRANSEC)** over commercial metrics like spectral efficiency. This page covers advanced techniques used in GPS M-code, SATCOM FHSS, phased-array radar, Link 16, and covert communications.
+
+---
+
+## 🎓 For Non-Technical Readers
+
+Before diving into the technical details, here are the core concepts explained in everyday terms:
+
+### Why Military Communications Are Different
+
+**Imagine trying to have a conversation in a crowded, hostile room** where:
+- Someone is shouting over you (jamming)
+- Others are listening to steal your secrets (interception)
+- You need to talk without being noticed (covert)
+
+Military communications solve these problems in ways regular WiFi or cell phones don't need to.
+
+---
+
+### The "Whisper in the Crowd" Analogy
+
+**Spread Spectrum** = Speaking very quietly across a huge room
+
+Instead of shouting one clear message, you:
+1. **Whisper fragments** of your message to many places at once
+2. **Spread it so thin** that each piece sounds like background noise
+3. **Only someone with the secret pattern** can collect all the pieces and understand you
+
+**Real-world result**: Your signal is literally **weaker than background noise**, yet your intended receiver hears it perfectly. Enemies just hear static.
+
+**Example**: GPS M-code is 20 times weaker than the noise floor, yet your military GPS receiver locks on instantly. A spy's receiver? Just noise.
+
+---
+
+### The "Concert Hall Spotlight" Analogy
+
+**Phased-Array Antennas (AESA)** = Pointing a beam of radio energy
+
+Think of a traditional dish antenna like a flashlight—it points one direction, and moving it takes time.
+
+**AESA is like a concert hall's lighting system**:
+- **Hundreds of tiny lights** (antenna elements)
+- **Computer-controlled** to turn on/off in precise patterns
+- **Creates a "spotlight"** that can instantly jump to different parts of the room
+- **Multiple spotlights** can exist simultaneously (track many targets)
+
+**Real-world result**: F-22 radar can track 100 aircraft, jam enemy radars, and guide missiles—all at once, all electronically, no moving parts.
+
+---
+
+### The "Secret Handshake" Analogy
+
+**Frequency Hopping** = Changing radio channels thousands of times per second
+
+Imagine a conversation where:
+1. You and your friend **agree on a secret pattern** of which channel to use when
+2. Every millisecond, you both **jump to a new frequency** following the pattern
+3. **Enemies can't follow** because they don't know the pattern
+4. Even if they jam one frequency, you're already gone
+
+**Real-world result**: Military satellite phones (MILSTAR) hop 1000+ times per second across a gigahertz of spectrum. A jammer would need to jam the entire band with megawatts of power—impractical.
+
+---
+
+### The "Invisible Ink" Analogy
+
+**Low Probability of Detection (LPD)** = Radio signals that don't look like signals
+
+Imagine hiding a message by:
+1. **Writing each letter** on a separate grain of sand
+2. **Scattering the sand** across a beach
+3. **Only the recipient** knows which grains to collect
+
+**Real-world result**: Covert radios transmit at power levels 1000× below what receivers normally detect. Even sensitive spy equipment can't tell the difference between the transmission and natural radio noise.
+
+---
+
+### The "Smart Echo" Analogy
+
+**Anti-Jamming (AJ)** = Fighting back against interference
+
+When an enemy tries to jam your signal:
+1. **Your antenna "learns"** where the jammer is located
+2. **Creates a "null"** (deaf spot) pointing at the jammer
+3. **Amplifies signals** from your intended direction
+
+Think of it like **noise-canceling headphones for radio**—specifically canceling out the jammer while hearing your friend.
+
+**Real-world result**: GPS receivers with anti-jam antennas (CRPA) can reject jammers that are 10,000× stronger than the GPS satellite signal.
+
+---
+
+### Key Concepts Simplified
+
+| Concept | Everyday Analogy | Military Benefit |
+|---------|------------------|------------------|
+| **Spread Spectrum** | Whisper spread across a huge room | Signal hidden below noise floor |
+| **Processing Gain** | Collecting 1000 whispers back into speech | Overcomes jammers and noise |
+| **Frequency Hopping** | Changing channels 1000× per second | Enemy can't follow or jam |
+| **Phased Array** | Computer-controlled spotlight | Instant beam steering, multi-target |
+| **Encryption** | Secret language only you and friend know | Even intercepted messages are useless |
+| **Beamforming** | Talking through a directional megaphone | Only intended receiver hears you |
+
+---
+
+### Why This Matters for Chimera
+
+Chimera helps you **visualize and experiment** with these concepts:
+- **Build spread spectrum systems** in your browser
+- **See jamming resistance** in real-time plots
+- **Experiment with frequency hopping** patterns
+- **Understand phased arrays** through interactive simulations
+
+**You don't need a million-dollar lab**—Chimera brings military-grade DSP concepts to anyone with curiosity and a web browser.
+
+---
+
+### What You'll Learn in This Document
+
+The sections below explain **how these systems actually work**:
+- 📡 **SATCOM Frequency Hopping**: How military satellites resist jamming
+- 🛰️ **GPS M-Code**: Why military GPS works when civilian GPS is jammed
+- 🎚️ **Phased-Array Radar**: How F-22s and destroyers "see" electronically
+- 🔗 **Link 16**: The tactical data network connecting planes, ships, and missiles
+- 🕵️ **Covert Communications**: How to transmit data invisibly
+
+**If you're new to DSP**: Start with [[Spread Spectrum (DSSS/FHSS)]] for foundational concepts, then return here.
+
+**If you're experienced**: Skip to the technical sections—detailed math, code examples, and real-world system specs await.
 
 ---
 

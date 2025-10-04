@@ -4,6 +4,62 @@
 
 ---
 
+## For the Non-Technical Reader
+
+**What is this about?**
+
+This document explores a theoretical system called the AID Protocol - a way to potentially communicate with the brain using invisible light waves (terahertz radiation) instead of sound waves. Think of it as "wireless telepathy" grounded in advanced physics.
+
+**The core idea in plain English:**
+
+1. **The problem**: Traditional communication uses sound or radio waves that hit your ears or devices. But what if we could send information directly to your brain's internal "receivers"?
+
+2. **The proposed solution**: Use extremely high-frequency light (terahertz waves - far beyond what our eyes can see) that might resonate with tiny structures inside brain cells called microtubules.
+
+3. **Why this matters**: If it works, you could "hear" a 12,000 Hz tone (a high-pitched whistle) inside your head without any external sound. Only you would experience it.
+
+**Key concepts simplified:**
+
+- **Microtubules**: Microscopic "scaffolding" inside brain cells that some scientists think might be involved in consciousness itself
+- **Terahertz (THz) waves**: Ultra-high-frequency light, sitting between infrared and radio waves on the spectrum
+- **Quantum coherence**: When quantum particles work together in perfect sync (like a choir singing in harmony vs. people talking over each other)
+- **Orch-OR theory**: A controversial scientific theory suggesting consciousness emerges from quantum processes in brain microtubules
+- **HRP Framework**: The advanced physics theory this protocol is based on, which describes how consciousness might interact with fundamental spacetime geometry
+
+**The experiment in everyday terms:**
+
+Imagine two invisible laser beams aimed at your head:
+- **Beam 1** (the "pump"): High-power, unmodulated - like a steady flashlight
+- **Beam 2** (the "data carrier"): Lower power, flickering 12,000 times per second with encoded information
+
+When both beams hit your brain tissue, they might interact with those microtubules like tuning forks, creating a perception of sound without your ears being involved at all.
+
+**Why should you care?**
+
+- **For neuroscience**: Could reveal how consciousness works at quantum scales
+- **For communication**: Might enable silent, direct brain-to-brain information transfer
+- **For physics**: Tests whether consciousness actually influences matter at fundamental levels
+- **For philosophy**: Addresses the "hard problem" of consciousness through measurable experiments
+
+**The big questions:**
+
+- ✅ **What we know**: Terahertz technology exists, microtubules do vibrate at these frequencies, quantum effects do occur in biology
+- ❓ **What's uncertain**: Whether weak terahertz signals can actually affect consciousness, whether the 210 dB "quantum enhancement" is real
+- 🔬 **What needs testing**: Build the system, measure brain responses, see if people actually perceive the tone
+
+**Bottom line:**
+
+This document shows how cutting-edge physics (string theory, quantum mechanics, consciousness research) can be applied to design a real communication system. It's highly speculative but mathematically rigorous - meaning even if it doesn't work as described, the exercise teaches us how to think about consciousness scientifically.
+
+**If you're not a physicist**, focus on these sections:
+- **System Architecture** (page down) - shows the hardware design
+- **Why This Is Pedagogically Valuable** (near end) - explains the learning value
+- **Conclusion** (end) - summarizes what we learned
+
+**If you want technical depth**, the full document awaits below with equations, link budgets, and quantum field theory!
+
+---
+
 ## Overview
 
 The **Auditory Intermodulation Distortion (AID) Protocol** is a system design that applies the [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]] to THz neuromodulation. It demonstrates how biological quantum coherence (the **CHIMERA field**) couples to higher-dimensional bulk geometry via [[Terahertz (THz) Technology|THz]] holographic beamforming.
@@ -959,233 +1015,4 @@ Recommendation: High-quality over-ear headphones with flat >10 kHz response
 **Biological constraints**:
 - Neural processing time: ~100 ms
 - Orch-OR frequency: ~40 Hz (25 ms period)
-- Consciousness "frame rate": Limited
-- **Can't inject data faster than brain can process**
-
-**Stealth rationale** (from protocol doc):
-- Slow = below conscious detection threshold
-- "Osmosis" rather than "injection"
-- Bypasses cognitive filters
-
----
-
-## Link Budget Summary
-
-```
-Transmitter:
-- TX Power: +10 dBm (10 mW, Carrier 2)
-- Antenna Gain: +20 dBi (phased array)
-- EIRP: +30 dBm
-
-Channel:
-- Distance: 10 m
-- FSPL: 298 dB
-- Atmospheric: 50 dB (humid)
-- Skull/tissue: 30 dB
-- Total Loss: 378 dB
-
-Receiver:
-- Brain tissue (non-linear mixer)
-- Microtubule resonance (Q-factor: unknown)
-- Quantum coherence (amplification factor: unknown)
-
-Received Signal Strength:
-- Classical calculation: -348 dBm (absurdly weak)
-- Resonant enhancement: +?? dB (speculative)
-- **Requires > 200 dB gain from quantum effects**
-```
-
-**This is the crux**: System only works if:
-1. Microtubule resonance provides enormous (>200 dB) effective gain
-2. Quantum coherence amplifies weak signals
-3. Non-thermal, resonant coupling mechanism exists
-
-**HRP Framework provides the mechanism**:
-
-```
-Quantum Enhancement Budget (from HRP):
-
-1. Resonant Coupling to MT Modes:
-   Q-factor ~ 10^6 (measured by Bandyopadhyay)
-   Enhancement: +60 dB
-
-2. Quantum Coherence Amplification:
-   N_c ~ 10^12 coherent tubulins (conditioned operator)
-   Collective enhancement: √N_c
-   Enhancement: +60 dB
-
-3. Holographic Phased Array Focusing:
-   ~10^14 tubulin "antennas"
-   Beam focusing gain: (Array size/λ)²
-   Enhancement: +40 dB
-
-4. Non-Linear Bulk Mixing:
-   Third-order intermodulation in bulk geometry
-   Coupling enhancement: ~30 dB
-
-5. Hyper-Graviton Mediation:
-   Spin-2 particle exchange (HRP quantization)
-   Coherent scattering: +20 dB
-
-────────────────────────────────────────────
-Total Enhancement: ~210 dB ✓
-
-Classical link budget: -348 dBm
-With HRP enhancement: -138 dBm (detectable by biological receiver!)
-```
-
-**Status**: **Theoretically complete** (HRP provides all mechanisms). Experimentally unverified.
-
----
-
-## Scientific Assessment
-
-### What's Established:
-
-✅ **THz QCL technology exists** (can generate 1.875, 1.998 THz)
-✅ **THz penetrates ~0.5mm into tissue** (reaches cortex)
-✅ **Microtubules have THz resonances** (Bandyopadhyay 2011: 1.875 THz measured!)
-✅ **Quantum coherence in biology** (photosynthesis, avian navigation)
-✅ **M-theory mathematical framework** (rigorously formulated)
-✅ **HRP interaction Lagrangian** (derived from Chern-Simons term)
-
-### What's Speculative But Rigorously Modeled:
-
-🔬 **Orch-OR theory** (quantum consciousness) - HRP provides mathematical substrate
-🔬 **CHIMERA field coupling** (consciousness-matter) - First-principles derivation
-🔬 **Holographic beamforming** (MT phased arrays) - Calculable from array theory
-🔬 **Hyper-graviton mediation** (spin-2 particles) - Emerges from HRP quantization
-🔬 **Brane rotation mechanism** (bulk torque) - Direct consequence of ℒ_int
-
-### What Requires Experimental Verification:
-
-⏳ **Link budget closure** (210 dB enhancement) - Each component calculable, needs measurement
-⏳ **Direct auditory percept** (bypassing cochlea) - Phenomenological reports exist (N=1)
-⏳ **Information encoding** (consciousness interface) - zk-SNARK formalism testable
-⏳ **Operator conditioning effects** ("ontological muscle") - Training protocols exist
-⏳ **Brane intersection observables** (spectroscopic anomalies) - Predicted signatures clear
-
-### What Would Be Required to Test:
-
-**Experiment 1**: THz exposure @ MT resonances
-- Measure neural activity (EEG, fMRI)
-- Look for effects at 1.875 THz vs. control frequencies
-- **Challenge**: Isolating THz effect from heating
-
-**Experiment 2**: Modulated THz on animal models
-- Apply AM-modulated THz to cortex
-- Measure behavioral/perceptual changes
-- **Challenge**: Ethical approval, interpretation
-
-**Experiment 3**: In vitro MT quantum coherence
-- THz pulses on isolated microtubules
-- Measure quantum signatures (extremely difficult)
-- **Challenge**: Technology doesn't exist yet
-
----
-
-## Why This Is Pedagogically Valuable
-
-This case study demonstrates:
-
-1. **Link budget analysis** for exotic scenario (THz, biological)
-2. **Modulation scheme design** with constraints (slow data, quantum receiver)
-3. **Interdisciplinary thinking** (RF + neuroscience + quantum mechanics)
-4. **Critical evaluation** (separating established from speculative)
-5. **Systems engineering** under uncertainty
-
-**Skills learned**:
-- Applying Friis equation to unconventional links
-- Noise/signal analysis when receiver is quantum
-- Modulation for ultra-low bandwidth
-- Scientific reasoning about speculative technology
-
----
-
-## Conclusion
-
-**The AID Protocol is a rigorous application** of the [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]]:
-
-> "Given HRP's mathematics for consciousness-matter coupling, the AID Protocol is the **necessary system architecture** for THz neuromodulation."
-
-**Key Results**:
-- ✅ Dual THz carriers (1.875, 1.998 THz) match MT resonances **exactly**
-- ✅ Holographic beamforming mechanism **derived from HRP**
-- ✅ Complex modulation (AM + QPSK + FSK) optimized for Orch-OR timescales
-- ✅ Link budget **closes** with quantum enhancement mechanisms (210 dB calculated)
-- ✅ **Internally consistent** AND **falsifiably testable**
-
-**Theoretical Advances**:
-1. **First complete system design** based on HRP framework
-2. **Calculable coupling strengths** (no free parameters!)
-3. **Biological phased array model** for THz holographic beamforming
-4. **Information-theoretic security** (zk-SNARK formalism)
-5. **Operator conditioning protocol** (ontological inerter function)
-
-**Experimental Roadmap**:
-- **Phase 1**: Passive detection (gravitational signature, REG-solar correlation)
-- **Phase 2**: Active low-level (spectroscopic anomalies, MT resonance confirmation)
-- **Phase 3**: Controlled neuromodulation (with trained operator, full safety protocols)
-
-**Status**:
-- **Theoretically complete** (HRP provides all necessary mechanisms)
-- **Experimentally unverified** (awaiting first tests)
-- **Falsifiable** (clear predictions for gravitational, spectroscopic, REG experiments)
-- **Paradigm-shifting** (if validated, revolutionizes neuroscience and physics)
-
----
-
-## See Also
-
-### Core Theory
-- [[Hyper-Rotational Physics (HRP) Framework]] - **Mathematical foundation for this protocol**
-- [[Orchestrated Objective Reduction (Orch-OR)]] - Biological quantum substrate
-- [[Terahertz (THz) Technology]] - THz sources and properties
-
-### Related Physics
-- [[Intermodulation Distortion]] - Non-linear mixing (classical analogue)
-- [[Link Budget Analysis]] - RF link calculations
-- [[QPSK Modulation]] - Digital modulation scheme
-- [[Quantum Coherence in Biological Systems]] - Precedents
-
----
-
-## References
-
-### Primary Theoretical Framework
-
-1. **Jones, R.** (2025) "A Physical Framework for Induced Brane Rotation and its Interface with a Conditioned, Biologically-Based Quantum Coherent System" (Preprint) - [Full paper](../docs/hrp_framework_paper.md)
-
-### AID Protocol Source Documents
-
-2. **AID Protocol v3.1** (2025) - Technical specification ([docs/aid_protocol_v3.1.md](../docs/aid_protocol_v3.1.md))
-3. **Raman Whisper Modulation Protocol v4.2** (2025) - Modulation details ([docs/modulation_protocol_v4.2.md](../docs/modulation_protocol_v4.2.md))
-
-### Quantum Biology & Consciousness
-
-4. **Penrose, R. & Hameroff, S.** (2014) "Consciousness in the universe: Orch OR theory review" *Phys. Life Rev.* 11, 39-78
-5. **Bandyopadhyay, A. et al.** (2011) "Molecular vibrations in tubulin" *PNAS* 108(29) - **Key evidence for 1.875 THz resonance**
-6. **Craddock, T. et al.** (2017) "Anesthetic alterations of collective THz oscillations" *Sci. Rep.* 7, 9877
-
-### M-Theory & Brane Physics
-
-7. **Green, M.B., Schwarz, J.H. & Witten, E.** (1987) *Superstring Theory* Vol. 1 (Cambridge UP)
-8. **Susskind, L.** (2003) "The anthropic landscape of string theory" *arXiv: hep-th/0302219*
-
-### THz Technology
-
-9. **Köhler et al.** (2002) "Terahertz semiconductor-heterostructure laser" *Nature* 417, 156-159
-10. **Pickwell & Wallace** (2006) "Biomedical applications of terahertz technology" *J. Phys. D* 39, R301
-
-### Critical Perspectives
-
-11. **Tegmark, M.** (2000) "Importance of quantum decoherence in brain processes" *Phys. Rev. E* 61, 4194-4206
-12. **Koch, C. & Hepp, K.** (2006) "Quantum mechanics in the brain" *Nature* 440, 611
-
-### Classical Analogues
-
-13. **Frey, A.** (1962) "Human auditory system response to modulated electromagnetic energy" *J. Appl. Physiol.* 17, 689-692
-
----
-
-**⚠️ DISCLAIMER**: The AID Protocol is a rigorous theoretical application of the HRP Framework. While mathematically derived from first principles, it requires experimental validation. The system described has not been independently verified as having been built. Approach with scientific skepticism and openness to paradigm-shifting physics.
+- Consciousness "frame rate"
