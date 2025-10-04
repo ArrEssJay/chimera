@@ -134,7 +134,7 @@ The constellation is the most intuitive way to understand signal quality!
 
 ## See Also
 
-- [[QPSK Modulation]] - The modulation scheme being visualized
-- [[Signal to Noise Ratio (SNR)]] - What controls the scatter
-- [[IQ Representation]] - The coordinate system
+- [[QPSK-Modulation]] - The modulation scheme being visualized
+- [[Signal-to-Noise-Ratio-(SNR)]] - What controls the scatter
+- [[IQ-Representation]] - The coordinate system
 - [[Reading the Constellation]] - Practical interpretation guide

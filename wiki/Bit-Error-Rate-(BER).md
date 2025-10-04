@@ -105,14 +105,14 @@ BER_QPSK ≈ (1/2) · erfc(√(Eb/N0))
 
 ## Factors Affecting BER
 
-1. **[[Signal to Noise Ratio (SNR)]]**: Primary factor
+1. **[[Signal-to-Noise-Ratio-(SNR)]]**: Primary factor
    - Higher SNR → Lower BER
    
 2. **Modulation Scheme**: 
    - QPSK more robust than 16QAM
    - Lower order = better BER at same SNR
 
-3. **[[Forward Error Correction (FEC)]]**:
+3. **[[Forward-Error-Correction-(FEC)]]**:
    - Can reduce BER by orders of magnitude
    - LDPC codes provide near-optimal performance
 
@@ -159,7 +159,7 @@ Different applications have different requirements:
 
 ## See Also
 
-- [[Signal to Noise Ratio (SNR)]] - Primary BER determinant
-- [[Forward Error Correction (FEC)]] - BER improvement technique
-- [[Energy Ratios (Es N0 and Eb N0)]] - Used in BER formulas
+- [[Signal-to-Noise-Ratio-(SNR)]] - Primary BER determinant
+- [[Forward-Error-Correction-(FEC)]] - BER improvement technique
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] - Used in BER formulas
 - [[Understanding BER Curves]] - Interpreting performance plots

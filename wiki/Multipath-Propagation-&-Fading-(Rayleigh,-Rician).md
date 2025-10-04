@@ -1,6 +1,6 @@
 # Multipath Propagation & Fading (Rayleigh & Rician)
 
-[[Home]] | **RF Propagation** | [[Channel Models (Rayleigh & Rician)]] | [[Atmospheric Effects (Ionospheric, Tropospheric)]]
+[[Home]] | **RF Propagation** | [[Channel-Models-(Rayleigh-&-Rician)]] | [[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]
 
 ---
 
@@ -167,7 +167,7 @@ Where $T_s$ = Symbol period
 
 **Example**: 1 Mbps data ($T_s = 1\ \mu$s), urban channel ($\tau_{\text{rms}} = 3\ \mu$s):
 - ISI severe (3 symbols overlap!)
-- **Mitigation**: Equalization, OFDM (see [[OFDM & Multicarrier Modulation]])
+- **Mitigation**: Equalization, OFDM (see [[OFDM-&-Multicarrier-Modulation]])
 
 ---
 
@@ -512,7 +512,7 @@ $$
 
 **Per-subcarrier equalization**: Simple single-tap equalizer
 
-**See**: [[OFDM & Multicarrier Modulation]]
+**See**: [[OFDM-&-Multicarrier-Modulation]]
 
 ---
 
@@ -522,7 +522,7 @@ $$
 
 **Frequency diversity**: Different frequency components fade independently
 
-**See**: [[Spread Spectrum (DSSS, FHSS)]]
+**See**: [[Spread-Spectrum-(DSSS-FHSS)]]
 
 ---
 
@@ -536,7 +536,7 @@ $$
 - Error burst of 10 bits → Spread across 100+ bit positions
 - Decoder sees isolated errors (easier to correct)
 
-**See**: [[Forward Error Correction (FEC)]], [[LDPC Codes]]
+**See**: [[Forward-Error-Correction-(FEC)]], [[LDPC-Codes]]
 
 ---
 
@@ -670,13 +670,13 @@ $$
 
 ## Related Topics
 
-- **[[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]]**: LOS vs NLOS propagation
-- **[[Atmospheric Effects (Ionospheric, Tropospheric)]]**: Clear-air effects (different from multipath)
-- **[[Signal-to-Noise Ratio (SNR)]]**: Fading reduces instantaneous SNR
-- **[[Bit Error Rate (BER)]]**: Fading degrades BER significantly
-- **[[QPSK Modulation]]** / **[[LDPC Codes]]**: Require fade mitigation
-- **[[OFDM & Multicarrier Modulation]]**: Combats frequency-selective fading
-- **[[Spread Spectrum (DSSS, FHSS)]]**: Provides frequency diversity
+- **[[Propagation-Modes-(Ground-Wave,-Sky-Wave,-Line-of-Sight)]]**: LOS vs NLOS propagation
+- **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Clear-air effects (different from multipath)
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Fading reduces instantaneous SNR
+- **[[Bit-Error-Rate-(BER)]]**: Fading degrades BER significantly
+- **[[QPSK-Modulation]]** / **[[LDPC-Codes]]**: Require fade mitigation
+- **[[OFDM-&-Multicarrier-Modulation]]**: Combats frequency-selective fading
+- **[[Spread-Spectrum-(DSSS-FHSS)]]**: Provides frequency diversity
 
 ---
 

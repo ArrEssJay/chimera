@@ -1,6 +1,6 @@
 # Adaptive Modulation & Coding (AMC)
 
-**Adaptive Modulation and Coding (AMC)** dynamically adjusts transmission parameters (modulation order, code rate, bandwidth) based on real-time channel conditions to maximize throughput while maintaining target error rates. AMC is fundamental to modern wireless standards (LTE, 5G NR, WiFi 6/7) and enables systems to track [[Shannon's Channel Capacity Theorem|Shannon capacity]] in time-varying channels.
+**Adaptive Modulation and Coding (AMC)** dynamically adjusts transmission parameters (modulation order, code rate, bandwidth) based on real-time channel conditions to maximize throughput while maintaining target error rates. AMC is fundamental to modern wireless standards (LTE, 5G NR, WiFi 6/7) and enables systems to track [[Shannon's-Channel-Capacity-Theorem|Shannon capacity]] in time-varying channels.
 
 **Core principle**: Match data rate to instantaneous channel quality—use aggressive modulation when channel is good, fall back to robust modulation when channel degrades.
 
@@ -680,12 +680,12 @@ print(f"AMC average BLER: {np.mean(bler_amc):.2%}")
 - **IEEE 802.11ax**: WiFi 6 (rate adaptation algorithms)
 
 ### Related Topics
-- [[Shannon's Channel Capacity Theorem]] - Theoretical foundation for AMC
-- [[OFDM & Multicarrier Modulation]] - Per-subcarrier adaptation
-- [[MIMO & Spatial Multiplexing]] - Per-stream MCS adaptation
-- [[Forward Error Correction (FEC)]] - Code rate adaptation
-- [[Real-World System Examples]] - LTE, 5G, WiFi implementations
+- [[Shannon's-Channel-Capacity-Theorem]] - Theoretical foundation for AMC
+- [[OFDM-&-Multicarrier-Modulation]] - Per-subcarrier adaptation
+- [[MIMO-&-Spatial-Multiplexing]] - Per-stream MCS adaptation
+- [[Forward-Error-Correction-(FEC)]] - Code rate adaptation
+- [[Real-World-System-Examples]] - LTE, 5G, WiFi implementations
 
 ---
 
-**Summary**: Adaptive Modulation and Coding (AMC) is the bridge between [[Shannon's Channel Capacity Theorem|Shannon theory]] and practical wireless systems. By dynamically selecting modulation order (BPSK → 256-QAM) and code rate (1/3 → 7/8) based on Channel Quality Indicator (CQI) feedback, AMC systems track instantaneous channel capacity and maximize throughput while maintaining target error rates (typically <10% BLER). LTE/5G use CQI reporting (1-15) mapped to MCS tables, combined with HARQ for robustness. AMC provides 2-5× throughput gain in fading channels compared to fixed modulation. Outer-loop link adaptation (OLLA) corrects for CQI errors. Cross-layer optimization integrates AMC with scheduling (proportional fair) and buffer management. Predictive AMC uses Doppler estimation or machine learning to anticipate channel changes. AMC is essential for spectral efficiency in modern cellular and WiFi networks, enabling gigabit-per-second data rates while serving users across wide SNR ranges (cell-edge to cell-center).
+**Summary**: Adaptive Modulation and Coding (AMC) is the bridge between [[Shannon's-Channel-Capacity-Theorem|Shannon theory]] and practical wireless systems. By dynamically selecting modulation order (BPSK → 256-QAM) and code rate (1/3 → 7/8) based on Channel Quality Indicator (CQI) feedback, AMC systems track instantaneous channel capacity and maximize throughput while maintaining target error rates (typically <10% BLER). LTE/5G use CQI reporting (1-15) mapped to MCS tables, combined with HARQ for robustness. AMC provides 2-5× throughput gain in fading channels compared to fixed modulation. Outer-loop link adaptation (OLLA) corrects for CQI errors. Cross-layer optimization integrates AMC with scheduling (proportional fair) and buffer management. Predictive AMC uses Doppler estimation or machine learning to anticipate channel changes. AMC is essential for spectral efficiency in modern cellular and WiFi networks, enabling gigabit-per-second data rates while serving users across wide SNR ranges (cell-edge to cell-center).

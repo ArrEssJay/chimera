@@ -814,11 +814,11 @@ print(f"Effective rate: {nT}× single antenna")
 - **3GPP TR 38.802**: 5G massive MIMO study
 
 ### Related Topics
-- [[OFDM & Multicarrier Modulation]] - MIMO-OFDM combination
+- [[OFDM-&-Multicarrier-Modulation]] - MIMO-OFDM combination
 - [[Beamforming (coming soon)]] - Advanced spatial processing
-- [[Channel Equalization]] - MIMO detection algorithms
-- [[Real-World System Examples]] - LTE, 5G, WiFi implementations
-- [[Adaptive Modulation & Coding (AMC)]] - Per-stream adaptation
+- [[Channel-Equalization]] - MIMO detection algorithms
+- [[Real-World-System-Examples]] - LTE, 5G, WiFi implementations
+- [[Adaptive-Modulation-&-Coding-(AMC)]] - Per-stream adaptation
 
 ---
 

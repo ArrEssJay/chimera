@@ -1,6 +1,6 @@
 # Wave Polarization
 
-[[Home]] | **EM Fundamentals** | [[Maxwell's Equations & Wave Propagation]] | [[Electromagnetic Spectrum]]
+[[Home]] | **EM Fundamentals** | [[Maxwell's-Equations-&-Wave-Propagation]] | [[Electromagnetic-Spectrum]]
 
 ---
 
@@ -721,11 +721,11 @@ $$
 
 ## Related Topics
 
-- **[[Maxwell's Equations & Wave Propagation]]**: E and H fields in EM waves
-- **[[Antenna Theory Basics]]**: Polarization matching for maximum gain
-- **[[Atmospheric Effects (Ionospheric, Tropospheric)]]**: Faraday rotation
-- **[[Multipath Propagation & Fading (Rayleigh, Rician)]]**: Depolarization in multipath
-- **[[Free-Space Path Loss (FSPL)]]**: Friis equation assumes matched polarization
+- **[[Maxwell's-Equations-&-Wave-Propagation]]**: E and H fields in EM waves
+- **[[Antenna-Theory-Basics]]**: Polarization matching for maximum gain
+- **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Faraday rotation
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]**: Depolarization in multipath
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Friis equation assumes matched polarization
 
 ---
 

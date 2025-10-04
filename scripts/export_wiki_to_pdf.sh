@@ -29,35 +29,50 @@ done
 
 echo "📄 Converting to PDF with pandoc..."
 
-# Convert markdown directly to PDF using pandoc's built-in PDF engine
-# This uses pdflatex/xelatex if available, or weasyprint as fallback
+# Detect available fonts
+if fc-list 2>/dev/null | grep -qi "DejaVu Sans"; then
+  MAIN_FONT="DejaVu Sans"
+  MONO_FONT="DejaVu Sans Mono"
+  echo "Using DejaVu fonts (best Unicode support)"
+elif fc-list 2>/dev/null | grep -qi "Noto Sans"; then
+  MAIN_FONT="Noto Sans"
+  MONO_FONT="Noto Sans Mono"
+  echo "Using Noto fonts (good Unicode support)"
+else
+  MAIN_FONT="Latin Modern Roman"
+  MONO_FONT="Latin Modern Mono"
+  echo "Using Latin Modern fonts (limited Unicode support, some characters may not render)"
+fi
+
+# Check if custom template exists
+TEMPLATE_PATH="$(dirname "$0")/pandoc-template.tex"
+TEMPLATE_ARG=""
+if [ -f "$TEMPLATE_PATH" ]; then
+  TEMPLATE_ARG="--template=$TEMPLATE_PATH"
+  echo "Using custom pandoc template: $TEMPLATE_PATH"
+else
+  echo "Custom template not found, using default pandoc template"
+fi
+
+# Convert markdown directly to PDF using pandoc with xelatex (supports Unicode/emoji)
 pandoc "$TMP_MD" \
   -o "$OUTPUT_PDF" \
-  --pdf-engine=weasyprint \
+  --pdf-engine=xelatex \
+  $TEMPLATE_ARG \
   --metadata title="Chimera DSP Wiki" \
   --metadata author="Chimera Project" \
   --metadata date="$(date +%Y-%m-%d)" \
   --toc \
-  --toc-depth=2 \
+  --toc-depth=3 \
   --number-sections \
+  --listings \
   -V geometry:margin=1in \
   -V linkcolor:blue \
   -V fontsize=11pt \
-  2>/dev/null || {
-    echo "⚠️  WeasyPrint not found. Trying with pdflatex..."
-    pandoc "$TMP_MD" \
-      -o "$OUTPUT_PDF" \
-      --pdf-engine=pdflatex \
-      --metadata title="Chimera DSP Wiki" \
-      --metadata author="Chimera Project" \
-      --metadata date="$(date +%Y-%m-%d)" \
-      --toc \
-      --toc-depth=2 \
-      --number-sections \
-      -V geometry:margin=1in \
-      -V linkcolor:blue \
-      -V fontsize=11pt
-  }
+  -V documentclass:article \
+  -V mainfont="$MAIN_FONT" \
+  -V monofont="$MONO_FONT" \
+  -V papersize:letter
 
 rm -f "$TMP_MD"
 

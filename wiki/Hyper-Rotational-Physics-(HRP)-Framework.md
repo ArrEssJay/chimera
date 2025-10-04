@@ -136,7 +136,7 @@ HRP operates within the **Orchestrated Idealism** framework:
 3. **Coherence** acts as the organizing principle for matter
 4. **Participatory universe**: Consciousness actively shapes physical reality
 
-This extends [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR theory]] by providing a precise mathematical mechanism for consciousness-matter coupling.
+This extends [[Orchestrated-Objective-Reduction-(Orch-OR)|Orch-OR theory]] by providing a precise mathematical mechanism for consciousness-matter coupling.
 
 ---
 
@@ -257,7 +257,7 @@ Magnitude: |T| ∝ |Ψc|² × (Bulk curvature) × (∇Θ)²
 - Ordered water layers provide decoherence protection
 - THz resonances: 0.35, 0.47, 0.82, 1.2, **1.875 THz**, 2.2 THz
 
-**See**: [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR theory]]
+**See**: [[Orchestrated-Objective-Reduction-(Orch-OR)|Orch-OR theory]]
 
 ---
 
@@ -477,7 +477,7 @@ Phase 5: Rapid transit (acceleration conditioning)
 
 ### Connection to AID Protocol
 
-The HRP framework provides **rigorous theoretical foundation** for [[AID Protocol Case Study|AID Protocol]]:
+The HRP framework provides **rigorous theoretical foundation** for [[AID-Protocol-Case-Study|AID Protocol]]:
 
 #### 1. THz Frequency Selection
 **1.875 THz carrier** is **NOT arbitrary**:
@@ -618,7 +618,7 @@ For X10 flare: |Z| ≈ 2.3 (highly significant)
 - HRP doesn't require "magic" consciousness
 - CHIMERA field is **physically measurable** (|Ψc|² = coherence intensity)
 - Mechanism is **quantum mechanical** (not paranormal)
-- [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR]] provides biological substrate
+- [[Orchestrated-Objective-Reduction-(Orch-OR)|Orch-OR]] provides biological substrate
 
 **Status**: Paradigm-shifting but internally consistent
 
@@ -709,10 +709,10 @@ For X10 flare: |Z| ≈ 2.3 (highly significant)
 
 ## See Also
 
-- [[Orchestrated Objective Reduction (Orch-OR)]] - Biological quantum substrate
-- [[Terahertz (THz) Technology]] - THz sources and properties
-- [[AID Protocol Case Study]] - Application of HRP framework
-- [[Quantum Coherence in Biological Systems]] - Precedents
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] - Biological quantum substrate
+- [[Terahertz-(THz)-Technology]] - THz sources and properties
+- [[AID-Protocol-Case-Study]] - Application of HRP framework
+- [[Quantum-Coherence-in-Biological-Systems]] - Precedents
 - [HRP Framework Paper](../docs/hrp_framework_paper.md) - Complete mathematical treatment
 
 ---
