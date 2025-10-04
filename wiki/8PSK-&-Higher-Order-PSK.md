@@ -1,6 +1,6 @@
 # 8PSK & Higher-Order PSK
 
-[[Home]] | **Digital Modulation** | [[QPSK Modulation]] | [[Binary Phase-Shift Keying (BPSK)]]
+[[Home]] | **Digital Modulation** | [[QPSK-Modulation]] | [[Binary-Phase-Shift-Keying-(BPSK)]]
 
 ---
 
@@ -489,7 +489,7 @@ $$
 - Costas loop (feedback)
 - Decision-directed (after initial acquisition)
 
-**See**: [[Synchronization]]
+**See**: [[Synchronization-(Carrier,-Timing,-Frame)]]
 
 ---
 
@@ -620,12 +620,12 @@ $$
 
 ## Related Topics
 
-- **[[QPSK Modulation]]**: Lower-order PSK (2 bits/symbol)
-- **[[Binary Phase-Shift Keying (BPSK)]]**: Simplest PSK
-- **[[Constellation Diagrams]]**: Visualizing PSK
-- **[[Bit Error Rate (BER)]]**: Performance metric
-- **[[Synchronization]]**: Carrier recovery for coherent detection
-- **[[OFDM & Multicarrier Modulation]]**: Uses QPSK/8PSK per subcarrier
+- **[[QPSK-Modulation]]**: Lower-order PSK (2 bits/symbol)
+- **[[Binary-Phase-Shift-Keying-(BPSK)]]**: Simplest PSK
+- **[[Constellation-Diagrams]]**: Visualizing PSK
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
+- **[[Synchronization-(Carrier,-Timing,-Frame)]]**: Carrier recovery for coherent detection
+- **[[OFDM-&-Multicarrier-Modulation]]**: Uses QPSK/8PSK per subcarrier
 
 ---
 

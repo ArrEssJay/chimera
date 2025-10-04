@@ -1,6 +1,6 @@
 # Real-World System Examples
 
-[[Home]] | **System Implementation** | [[Channel Equalization]] | [[Signal Chain (End-to-End Processing)]]
+[[Home]] | **System Implementation** | [[Channel-Equalization]] | [[Signal-Chain-(End-to-End-Processing)]]
 
 ---
 
@@ -888,11 +888,11 @@ $$
 
 ## Related Topics
 
-- **[[Signal Chain (End-to-End Processing)]]**: System block diagrams
-- **[[Complete Link Budget Analysis]]**: Detailed link calculations
-- **[[OFDM & Multicarrier Modulation]]**: WiFi/LTE PHY layer
-- **[[Spread Spectrum (DSSS, FHSS)]]**: GPS, Bluetooth AFH
-- **[[Adaptive Coding & Modulation]]**: LTE, DVB-S2X, LoRaWAN ADR
+- **[[Signal-Chain-(End-to-End-Processing)]]**: System block diagrams
+- **[[Complete-Link-Budget-Analysis]]**: Detailed link calculations
+- **[[OFDM-&-Multicarrier-Modulation]]**: WiFi/LTE PHY layer
+- **[[Spread-Spectrum-(DSSS-FHSS)]]**: GPS, Bluetooth AFH
+- **[[Adaptive-Modulation-&-Coding-(AMC)]]**: LTE, DVB-S2X, LoRaWAN ADR
 
 ---
 

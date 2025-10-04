@@ -84,7 +84,7 @@ Probability Density:
 
 Chimera's simulation applies AWGN to model the communication channel:
 - Noise is added separately to I and Q components
-- Noise power is controlled by the [[Signal to Noise Ratio (SNR)]] setting
+- Noise power is controlled by the [[Signal-to-Noise-Ratio-(SNR)]] setting
 - Higher SNR = less noise variance = tighter constellation clusters
 
 ### Noise Power Calculation
@@ -117,7 +117,7 @@ Large scatter = high errors    Tight cluster = low errors
 
 ## See Also
 
-- [[Signal to Noise Ratio (SNR)]] - Controls noise power
-- [[Link Loss vs Noise]] - Distinction between attenuation and noise
-- [[Constellation Diagrams]] - Visualizing noise effects
-- [[IQ Representation]] - How noise affects I/Q components
+- [[Signal-to-Noise-Ratio-(SNR)]] - Controls noise power
+- [[Link-Loss-vs-Noise]] - Distinction between attenuation and noise
+- [[Constellation-Diagrams]] - Visualizing noise effects
+- [[IQ-Representation]] - How noise affects I/Q components

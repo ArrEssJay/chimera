@@ -1,6 +1,6 @@
 # Synchronization (Carrier, Timing, Frame)
 
-[[Home]] | **System Implementation** | [[Signal Chain (End-to-End Processing)]] | [[Channel Equalization]]
+[[Home]] | **System Implementation** | [[Signal-Chain-(End-to-End-Processing)]] | [[Channel-Equalization]]
 
 ---
 
@@ -649,11 +649,11 @@ Where $\sigma_\tau$ = RMS timing error (fraction of symbol period)
 
 ## Related Topics
 
-- **[[Signal Chain (End-to-End Processing)]]**: Overall system flow
-- **[[Channel Equalization]]**: Frequency-selective fading correction
-- **[[OFDM & Multicarrier Modulation]]**: Pilot-based sync
-- **[[QPSK Modulation]]**: Phase tracking for PSK
-- **[[Bit Error Rate (BER)]]**: Performance with sync errors
+- **[[Signal-Chain-(End-to-End-Processing)]]**: Overall system flow
+- **[[Channel-Equalization]]**: Frequency-selective fading correction
+- **[[OFDM-&-Multicarrier-Modulation]]**: Pilot-based sync
+- **[[QPSK-Modulation]]**: Phase tracking for PSK
+- **[[Bit-Error-Rate-(BER)]]**: Performance with sync errors
 
 ---
 
