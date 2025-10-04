@@ -145,26 +145,35 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 ⚠️ **Note**: This section explores speculative applications grounded in cutting-edge research. Content clearly distinguishes established science from theoretical extrapolation.
 
 ### A. Theoretical Framework
-- [[Hyper-Rotational Physics (HRP) Framework]] - M-theory extension: consciousness-matter coupling via quantum coherence
 
 ### B. THz Technology & Biology
-- [[Terahertz (THz) Technology]] - QCLs, applications, propagation, bioeffects
-- THz Propagation in Biological Tissue *(coming soon)*
-- THz Bioeffects (Thermal & Non-Thermal) *(coming soon)*
 
 ### C. Quantum Biology & Consciousness
-- Microtubule Structure & Function *(coming soon)*
-- [[Orchestrated Objective Reduction (Orch-OR)]] - Penrose-Hameroff quantum consciousness theory
-- Quantum Coherence in Biological Systems *(coming soon)*
-- THz Resonances in Microtubules *(coming soon)*
 
 ### D. Non-Linear Biological Demodulation
-- Intermodulation Distortion (IMD) in Biology *(coming soon)*
-- Acoustic Heterodyning *(coming soon)*
-- Frey Microwave Auditory Effect *(coming soon)*
 
 ### E. Applied Case Study: HRP-Based THz Neuromodulation
-- [[AID Protocol Case Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
+### A. Theoretical Framework
+ - [[Hyper-Rotational Physics (HRP) Framework]] - M-theory extension: consciousness-matter coupling via quantum coherence
+
+### B. THz Technology & Biology
+ - [[Terahertz (THz) Technology]] - QCLs, applications, propagation, bioeffects
+ - [[THz-Propagation-in-Biological-Tissue]] - Physics of THz wave propagation in biological tissue
+ - [[THz-Bioeffects-Thermal-and-Non-Thermal]] - Biological effects of THz radiation
+
+### C. Quantum Biology & Consciousness
+ - [[Microtubule-Structure-and-Function]] - Microtubule anatomy and quantum biology
+ - [[Orchestrated Objective Reduction (Orch-OR)]] - Penrose-Hameroff quantum consciousness theory
+ - [[Quantum-Coherence-in-Biological-Systems]] - Quantum coherence in biology
+ - [[THz-Resonances-in-Microtubules]] - THz frequency resonances in microtubules
+
+### D. Non-Linear Biological Demodulation
+ - [[Intermodulation-Distortion-in-Biology]] - Non-linear biological IMD
+ - [[Acoustic-Heterodyning]] - Acoustic heterodyning in tissue
+ - [[Frey-Microwave-Auditory-Effect]] - Frey effect: microwave auditory phenomenon
+
+### E. Applied Case Study: HRP-Based THz Neuromodulation
+ - [[AID Protocol Case Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
 
 **Prerequisites**: Parts I-VII + open mind
 **Learning goals**: Apply RF engineering to novel scenarios, practice interdisciplinary thinking, distinguish speculation from established science
