@@ -52,3 +52,44 @@ cargo test --package chimera-web
 ```
 
 Yew-specific wasm tests can be executed with `wasm-pack test --chrome --headless` if desired.
+
+### React Components Testing
+
+The React-based UI components use multiple testing approaches:
+
+**Unit Tests (Vitest):**
+```bash
+cd chimera-web
+npm test                  # Run tests
+npm run test:ui           # Run tests with UI
+npm run test:coverage     # Run tests with coverage report
+```
+
+**End-to-End Tests (Playwright):**
+```bash
+cd chimera-web
+npm run e2e              # Run E2E tests
+npm run e2e:ui           # Run E2E tests with UI
+```
+
+**Visual Regression Tests (Chromatic):**
+```bash
+cd chimera-web
+npm run chromatic        # Run visual regression tests locally
+```
+
+Visual regression testing is automated via Chromatic and runs on every PR to detect UI changes:
+- **Baseline Captures:** Chromatic captures screenshots of all Storybook stories
+- **Automated Comparison:** Visual changes are detected automatically on each PR
+- **Review Workflow:** Team members review and approve/reject visual changes in the Chromatic dashboard
+- **CI Integration:** The `.github/workflows/chromatic.yml` workflow runs on push and PR events
+
+### Storybook
+
+Interactive component documentation and development:
+
+```bash
+cd chimera-web
+npm run storybook        # Start Storybook dev server
+npm run build-storybook  # Build static Storybook
+```
