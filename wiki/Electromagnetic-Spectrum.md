@@ -1,6 +1,6 @@
 # Electromagnetic Spectrum
 
-[[Home]] | **Foundation** | [[Maxwell's Equations & Wave Propagation]] | [[Frequency-Shift Keying (FSK)]]
+[[Home]] | **Foundation** | [[Maxwell's-Equations-&-Wave-Propagation]] | [[Frequency-Shift-Keying-(FSK)]]
 
 ---
 
@@ -32,7 +32,7 @@
 
 ## Overview
 
-The **electromagnetic (EM) spectrum** encompasses all frequencies of electromagnetic radiation, from extremely low frequency (ELF) radio waves to ultra-high energy gamma rays. **All EM waves travel at the speed of light** ($c \approx 3 \times 10^8$ m/s in vacuum) and obey [[Maxwell's Equations & Wave Propagation|Maxwell's equations]].
+The **electromagnetic (EM) spectrum** encompasses all frequencies of electromagnetic radiation, from extremely low frequency (ELF) radio waves to ultra-high energy gamma rays. **All EM waves travel at the speed of light** ($c \approx 3 \times 10^8$ m/s in vacuum) and obey [[Maxwell's-Equations-&-Wave-Propagation]].
 
 **Key relationship**:
 
@@ -147,7 +147,7 @@ Where $h = 6.626 \times 10^{-34}$ J·s (Planck's constant)
 - High spatial resolution (sub-mm)
 - Strong water absorption (limits biomedical depth)
 
-**See**: [[Terahertz (THz) Technology]] for detailed discussion
+**See**: [[Terahertz-(THz)-Technology]] for detailed discussion
 
 ---
 
@@ -413,16 +413,16 @@ Where $h = 6.626 \times 10^{-34}$ J·s (Planck's constant)
 
 ## Related Topics
 
-- **[[Maxwell's Equations & Wave Propagation]]**: Mathematical foundation of EM waves
-- **[[Free-Space Path Loss (FSPL)]]**: Frequency-dependent propagation loss
-- **[[Terahertz (THz) Technology]]**: Applications and challenges in THz band
-- **[[AID Protocol Case Study]]**: 1.875 THz carrier for neural modulation
+- **[[Maxwell's-Equations-&-Wave-Propagation]]**: Mathematical foundation of EM waves
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Frequency-dependent propagation loss
+- **[[Terahertz-(THz)-Technology]]**: Applications and challenges in THz band
+- **[[AID-Protocol-Case-Study]]**: 1.875 THz carrier for neural modulation
 - **Antenna Theory**: Design principles for frequency-specific antennas (TBD)
 - **Atmospheric Propagation**: Absorption, refraction, ducting effects (TBD)
 
 ---
 
-**Next**: [[Antenna Theory Basics]] (TBD) - How to design antennas for different spectrum bands
+**Next**: [[Antenna-Theory-Basics]] (TBD) - How to design antennas for different spectrum bands
 
 ---
 

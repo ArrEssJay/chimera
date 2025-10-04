@@ -504,7 +504,7 @@ Modifies Orch-OR collapse patterns
 Alters conscious experience
 ```
 
-**This is the basis for the [[AID Protocol]]**
+**This is the basis for the [[AID-Protocol-Case-Study|AID Protocol]]**
 
 ---
 
@@ -523,10 +523,10 @@ Alters conscious experience
 ## See Also
 
 - [[Microtubule Structure and Dynamics]] - Biological details
-- [[Quantum Coherence in Biological Systems]] - Other examples
-- [[Terahertz (THz) Technology]] - THz sources and properties
+- [[Quantum-Coherence-in-Biological-Systems]] - Other examples
+- [[Terahertz-(THz)-Technology]] - THz sources and properties
 - [[THz Bioeffects]] - Documented biological interactions
-- [[AID Protocol]] - Speculative application (case study)
+- [[AID-Protocol-Case-Study|AID Protocol]] - Speculative application (case study)
 
 ---
 

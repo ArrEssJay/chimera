@@ -179,7 +179,7 @@ But there are practical limits:
 
 ## See Also
 
-- [[Signal to Noise Ratio (SNR)]] - The quality metric
-- [[Additive White Gaussian Noise (AWGN)]] - The noise model
-- [[Link Budget Analysis]] - Calculating system performance
-- [[Energy Ratios (Es N0 and Eb N0)]] - Energy-based metrics
+- [[Signal-to-Noise-Ratio-(SNR)]] - The quality metric
+- [[Additive-White-Gaussian-Noise-(AWGN)]] - The noise model
+- [[Complete-Link-Budget-Analysis|Link Budget Analysis]] - Calculating system performance
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] - Energy-based metrics

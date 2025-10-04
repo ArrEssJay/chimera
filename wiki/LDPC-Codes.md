@@ -50,7 +50,7 @@
 
 ---
 
-**Low-Density Parity-Check (LDPC)** codes are a class of [[Forward Error Correction (FEC)|FEC]] codes used in Chimera and many modern communication systems.
+**Low-Density Parity-Check (LDPC)** codes are a class of [[Forward-Error-Correction-(FEC)]] codes used in Chimera and many modern communication systems.
 
 ## What Makes LDPC Special?
 
@@ -259,7 +259,7 @@ Coding gain: ~40 dB
 
 ## See Also
 
-- [[Forward Error Correction (FEC)]] - General FEC concepts
-- [[Bit Error Rate (BER)]] - What LDPC improves
-- [[Signal to Noise Ratio (SNR)]] - LDPC enables lower SNR
+- [[Forward-Error-Correction-(FEC)]] - General FEC concepts
+- [[Bit-Error-Rate-(BER)]] - What LDPC improves
+- [[Signal-to-Noise-Ratio-(SNR)]] - LDPC enables lower SNR
 - [Chimera Technical Overview](../docs/chimera_technical_overview.md) - Implementation details

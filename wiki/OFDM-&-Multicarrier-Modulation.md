@@ -700,11 +700,11 @@ H_estimated = rx_symbols / data_symbols  # Assumes data_symbols are pilots
 - **3GPP TS 38.211**: 5G NR Physical Layer (scalable OFDM)
 
 ### Related Topics
-- [[MIMO & Spatial Multiplexing]] - Combining OFDM with multiple antennas
-- [[Channel Equalization]] - Frequency-domain equalization in OFDM
-- [[Adaptive Modulation & Coding (AMC)]] - Per-subcarrier link adaptation
-- [[Synchronization (Carrier, Timing, Frame)]] - OFDM sync techniques
-- [[Real-World System Examples]] - LTE, 5G, WiFi implementations
+- [[MIMO-&-Spatial-Multiplexing]] - Combining OFDM with multiple antennas
+- [[Channel-Equalization]] - Frequency-domain equalization in OFDM
+- [[Adaptive-Modulation-&-Coding-(AMC)]] - Per-subcarrier link adaptation
+- [[Synchronization-(Carrier,-Timing,-Frame)]] - OFDM sync techniques
+- [[Real-World-System-Examples]] - LTE, 5G, WiFi implementations
 
 ---
 

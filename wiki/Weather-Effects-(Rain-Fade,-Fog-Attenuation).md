@@ -1,6 +1,6 @@
 # Weather Effects: Rain Fade & Fog Attenuation
 
-[[Home]] | **RF Propagation** | [[Free-Space Path Loss (FSPL)]] | [[Atmospheric Effects (Ionospheric, Tropospheric)]]
+[[Home]] | **RF Propagation** | [[Free-Space-Path-Loss-(FSPL)]] | [[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]
 
 ---
 
@@ -607,11 +607,11 @@ $$
 
 ## Related Topics
 
-- **[[Free-Space Path Loss (FSPL)]]**: Baseline propagation loss
-- **[[Atmospheric Effects (Ionospheric, Tropospheric)]]**: Clear-air propagation
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Baseline propagation loss
+- **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Clear-air propagation
 - **[[Multipath Propagation & Fading]]**: Rayleigh/Rician fading (different mechanism)
-- **[[Signal-to-Noise Ratio (SNR)]]**: Impact of attenuation on link quality
-- **[[QPSK Modulation]]** / **[[LDPC Codes]]**: ACM adapts these for rain conditions
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Impact of attenuation on link quality
+- **[[QPSK-Modulation]]** / **[[LDPC-Codes]]**: ACM adapts these for rain conditions
 - **Antenna Theory**: Larger antennas provide more gain margin
 
 ---

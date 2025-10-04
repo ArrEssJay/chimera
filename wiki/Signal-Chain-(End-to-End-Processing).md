@@ -152,12 +152,12 @@ Example: "Hello" in binary
 **Input**: Information bits  
 **Output**: Encoded bits with parity
 
-**Purpose**: Add [[Forward Error Correction (FEC)|redundancy]] for error correction
+**Purpose**: Add [[Forward-Error-Correction-(FEC)]] for error correction
 
 ```
 Information: [1 0 1 0] (4 bits)
       ↓
-[[LDPC Codes|LDPC]] Encoder (rate 1/2)
+[[LDPC-Codes]] Encoder (rate 1/2)
       ↓
 Codeword: [1 0 1 0 1 1 0 0] (8 bits)
           └─────┘ └───────┘
@@ -178,7 +178,7 @@ Codeword: [1 0 1 0 1 1 0 0] (8 bits)
 **Input**: Encoded bits  
 **Output**: Complex symbols (I+jQ)
 
-**Purpose**: Map bits to [[QPSK Modulation|constellation points]]
+**Purpose**: Map bits to [[QPSK-Modulation]]
 
 ```
 Bits: [0 0] → Symbol: (-1, -1) → 225°
@@ -189,7 +189,7 @@ Bits: [1 1] → Symbol: (+1, +1) →  45°
 
 **For QPSK**: 2 bits per symbol
 
-**[[Constellation Diagrams|Constellation]] (TX side)**:
+**[[Constellation-Diagrams]] (TX side)**:
 ```
       Q
       ↑
@@ -260,7 +260,7 @@ Example:
 = -89 dBm RX power
 ```
 
-See: [[Link Loss vs Noise]]
+See: [[Link-Loss-vs-Noise]]
 
 **Chimera**: Simulated as amplitude scaling
 
@@ -280,7 +280,7 @@ r(t) = s(t) + n(t)
 where n(t) ~ N(0, σ²) is Gaussian noise
 ```
 
-**[[Signal to Noise Ratio (SNR)]]** determines noise power:
+**[[Signal-to-Noise-Ratio-(SNR)]]** determines noise power:
 ```
 SNR = P_signal / P_noise
 
@@ -298,7 +298,7 @@ SNR = P_signal / P_noise
   ☁   |  ☁
 ```
 
-See: [[Additive White Gaussian Noise (AWGN)]]
+See: [[Additive-White-Gaussian-Noise-(AWGN)]]
 
 **Chimera Implementation**: `chimera-core::channel`
 
@@ -327,7 +327,7 @@ where LPF is low-pass filter
 **Input**: Noisy continuous waveform  
 **Output**: Discrete symbol samples
 
-**Purpose**: Maximize [[Signal to Noise Ratio (SNR)|SNR]] before sampling
+**Purpose**: Maximize [[Signal-to-Noise-Ratio-(SNR)]] before sampling
 
 **Not simulated in current Chimera**
 
@@ -368,9 +368,9 @@ LLR = -0.3 → Weak '0' (could be wrong)
 **Input**: Soft bit estimates  
 **Output**: Corrected information bits
 
-**Purpose**: Fix errors using [[Forward Error Correction (FEC)|redundancy]]
+**Purpose**: Fix errors using [[Forward-Error-Correction-(FEC)]]
 
-**[[LDPC Codes|LDPC]] Decoding**:
+**[[LDPC-Codes]] Decoding**:
 1. Initialize with soft values (LLRs)
 2. Iterate belief propagation (typically 50 iterations)
 3. Check parity constraints
@@ -393,8 +393,8 @@ Post-FEC: [1 0 1 0 1 1 0 0] ← Errors corrected! ✅
 **Output**: Recovered information bits
 
 **Quality Metrics**:
-- [[Bit Error Rate (BER)|Pre-FEC BER]]: Errors before decoding
-- [[Bit Error Rate (BER)|Post-FEC BER]]: Residual errors after decoding
+- [[Bit-Error-Rate-(BER)]]: Errors before decoding
+- [[Bit-Error-Rate-(BER)]]: Residual errors after decoding
 - Frame Error Rate: Percentage of completely corrupted frames
 
 ```
@@ -414,15 +414,15 @@ Poor:       Post-FEC BER > 10⁻³
 - Modulation order (bits/symbol)
 
 ### Channel Metrics
-- [[Link Loss vs Noise|Link loss]] (dB)
-- [[Signal to Noise Ratio (SNR)|SNR]] (dB)
-- [[Energy Ratios (Es/N0 and Eb/N0)|Es/N0]] (dB per symbol)
-- [[Energy Ratios (Es/N0 and Eb/N0)|Eb/N0]] (dB per bit)
+- [[Link-Loss-vs-Noise]] (dB)
+- [[Signal-to-Noise-Ratio-(SNR)]] (dB)
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] (dB per symbol)
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] (dB per bit)
 
 ### Receiver Metrics
 - Pre-FEC errors
 - Post-FEC errors
-- [[Bit Error Rate (BER)|BER]] (pre and post)
+- [[Bit-Error-Rate-(BER)]] (pre and post)
 - Frame Error Rate
 - LDPC iterations
 - Coding gain
@@ -446,7 +446,7 @@ Throughout the signal chain, we work in different domains:
 ### Symbol Domain
 - **What**: Discrete constellation points
 - **Where**: Modulation, demodulation
-- **Tool**: [[Constellation Diagrams|Constellation diagram]]
+- **Tool**: [[Constellation-Diagrams]]
 
 ### Bit Domain
 - **What**: Binary data (0s and 1s)
@@ -519,10 +519,10 @@ The web interface shows:
 
 ## See Also
 
-- [[Forward Error Correction (FEC)]] - Encoding/decoding details
-- [[QPSK Modulation]] - Modulation scheme
-- [[Constellation Diagrams]] - Symbol visualization
-- [[Signal to Noise Ratio (SNR)]] - Channel quality metric
-- [[Link Loss vs Noise]] - Channel impairments
-- [[Bit Error Rate (BER)]] - Performance metric
+- [[Forward-Error-Correction-(FEC)]] - Encoding/decoding details
+- [[QPSK-Modulation]] - Modulation scheme
+- [[Constellation-Diagrams]] - Symbol visualization
+- [[Signal-to-Noise-Ratio-(SNR)]] - Channel quality metric
+- [[Link-Loss-vs-Noise]] - Channel impairments
+- [[Bit-Error-Rate-(BER)]] - Performance metric
 - [[Reading the Constellation]] - Practical guide to interpreting plots

@@ -1,6 +1,6 @@
 # Power Density & Field Strength
 
-[[Home]] | **EM Fundamentals** | [[Maxwell's Equations & Wave Propagation]] | [[Wave Polarization]]
+[[Home]] | **EM Fundamentals** | [[Maxwell's-Equations-&-Wave-Propagation]] | [[Wave-Polarization]]
 
 ---
 
@@ -354,7 +354,7 @@ $$
 P_r = \frac{P_t G_t G_r \lambda^2}{(4\pi r)^2}
 $$
 
-**This is the Friis transmission equation** (see [[Free-Space Path Loss (FSPL)]])
+**This is the Friis transmission equation** (see [[Free-Space-Path-Loss-(FSPL)]])
 
 ---
 
@@ -647,11 +647,11 @@ $$
 
 ## Related Topics
 
-- **[[Free-Space Path Loss (FSPL)]]**: Uses power density to derive path loss
-- **[[Antenna Theory Basics]]**: Gain, effective aperture, directivity
-- **[[Maxwell's Equations & Wave Propagation]]**: E and H field derivation
-- **[[Signal-to-Noise Ratio (SNR)]]**: Received power from power density
-- **[[Weather Effects (Rain Fade, Fog Attenuation)]]**: Power density reduction mechanisms
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Uses power density to derive path loss
+- **[[Antenna-Theory-Basics]]**: Gain, effective aperture, directivity
+- **[[Maxwell's-Equations-&-Wave-Propagation]]**: E and H field derivation
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Received power from power density
+- **[[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]**: Power density reduction mechanisms
 
 ---
 

@@ -1,6 +1,6 @@
 # Binary Phase-Shift Keying (BPSK)
 
-[[Home]] | **Modulation** | [[On-Off Keying (OOK)]] | [[Frequency-Shift Keying (FSK)]] | [[QPSK Modulation]]
+[[Home]] | **Modulation** | [[On-Off-Keying-(OOK)]] | [[Frequency-Shift-Keying-(FSK)]] | [[QPSK-Modulation]]
 
 ---
 
@@ -22,9 +22,9 @@
 
 **Binary Phase-Shift Keying (BPSK)** is the simplest form of **phase modulation**, where binary data is encoded by **shifting the carrier phase** between two states: 0° and 180°.
 
-**Key advantage over [[On-Off Keying (OOK)|OOK]] and [[Frequency-Shift Keying (FSK)|FSK]]**: BPSK uses **coherent detection** and provides **3 dB better performance** (lower BER for same SNR).
+**Key advantage over [[On-Off-Keying-(OOK)]] and [[Frequency-Shift-Keying-(FSK)]]**: BPSK uses **coherent detection** and provides **3 dB better performance** (lower BER for same SNR).
 
-**Foundation for**: [[QPSK Modulation]] (4 phases), 8PSK (8 phases), and higher-order modulation.
+**Foundation for**: [[QPSK-Modulation]] (4 phases), 8PSK (8 phases), and higher-order modulation.
 
 ---
 
@@ -67,7 +67,7 @@ Where:
 
 ---
 
-## [[IQ Representation]]
+## [[IQ-Representation]]
 
 **Baseband complex representation**:
 
@@ -79,7 +79,7 @@ $$
 - **I (In-phase)**: $I_n = A \cdot d_n$ (either $+A$ or $-A$)
 - **Q (Quadrature)**: $Q_n = 0$ (BPSK uses only I axis)
 
-**[[Constellation Diagrams|Constellation]]**:
+**[[Constellation-Diagrams]]**:
 
 ```
 Q (Imaginary)
@@ -270,7 +270,7 @@ Where:
 
 | Modulation | BER @ 10 dB $E_b/N_0$ |
 |------------|----------------------|
-| [[On-Off Keying (OOK)|OOK]] (non-coherent) | 3.9 × 10⁻³ |
+| [[On-Off-Keying-(OOK)]] (non-coherent) | 3.9 × 10⁻³ |
 | **BPSK (coherent)** | **3.9 × 10⁻⁶** |
 
 **BPSK is ~1000× better** at 10 dB!
@@ -367,7 +367,7 @@ $$
 1. **Best BER performance** for binary modulation (3 dB better than OOK)
 2. **Constant envelope** (nonlinear amplifiers OK, no AM-PM distortion)
 3. **Simple constellation** (two points, easy visualization)
-4. **Foundation for higher-order PSK** ([[QPSK Modulation|QPSK]], 8PSK)
+4. **Foundation for higher-order PSK** ([[QPSK-Modulation]], 8PSK)
 
 ---
 
@@ -384,7 +384,7 @@ $$
 
 **BPSK uses one axis** (I-axis) with two constellation points.
 
-**Natural extension**: Use **both I and Q axes** → [[QPSK Modulation|QPSK]]:
+**Natural extension**: Use **both I and Q axes** → [[QPSK-Modulation]]:
 
 ```
 BPSK constellation:
@@ -409,7 +409,7 @@ QPSK constellation (4 points):
 
 **QPSK** = Two independent BPSK channels (I and Q) in parallel.
 
-**See**: [[QPSK Modulation]] for details
+**See**: [[QPSK-Modulation]] for details
 
 ---
 
@@ -507,13 +507,13 @@ $$
 
 ## Related Topics
 
-- **[[On-Off Keying (OOK)]]**: Simpler but 3 dB worse performance
-- **[[Frequency-Shift Keying (FSK)]]**: Alternative binary modulation (non-coherent detection)
-- **[[QPSK Modulation]]**: Extension to 4 phases (2 bits/symbol)
-- **[[Constellation Diagrams]]**: Visual representation of modulation
-- **[[IQ Representation]]**: Complex baseband notation
-- **[[Bit Error Rate (BER)]]**: Performance metric for digital modulation
-- **[[Forward Error Correction (FEC)]]**: Coding to improve BER
+- **[[On-Off-Keying-(OOK)]]**: Simpler but 3 dB worse performance
+- **[[Frequency-Shift-Keying-(FSK)]]**: Alternative binary modulation (non-coherent detection)
+- **[[QPSK-Modulation]]**: Extension to 4 phases (2 bits/symbol)
+- **[[Constellation-Diagrams]]**: Visual representation of modulation
+- **[[IQ-Representation]]**: Complex baseband notation
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric for digital modulation
+- **[[Forward-Error-Correction-(FEC)]]**: Coding to improve BER
 
 ---
 

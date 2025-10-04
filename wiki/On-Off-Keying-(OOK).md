@@ -165,7 +165,7 @@ BER = (1/2)exp(-E_b/2N₀)    (3 dB worse!)
 **Example**: For BER = 10⁻⁶
 - Coherent OOK: E_b/N₀ ≈ 13.5 dB
 - Non-coherent OOK: E_b/N₀ ≈ 16.5 dB
-- [[QPSK Modulation|QPSK]]: E_b/N₀ ≈ 10.5 dB (better!)
+- [[QPSK-Modulation]]: E_b/N₀ ≈ 10.5 dB (better!)
 
 ---
 
@@ -244,7 +244,7 @@ Bit "0": Pulse at t = T_b/2
 
 **Distance between points**: d = A
 
-**Compare to [[QPSK Modulation|QPSK]]**: Four points, better use of signal space.
+**Compare to [[QPSK-Modulation]]**: Four points, better use of signal space.
 
 ---
 
@@ -253,11 +253,11 @@ Bit "0": Pulse at t = T_b/2
 | Modulation | Bits/Symbol | Bandwidth | Power (for BER=10⁻⁶) | Complexity |
 |------------|-------------|-----------|----------------------|------------|
 | **OOK** | 1 | 2R_b | 16.5 dB (non-coh) | Lowest |
-| [[BPSK]] | 1 | R_b | 10.5 dB | Low |
+| [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] | 1 | R_b | 10.5 dB | Low |
 | [[QPSK Modulation\|QPSK]] | 2 | R_b | 10.5 dB | Medium |
 | [[16-QAM]] | 4 | R_b | 18.5 dB | High |
 
-**Key insight**: OOK is simple but inefficient. [[BPSK]] is better in almost every way (except hardware complexity).
+**Key insight**: OOK is simple but inefficient. [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] is better in almost every way (except hardware complexity).
 
 ---
 
@@ -268,17 +268,17 @@ Bit "0": Pulse at t = T_b/2
 3. **Poor efficiency**: Both spectral and power
 4. **Historical importance**: First digital modulation
 5. **Still used**: Low-cost, low-power applications (optical, RFID)
-6. **Gateway to understanding**: Good starting point before [[FSK]], [[BPSK]]
+6. **Gateway to understanding**: Good starting point before [[FSK]], [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]
 
 ---
 
 ## 🔗 See Also
 
-- [[Amplitude-Shift Keying (ASK)]] - Generalization of OOK *(coming soon)*
-- [[Frequency-Shift Keying (FSK)]] - Next step in modulation complexity
-- [[Binary Phase-Shift Keying (BPSK)]] - Better alternative (same complexity, better performance)
-- [[QPSK Modulation]] - Even more efficient
-- [[Constellation Diagrams]] - Visual representation of modulations
+- [[Amplitude-Shift-Keying-(ASK)]] - Generalization of OOK *(coming soon)*
+- [[Frequency-Shift-Keying-(FSK)]] - Next step in modulation complexity
+- [[Binary-Phase-Shift-Keying-(BPSK)]] - Better alternative (same complexity, better performance)
+- [[QPSK-Modulation]] - Even more efficient
+- [[Constellation-Diagrams]] - Visual representation of modulations
 
 ---
 

@@ -1,6 +1,6 @@
 # Spectral Efficiency & Bit Rate
 
-[[Home]] | **Digital Modulation** | [[Quadrature Amplitude Modulation (QAM)]] | [[Shannon's Channel Capacity Theorem]]
+[[Home]] | **Digital Modulation** | [[Quadrature-Amplitude-Modulation-(QAM)]] | [[Shannon's-Channel-Capacity-Theorem]]
 
 ---
 
@@ -696,12 +696,12 @@ else:
 
 ## Related Topics
 
-- **[[Shannon's Channel Capacity Theorem]]**: Theoretical maximum
-- **[[Quadrature Amplitude Modulation (QAM)]]**: High spectral efficiency
-- **[[Forward Error Correction (FEC)]]**: Code rate trade-offs
-- **[[OFDM & Multicarrier Modulation]]**: Parallel channels
-- **[[MIMO & Spatial Multiplexing]]**: Multiple spatial streams
-- **[[Link Budget Analysis]]**: SNR determines achievable η
+- **[[Shannon's-Channel-Capacity-Theorem]]**: Theoretical maximum
+- **[[Quadrature-Amplitude-Modulation-(QAM)]]**: High spectral efficiency
+- **[[Forward-Error-Correction-(FEC)]]**: Code rate trade-offs
+- **[[OFDM-&-Multicarrier-Modulation]]**: Parallel channels
+- **[[MIMO-&-Spatial-Multiplexing]]**: Multiple spatial streams
+- **[[Complete-Link-Budget-Analysis|Link Budget Analysis]]**: SNR determines achievable η
 
 ---
 

@@ -1,6 +1,6 @@
 # Propagation Modes: Ground Wave, Sky Wave, Line-of-Sight
 
-[[Home]] | **RF Propagation** | [[Free-Space Path Loss (FSPL)]] | [[Electromagnetic Spectrum]]
+[[Home]] | **RF Propagation** | [[Free-Space-Path-Loss-(FSPL)]] | [[Electromagnetic-Spectrum]]
 
 ---
 
@@ -453,7 +453,7 @@ $$
 **Point-to-point backhaul**:
 - Tower-to-tower links (10-50 km)
 - Requires clear Fresnel zone
-- Rain fade significant (see [[Weather Effects (Rain Fade, Fog Attenuation)]])
+- Rain fade significant (see [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]])
 
 ---
 
@@ -546,12 +546,12 @@ $$
 
 ## Related Topics
 
-- **[[Free-Space Path Loss (FSPL)]]**: Baseline loss for all propagation modes
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Baseline loss for all propagation modes
 - **[[Multipath Propagation & Fading]]**: Rayleigh/Rician fading in NLOS
-- **[[Atmospheric Effects (Ionospheric, Tropospheric)]]**: Ionospheric refraction, atmospheric absorption
-- **[[Weather Effects (Rain Fade, Fog Attenuation)]]**: Rain fade at high frequencies
-- **[[Electromagnetic Spectrum]]**: Frequency-dependent propagation behavior
-- **[[Antenna Theory Basics]]**: Antenna height extends radio horizon
+- **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Ionospheric refraction, atmospheric absorption
+- **[[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]**: Rain fade at high frequencies
+- **[[Electromagnetic-Spectrum]]**: Frequency-dependent propagation behavior
+- **[[Antenna-Theory-Basics]]**: Antenna height extends radio horizon
 
 ---
 
