@@ -37,6 +37,6 @@
 
 /* Error variant */
 .chimera-badge--error {
-  background: var(--danger, lch(55% 65 30));
+  background: var(--danger);
   color: var(--text-primary, lch(92% 0 0));
 }
