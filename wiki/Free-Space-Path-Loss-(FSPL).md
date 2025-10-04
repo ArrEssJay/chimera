@@ -1,5 +1,18 @@
 # Free-Space Path Loss (FSPL)
 
+## 🛰️ For Non-Technical Readers
+
+**Like shouting across a field—the farther away, the quieter. Radio waves spread out and weaken with distance.**
+
+**Key insights**:
+- **Double the distance** = signal becomes **4× weaker**
+- **Higher frequency** (5G) = weaker than lower frequency (4G) over same distance
+- **Satellites 36,000 km away**: Signal weakens by 10 trillion trillion times! (That's why dishes are big)
+
+**Real examples**: WiFi weakens 10,000× over 50 meters. Cell towers need to be closer for 5G than 4G.
+
+---
+
 **Free-Space Path Loss (FSPL)** quantifies how much signal power is lost as an electromagnetic wave propagates through free space.
 
 ---

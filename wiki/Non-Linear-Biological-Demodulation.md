@@ -4,6 +4,26 @@
 
 ---
 
+## 🔰 For Non-Technical Readers
+
+**Imagine you're listening to two radio stations at once—sometimes they interfere and create weird new sounds.**
+
+That's essentially what "nonlinear demodulation" means: when two signals (like sound waves or radio waves) meet in certain materials, they can **mix together** and create **brand new frequencies** that weren't in the original signals.
+
+**Three real-world examples**:
+
+1. **Ultrasound speakers** (Established ✅): You can aim two inaudible ultrasound beams at a wall, and where they intersect, they create audible sound. Used in museums to create "sound spotlights" that only one person can hear.
+
+2. **Microwave hearing** (Established ✅): Pulsed radar can make people hear clicking sounds inside their head! Not telepathy—it's the radar pulse causing tiny rapid heating in the ear, which creates a pressure wave your ear detects as sound.
+
+3. **Deep brain stimulation via mixed signals** (Speculative ⚠️): Scientists wonder if two high-frequency beams could cross in the brain and create a low-frequency signal that stimulates neurons. This is theoretical—it might not work due to weak mixing in biological tissue.
+
+**Why "nonlinear"?** Most systems are "linear" (output = input). But some materials act "nonlinear" (output ≠ input), allowing signal mixing. It's like how mixing blue and yellow paint creates green—the green wasn't in either original color.
+
+**Status**: Acoustic mixing in tissue is **proven science** (used in medical ultrasound imaging daily). Electromagnetic mixing in tissue is **mostly theoretical** (tissue is only weakly nonlinear at radio/microwave frequencies).
+
+---
+
 ## Overview
 
 **Non-linear biological demodulation** refers to phenomena where biological tissues act as nonlinear systems, producing new frequencies from input electromagnetic or acoustic signals. This page provides an overview of three key mechanisms explored in Part VIII.

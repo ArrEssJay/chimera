@@ -1,6 +1,32 @@
 # Electromagnetic Spectrum
 
-[[Home]] | **Foundation** | [[Maxwell's Equations & Wave Propagation]]
+[[Home]] | **Foundation** | [[Maxwell's Equations & Wave Propagation]] | [[Frequency-Shift Keying (FSK)]]
+
+---
+
+## 🌈 For Non-Technical Readers
+
+**The electromagnetic spectrum is like a piano keyboard—but instead of sound notes, it's frequencies of light and radio waves.**
+
+**The big picture**:
+- **Low notes (low frequency)**: Radio, AM/FM, WiFi, microwaves
+- **Middle notes**: Infrared (heat you feel from a fire), visible light (colors we see)
+- **High notes (high frequency)**: Ultraviolet, X-rays, gamma rays
+
+**It's all the same thing!** Radio waves, WiFi, light, X-rays are all electromagnetic waves—just different frequencies.
+
+**Real-world frequencies**:
+- **AM radio**: ~1 MHz (long waves, travel far)
+- **FM radio**: ~100 MHz (shorter waves, better quality)
+- **WiFi**: 2.4 GHz or 5 GHz (very short waves, fast data)
+- **Visible light**: ~500 THz (that's 500,000 GHz!)
+- **X-rays**: ~10¹⁸ Hz (penetrate body)
+
+**Why frequency matters**:
+- **Low frequency**: Travels far, penetrates buildings, but needs big antennas
+- **High frequency**: Fast data, small antennas, but doesn't travel as far
+
+**Fun fact**: The rainbow you see is less than 1 octave of frequency! The EM spectrum spans 20+ octaves from radio to gamma rays.
 
 ---
 

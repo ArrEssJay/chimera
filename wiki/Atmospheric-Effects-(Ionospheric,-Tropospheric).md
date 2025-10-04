@@ -4,6 +4,36 @@
 
 ---
 
+## 🌟 For Non-Technical Readers
+
+**Think of the atmosphere as a giant, invisible lens and filter for radio waves.**
+
+Imagine you're trying to shine a flashlight across a room:
+- **On a clear day**, the light travels straight and far
+- **Through fog**, the light gets scattered and dimmer
+- **With a curved mirror**, the light bends and can reach around corners
+
+Radio waves behave similarly through Earth's atmosphere:
+
+1. **The Ionosphere** (60-400 km up) is like a **curved mirror in space**
+   - Acts like a reflector for AM radio and shortwave (HF) signals
+   - This is why you can hear distant AM radio stations at night—the signal bounces off this invisible mirror!
+   - Created by the sun's energy ionizing air molecules
+
+2. **The Troposphere** (0-15 km up, where weather happens) is like **fog or water vapor**
+   - Bends and absorbs radio waves, especially at high frequencies
+   - This is why 5G signals don't travel as far as 4G—they're more easily absorbed by air humidity
+   - Weather (rain, fog) makes this worse
+
+**Real-world impact**:
+- **GPS errors**: The ionosphere slows down GPS signals, causing ~10-30 meter errors (your phone corrects for this)
+- **Satellite TV in rain**: Signal drops out because raindrops absorb the microwaves
+- **Shortwave radio at night**: Can receive stations from across the globe because the ionosphere reflects signals back to Earth
+
+**The key insight**: Different radio frequencies interact with the atmosphere in completely different ways—AM radio bounces off the ionosphere, while 5G gets absorbed by humidity.
+
+---
+
 ## Overview
 
 **Earth's atmosphere profoundly affects RF propagation** through:

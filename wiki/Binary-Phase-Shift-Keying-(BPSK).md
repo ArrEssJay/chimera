@@ -4,6 +4,20 @@
 
 ---
 
+## 📡 For Non-Technical Readers
+
+**BPSK is like Morse code with a twist—instead of on/off, you flip the wave upside-down to send 1s and 0s.**
+
+**Simple idea**: 
+- Bit 0 = wave pointing "up" ↑  
+- Bit 1 = wave pointing "down" ↓ (flipped 180°)
+
+**Real use**: GPS satellites use BPSK! Your phone detects whether the signal is normal or flipped.
+
+**Why flip instead of on/off?** More reliable in noise, works with constant power, less interference. Trade-off: Simple but slow (1 bit per symbol).
+
+---
+
 ## Overview
 
 **Binary Phase-Shift Keying (BPSK)** is the simplest form of **phase modulation**, where binary data is encoded by **shifting the carrier phase** between two states: 0° and 180°.

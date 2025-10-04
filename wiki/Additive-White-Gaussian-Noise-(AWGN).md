@@ -1,5 +1,20 @@
 # Additive White Gaussian Noise (AWGN)
 
+## 📻 For Non-Technical Readers
+
+**AWGN is the "static" or "hiss" you hear on old radios—random interference that corrupts signals.**
+
+**Real-world analogies**:
+- **Old TV static**: Random noise when you lose the signal
+- **Grainy photos in low light**: Camera sensors produce AWGN when there's not enough light
+- **Bluetooth stuttering**: Weak signals get corrupted by AWGN
+
+**Where it comes from**: Thermal noise (electrons jiggling from heat), electronic components, even faint cosmic microwave background radiation.
+
+**Why it matters**: AWGN is the **fundamental limit** on communication. You can't eliminate it, but you can overcome it with more power, error correction, or better antennas.
+
+---
+
 **AWGN** is a basic noise model used in communication systems.
 
 ## What is AWGN?

@@ -13,6 +13,30 @@
 
 ---
 
+## Simple Explanation 🔰
+
+**Imagine mixing colors**: When you mix blue and yellow paint, you get green. Acoustic heterodyning is similar, but with sound waves instead of colors.
+
+**The basic idea**:
+1. Take two ultrasound beams (too high-pitched for humans to hear, like dog whistles)
+2. Aim them at the same spot
+3. When they overlap, they "mix" together in a nonlinear way
+4. This creates a new, audible sound at the *difference* between their frequencies
+
+**Real-world example**: If you send 40,000 Hz and 42,000 Hz ultrasound beams (both inaudible), they can create a 2,000 Hz tone (clearly audible) where they meet.
+
+**Why this matters**:
+- **Directional sound**: The audible sound appears only where the beams cross, not everywhere
+- **Medical imaging**: Doctors use this to get clearer ultrasound pictures
+- **Targeted audio**: Museums use it to create sound that only one person can hear
+- **Research frontier**: Scientists are exploring whether this could stimulate specific brain regions
+
+**The catch**: This process is inefficient—only about 0.1-1% of the ultrasound energy converts to audible sound. It's like trying to light a room with a flashlight; it works, but you need a powerful source.
+
+**Safety note**: The ultrasound intensities used are generally safe (similar to medical ultrasounds), though higher powers for brain stimulation remain experimental.
+
+---
+
 ## 1. Physical Mechanism ✅
 
 **Nonlinear wave equation**:
