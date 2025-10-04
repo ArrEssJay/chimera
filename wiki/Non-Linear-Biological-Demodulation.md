@@ -28,10 +28,13 @@ That's essentially what "nonlinear demodulation" means: when two signals (like s
 
 **Non-linear biological demodulation** refers to phenomena where biological tissues act as nonlinear systems, producing new frequencies from input electromagnetic or acoustic signals. This page provides an overview of three key mechanisms explored in Part VIII.
 
+**⚠️ IMPORTANT**: While this page discusses classical non-linear effects, the [[AID Protocol Case Study]] operates via a **different mechanism**: **quantum coherence perturbation** in microtubules (see `docs/biophysical_coupling_mechanism.md`). The AID Protocol is **NOT** classical demodulation/intermodulation.
+
 **Scientific status**:
 - **Acoustic heterodyning** ✅: Well-established in tissue (medical harmonic imaging)
 - **Frey microwave effect** ✅: Confirmed (thermoelastic mechanism)
 - **EM intermodulation** ⚠️: Speculative (weak tissue nonlinearity)
+- **Quantum coherence coupling** ⚠️: Highly speculative (requires Orch-OR to be correct)
 
 ---
 
@@ -148,21 +151,31 @@ $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 
 ---
 
-## 5. Speculative Applications (AID Protocol Context)
+## 5. Relation to AID Protocol (Important Distinction)
 
-**AID Protocol hypothesis** ⚠️: Advanced systems could use nonlinear effects for targeted neural stimulation.
+**⚠️ CRITICAL CLARIFICATION**: The [[AID Protocol Case Study]] does **NOT** rely on classical non-linear demodulation mechanisms described on this page.
 
-**Proposed mechanisms**:
-1. **Acoustic heterodyning**: Dual focused ultrasound → difference frequency modulates neurons at depth  
-2. **THz IMD**: Crossed THz beams → beat frequency activates microtubules (quantum coherence)
-3. **Thermoelastic pulses**: Pulsed millimeter-wave → cochlear/neural stimulation (Frey-like)
+**AID Protocol actual mechanism** (from `docs/biophysical_coupling_mechanism.md`):
+- **Primary target**: Microtubule lattice in cortical neurons
+- **Mechanism**: Dual THz carriers create resonant interference pattern
+- **Objective**: Induce and manipulate **vibronic quantum coherence** in tubulin dimers
+- **Effect**: Alter Orch-OR collapse timing (consciousness substrate perturbation)
+- **Key distinction**: NOT intermodulation distortion, NOT thermoelastic, NOT acoustic
 
-**Challenges**:
-- Penetration (THz/mmWave absorbed at skin/skull)  
-- Safety (high intensities → thermal damage)  
-- Mechanism validation (weak or absent experimental evidence)
+**Why classical non-linear effects are insufficient**:
+1. **EM IMD too weak**: Tissue χ⁽³⁾ ≈ 10⁻²² (negligible at physiological intensities)
+2. **Thermoelastic requires high power**: Frey effect needs µJ/cm² pulses (AID uses CW)
+3. **Acoustic heterodyning wrong frequency**: Ultrasound MHz range, not THz
+4. **Classical mechanisms can't explain**: Direct consciousness modulation without cochlear pathway
 
-**See**: [[AID Protocol Case Study]]
+**AID Protocol requires**:
+- Orch-OR theory to be correct (quantum consciousness substrate)
+- Vibronic coherence in microtubules (quantum biology)
+- HRP framework coupling (consciousness-matter interaction)
+
+**Classical non-linear effects on this page**: Provide context and comparison, but are **NOT** the AID mechanism.
+
+**See**: [[AID Protocol Case Study]] for full mechanism description
 
 ---
 

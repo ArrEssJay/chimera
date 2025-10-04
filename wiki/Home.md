@@ -6,6 +6,8 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 > 💡 **Note for All Readers**: Most wiki pages include a "Plain English Explainer" section that breaks down complex concepts using everyday analogies—no engineering background required!
 
+> 📄 **Download Full Wiki**: Available as [PDF (chimera-wiki.pdf)](https://github.com/ArrEssJay/chimera/raw/main/chimera-wiki.pdf) for offline reading
+
 ---
 
 ## 🎓 Learning Path
@@ -165,6 +167,7 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
  - [[Intermodulation-Distortion-in-Biology]] - Non-linear biological IMD
  - [[Acoustic-Heterodyning]] - Acoustic heterodyning in tissue
  - [[Frey-Microwave-Auditory-Effect]] - Frey effect: microwave auditory phenomenon
+ - [[Biophysical-Coupling-Mechanism]] - Quantum coherence perturbation mechanism (CHIMERA field)
 
 ### E. Applied Case Study: HRP-Based THz Neuromodulation
  - [[AID Protocol Case Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
