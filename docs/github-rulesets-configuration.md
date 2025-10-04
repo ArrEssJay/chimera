@@ -5,12 +5,17 @@
 Repository rulesets provide a more flexible and powerful alternative to branch protection rules. They allow you to:
 - Apply rules across multiple branches using patterns
 - Create reusable rule configurations
-- Enforce file-level restrictions
+- Enforce file-level restrictions (via CODEOWNERS, not directly in rulesets)
 - Set metadata requirements
+
+**⚠️ Important:** The GitHub Rulesets API does not support `file_path_restriction` type. File-level protection must be implemented using:
+1. **CODEOWNERS** file (`.github/CODEOWNERS`) - ✅ Already configured
+2. **Required reviews from code owners** in rulesets
+3. **CI workflows** that detect and block unwanted changes
 
 ---
 
-## Ruleset 1: Contract Protection
+## Ruleset 1: Contract Protection (via CODEOWNERS)
 
 **Purpose:** Prevent any modifications to contract files without explicit approval
 
