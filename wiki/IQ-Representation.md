@@ -1,5 +1,42 @@
 # IQ Representation
 
+## 📊 For Non-Technical Readers
+
+**IQ representation is like describing a location on a map using X and Y coordinates—it lets you pinpoint any radio signal position in 2D space!**
+
+**What is IQ?**
+- **I (In-phase)**: Horizontal axis, like "East-West" on a map
+- **Q (Quadrature)**: Vertical axis, like "North-South" on a map
+- Together: Any point in 2D = any signal you can send!
+
+**Why two dimensions?**
+- Radio waves have **amplitude** (strength) AND **phase** (timing)
+- Phase is like "what part of the wave cycle are you at?"
+- Two dimensions let you control BOTH simultaneously
+
+**Real-world analogy - Clock hands**:
+- **12 o'clock position**: I = max, Q = 0
+- **3 o'clock position**: I = 0, Q = max  
+- **6 o'clock position**: I = -max, Q = 0
+- **9 o'clock position**: I = 0, Q = -max
+- Any angle = unique IQ coordinate!
+
+**Why it's everywhere**:
+- **Software Defined Radio (SDR)**: All processing uses IQ data
+- **Digital audio**: Left/Right channels → I/Q channels
+- **Your phone**: Baseband chip outputs IQ samples, radio transmits them
+- **WiFi chips**: Process IQ data to decode constellations
+
+**The magic trick**:
+- One wire carries I signal, another carries Q signal
+- At transmitter: Combine using 90° phase-shifted carriers
+- At receiver: Split using 90° phase-shifted carriers
+- Result: Two independent data channels on same frequency!
+
+**Fun fact**: IQ representation is why "quadrature" modulation (QPSK, QAM) is so efficient—you're using two perpendicular dimensions, doubling capacity compared to just varying amplitude!
+
+---
+
 Each QPSK symbol is represented as a point in 2D space with two components:
 
 - **I (In-phase)**: The horizontal component (real part)

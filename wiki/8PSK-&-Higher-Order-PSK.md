@@ -4,6 +4,70 @@
 
 ---
 
+## 🎯 For Non-Technical Readers
+
+**8PSK is like using 8 different hand gestures instead of 4—you can send 50% more data, but the gestures are closer together, so easier to confuse!**
+
+**The progression**:
+- **BPSK**: 2 positions (up/down) = 1 bit/symbol
+- **QPSK**: 4 positions (4 corners) = 2 bits/symbol
+- **8PSK**: 8 positions (8 directions) = 3 bits/symbol 👈 We are here
+- **16PSK**: 16 positions = 4 bits/symbol
+- **32PSK**: 32 positions = 5 bits/symbol
+
+**Visual - 8PSK positions (like a compass)**:
+```
+        N (000)
+   NW   |   NE
+  (001) | (011)
+W ────┼──── E
+  (010) | (110)
+   SW   |   SE
+      S (100)
+```
+
+**The trade-off**:
+- **More positions** = faster data rate!
+  - QPSK: 2 bits/symbol
+  - 8PSK: 3 bits/symbol = **1.5× faster**!
+- **BUT** positions are closer together
+  - Easier to mistake "North" for "Northeast" when noisy
+  - Needs stronger signal (higher SNR) to work reliably
+
+**Real-world use - Satellite TV**:
+- **DVB-S2** (digital satellite): Uses 8PSK for HD channels
+- Why? Satellite bandwidth is expensive!
+- 50% more data in same bandwidth = 50% more channels
+- Trade-off: Need bigger dish (better SNR) for 8PSK vs QPSK
+
+**Higher-order PSK (16PSK, 32PSK)**:
+- **16PSK**: 16 positions = 4 bits/symbol
+- **32PSK**: 32 positions = 5 bits/symbol
+- Problem: Positions so close together, barely used in practice!
+- **Solution**: Switch to QAM (varies amplitude too) for better performance
+
+**Why not go higher?**:
+- Beyond 8PSK, positions are TOO close
+- Even tiny noise causes errors
+- QAM (varying amplitude + phase) is more efficient
+- This is why WiFi uses QAM, not 16PSK/32PSK!
+
+**When you encounter it**:
+- **Satellite TV**: 8PSK for HD channels
+- **Military communications**: 8PSK for satellite links
+- **Deep space**: NASA sometimes uses 8PSK for high-rate data
+- **Microwave backhaul**: Point-to-point links between cell towers
+
+**The math**:
+- QPSK: 45° between positions (lots of margin)
+- 8PSK: 22.5° between positions (tight!)
+- 16PSK: 11.25° between positions (very tight!)
+- Smaller angles = easier to confuse = needs cleaner signal
+
+**Fun fact**: The Hubble Space Telescope originally used QPSK, but was upgraded to 8PSK to send more science data per day—saving millions in ground station time!
+
+---
+
 ## Overview
 
 **8PSK (8-ary Phase-Shift Keying)** encodes data using **8 phase states**, transmitting **3 bits per symbol**.

@@ -4,6 +4,48 @@
 
 ---
 
+## 💡 For Non-Technical Readers
+
+**ASK is like using a dimmer switch on a flashlight—bright = 1, dim = 0. Simple to understand, but noise makes it hard to tell bright from dim!**
+
+**The idea - Vary the volume**:
+- Want to send **1**? Transmit at **full power**
+- Want to send **0**? Transmit at **low power** (or off)
+- Receiver measures: "How loud is the signal right now?"
+
+**Real-world analogy - Theater lights**:
+- **Full brightness** = data bit "1"
+- **Dim/off** = data bit "0"
+- Audience (receiver) can see which state you're in
+- But if room is smoky (noise), hard to tell bright from dim!
+
+**Why it's problematic**:
+- **Noise affects amplitude**: Interference makes signal stronger/weaker
+- **Fading affects amplitude**: Obstacles change signal strength
+- Hard to tell: "Is this a dim signal, or a faded bright signal?"
+- This is why ASK isn't used much in modern systems!
+
+**Where ASK is still used**:
+- **RFID tags**: Extremely simple, low power (backscatter modulation)
+- **Fiber optic**: Optical fiber has low noise, so ASK works well
+- **Historical modems**: Old 300 baud modems used ASK
+- **Combined with PSK**: QAM = ASK + PSK together (best of both!)
+
+**Advanced: M-ary ASK**:
+- Instead of 2 levels (on/off), use 4, 8, or 16 levels
+- **4-ASK**: Four brightness levels = 2 bits/symbol
+- **8-ASK**: Eight brightness levels = 3 bits/symbol
+- Even more sensitive to noise!
+
+**Why phase (PSK) or frequency (FSK) is better**:
+- **PSK**: Noise changes amplitude, phase stays stable
+- **FSK**: Noise changes amplitude, frequency stays stable
+- **ASK**: Noise directly corrupts the information! ☹️
+
+**Fun fact**: Your TV remote uses a form of ASK—infrared LED blinks on/off to send button codes. It works because the path from remote to TV is short and clean (low noise)!
+
+---
+
 ## Overview
 
 **Amplitude-Shift Keying (ASK)** encodes digital data by varying the **amplitude** of a carrier wave.

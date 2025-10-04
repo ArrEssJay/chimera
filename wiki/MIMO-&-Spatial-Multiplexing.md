@@ -1,5 +1,37 @@
 # MIMO & Spatial Multiplexing
 
+## 📡 For Non-Technical Readers
+
+**MIMO is like having multiple conversations in the same room—each person talks to their own partner, and everyone gets through faster!**
+
+**What is MIMO?** **M**ultiple **I**nput, **M**ultiple **O**utput = Multiple antennas on both transmitter and receiver
+
+**The magic trick**:
+1. Your WiFi router has 3 antennas
+2. Your laptop has 3 antennas
+3. All 3 can send/receive **simultaneously** on the same frequency!
+4. Result: **3× faster** than single antenna
+
+**Real-world example - WiFi**:
+- **1×1 (no MIMO)**: 1 antenna, 150 Mbps
+- **2×2 MIMO**: 2 antennas, 300 Mbps
+- **4×4 MIMO**: 4 antennas, 600 Mbps
+- **8×8 MIMO** (WiFi 6): 8 antennas, 1200+ Mbps!
+
+**How does it work?** 
+- Signals bounce off walls/furniture differently for each antenna
+- Receiver uses math to "unmix" the overlapping signals
+- It's like picking out one conversation in a crowded party—your brain does it with sound, MIMO does it with radio waves
+
+**When you see it**:
+- **"AC1900" WiFi**: Usually means 3×3 MIMO
+- **5G phone**: Has 4+ antennas for MIMO
+- **Your router's multiple antennas**: That's MIMO hardware!
+
+**Fun fact**: Massive MIMO (64+ antennas!) is why 5G base stations look like big panels instead of simple poles.
+
+---
+
 **Multiple-Input Multiple-Output (MIMO)** uses multiple antennas at both transmitter and receiver to dramatically increase data rates and reliability. MIMO is the technological breakthrough that powers modern wireless: WiFi 4/5/6/7, LTE, 5G, and beyond.
 
 **Key insight**: The wireless channel is not a scalar—it's a **matrix**. Multiple spatial paths can carry independent data streams simultaneously.

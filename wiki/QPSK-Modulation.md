@@ -1,5 +1,29 @@
 # QPSK Modulation
 
+## 📡 For Non-Technical Readers
+
+**QPSK is like using 4 different hand signals instead of 2—you can send messages twice as fast!**
+
+**The idea**: Instead of just "wave up" or "wave down" (BPSK), QPSK uses **4 directions**:
+- Up-right ↗️ = 00
+- Up-left ↖️ = 01  
+- Down-left ↙️ = 10
+- Down-right ↘️ = 11
+
+**Real-world use**: 
+- **Satellite TV** (DVB-S): Uses QPSK for reliable transmission from space
+- **4G LTE**: Uses QPSK when signal is weak (more reliable than faster modes)
+- **GPS**: Newer signals use QPSK for twice the data rate
+
+**Why 4 directions?**
+- Sends **2 bits per symbol** (vs 1 bit for BPSK) = twice as fast!
+- Still pretty reliable (the 4 directions are well-separated)
+- Sweet spot between speed and robustness
+
+**When you see it**: Your phone uses QPSK when cell signal is weak—slower than 16-QAM or 64-QAM, but way more reliable.
+
+---
+
 **QPSK** stands for **Quadrature Phase-Shift Keying**. It's a modulation technique that encodes 2 bits per symbol by varying the phase of the carrier wave.
 
 ## The Four QPSK States

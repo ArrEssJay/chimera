@@ -1,5 +1,41 @@
 # Forward Error Correction (FEC)
 
+## 🛡️ For Non-Technical Readers
+
+**FEC is like sending instructions with built-in spell-checker clues—even if some words get garbled, you can figure out what was meant!**
+
+**The problem**: 
+- Radio channels add noise/interference
+- Bits get flipped: 1→0 or 0→1
+- By the time you notice, it's too late to ask "can you repeat that?"
+
+**The FEC solution - Add smart redundancy**:
+
+**Simple example - Repetition**:
+- Want to send: `1`
+- FEC adds redundancy: `1 1 1` (send it 3 times)
+- Received: `1 0 1` (middle bit corrupted!)
+- Decoder: "Two 1s, one 0? Probably was `1`!" ✅
+
+**Real codes are smarter**:
+- **Hamming code**: 4 data bits + 3 parity bits = fix any single error
+- **Reed-Solomon**: Used in CDs, DVDs, QR codes—can fix burst errors!
+- **Turbo/LDPC codes**: Used in 4G/5G—nearly as good as theoretical limit!
+
+**Real-world examples**:
+- **QR codes**: Can work with 30% missing—that's FEC!
+- **Satellite TV**: Signal is weak, so FEC fixes errors without re-sending
+- **Deep space probes**: Can't retransmit from Mars! FEC is critical
+- **Your WiFi**: Uses LDPC codes to fix interference from microwave ovens
+
+**Trade-off**:
+- More redundancy = fix more errors BUT slower transmission
+- Your phone adjusts: strong signal = less FEC (fast), weak signal = more FEC (reliable)
+
+**Fun fact**: The Voyager probes launched in 1977 still communicate with Earth (15+ billion miles away!) using FEC codes to fix the incredibly noisy signal.
+
+---
+
 **Forward Error Correction (FEC)** adds redundancy to transmitted data so the receiver can detect and correct errors without retransmission.
 
 ## How FEC Works

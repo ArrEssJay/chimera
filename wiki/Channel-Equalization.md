@@ -4,6 +4,41 @@
 
 ---
 
+## 🎚️ For Non-Technical Readers
+
+**Channel equalization is like using an audio equalizer to undo the distortion from a bad microphone—it reverses the damage the radio channel causes to your signal!**
+
+**The problem**: 
+- Radio signals bounce off buildings/walls (multipath)
+- Echoes arrive at different times and smear together → **inter-symbol interference (ISI)**
+- It's like someone talking in a cave—echoes make words blur together
+
+**The solution - Equalization**:
+1. Receiver analyzes how the channel distorts known training signals
+2. Calculates inverse filter: "Channel made signal quieter at 5 kHz? Let's boost 5 kHz!"
+3. Applies correction to all received data
+4. Result: Clean, sharp signal restored!
+
+**Real-world analogy - Audio equalizer**:
+- Cheap headphones boost bass (distortion)
+- Audio app detects this and reduces bass to compensate
+- Result: Flat, accurate sound
+- Channel equalizer does the same for radio signals!
+
+**Types you encounter**:
+- **Linear equalizers** (simple, fast): WiFi, basic cellular
+- **Decision feedback equalizers** (smarter): High-speed data links
+- **Adaptive equalizers** (learns channel in real-time): Your phone constantly adjusts as you move!
+
+**When you see it**:
+- **4G/5G handoff**: Brief pause = phone learning new tower's channel
+- **Fast internet over long phone lines**: DSL equalizers undo cable distortion
+- **Underwater communications**: Extreme multipath requires heavy equalization
+
+**Fun fact**: Modern equalizers update hundreds of times per second as you walk—they track the changing radio environment in real-time!
+
+---
+
 ## Overview
 
 **Channel equalization** compensates for **Inter-Symbol Interference (ISI)** caused by multipath propagation.

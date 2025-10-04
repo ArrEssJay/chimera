@@ -4,6 +4,53 @@
 
 ---
 
+## 🗺️ For Non-Technical Readers
+
+**Convolutional codes + Viterbi decoding is like having a GPS that considers your entire journey to figure out where you really are—even if some GPS samples are noisy!**
+
+**The Problem**:
+- Noise corrupts transmitted bits: some 0s become 1s, some 1s become 0s
+- How do you figure out what was actually sent?
+
+**The Convolutional Code Solution - Add memory**:
+1. Instead of encoding each bit independently, the encoder "remembers" previous bits
+2. Each output bit depends on current + past few input bits
+3. This creates patterns—if one bit gets corrupted, the pattern breaks and decoder notices!
+
+**The GPS Analogy**:
+- **Bad GPS**: Each position reading is independent
+  - Get noisy reading? Can't tell if it's wrong!
+- **Smart GPS**: Considers your speed, direction, previous positions
+  - Get noisy reading that says you teleported 5 miles? "That's impossible, ignore it!"
+  
+**Viterbi Decoding - Find the most likely path**:
+- Looks at entire received sequence
+- Considers all possible paths the data could have taken
+- Picks the path that best matches what was received (even with errors!)
+
+**Real-world example - Space probes**:
+- **Voyager spacecraft**: 15+ billion miles away, incredibly noisy signal
+- Uses convolutional code with Viterbi decoding
+- Can correct errors even when 30-40% of bits are corrupted!
+- This is why we still get photos from interstellar space!
+
+**Everyday uses**:
+- **WiFi**: 802.11a/g use convolutional codes
+- **Satellite TV**: DVB-S uses convolutional + Viterbi
+- **GSM (2G)**: Your old cell phone used this
+- **GPS signals**: Navigation satellites use convolutional codes
+
+**Why it works**:
+- Pattern-based: Errors break patterns, decoder spots them
+- Context-aware: Uses past data to correct current data
+- Optimal: Viterbi finds the single best answer (mathematically proven!)
+
+**Trade-off**: More memory = better error correction BUT more complex decoder. Most systems use 3-7 bits of memory (called "constraint length").
+
+**Fun fact**: Andrew Viterbi invented this algorithm in 1967 for deep space communications—then co-founded Qualcomm, making billions from the algorithm used in every cell phone!
+
+---
+
 ## Overview
 
 **Convolutional codes** encode data **continuously** (not in fixed blocks).
