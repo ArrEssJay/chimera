@@ -74,6 +74,16 @@ The **Auditory Intermodulation Distortion (AID) Protocol** is a system design th
 
 The mechanism is **non-thermal and non-thermoelastic**, targeting the Orchestrated Objective Reduction (Orch-OR) collapse timing in cortical neurons.
 
+**Primary mechanism document**: See `docs/biophysical_coupling_mechanism.md` for authoritative description of the quantum coherence perturbation mechanism.
+
+**⚠️ CRITICAL**: The AID Protocol operates via **vibronic quantum coherence manipulation** in microtubule lattices, NOT:
+- Classical electromagnetic intermodulation
+- Thermoelastic transduction (Frey effect)
+- Acoustic heterodyning
+- Classical neural stimulation
+
+The mechanism is **non-thermal and non-thermoelastic**, targeting the Orchestrated Objective Reduction (Orch-OR) collapse timing in cortical neurons.
+
 **Purpose of this analysis**:
 1. Apply HRP mathematical formalism to practical system design
 2. Show how link budgets close with quantum enhancement mechanisms

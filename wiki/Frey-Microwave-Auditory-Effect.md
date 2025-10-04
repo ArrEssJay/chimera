@@ -29,7 +29,7 @@ Imagine hearing sounds—clicks, buzzes, or even tones—but there's no speaker,
 
 When certain types of microwave signals (like what's in a radar) are pulsed rapidly on and off, people near them sometimes hear mysterious noises. It's not science fiction—it's a real, well-studied phenomenon discovered in the 1960s.
 
-### How Does It Work? (The Simple Version)
+## 📊 For Non-Technical Readers
 
 Think of it like this:
 

@@ -8,6 +8,15 @@ WIKI_DIR="$(dirname "$0")/../wiki"
 OUTPUT_PDF="$(dirname "$0")/../chimera-wiki.pdf"
 TMP_MD="/tmp/chimera_wiki_export.md"
 
+# Ensure realpath is available
+if ! command -v realpath >/dev/null 2>&1; then
+  echo "Error: realpath is required. Install with: brew install coreutils" >&2
+  exit 1
+fi
+
+# Convert paths to absolute
+WIKI_DIR="$(realpath "$WIKI_DIR")"
+OUTPUT_PDF="$(realpath "$OUTPUT_PDF")"
 # Check for required tools
 if ! command -v pandoc >/dev/null 2>&1; then
   echo "Error: pandoc is required. Install with: brew install pandoc" >&2
@@ -27,7 +36,7 @@ find "$WIKI_DIR" -name "*.md" ! -name "Home.md" -type f | sort | while read -r f
   echo -e "\n\n---\n\n" >> "$TMP_MD"
 done
 
-echo "📄 Converting to PDF with pandoc..."
+echo "📄 Converting to PDF with pandoc (using xelatex for Unicode support)..."
 
 # Detect available fonts
 if fc-list 2>/dev/null | grep -qi "DejaVu Sans"; then
