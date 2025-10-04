@@ -1129,9 +1129,9 @@ else:
 
 ### Related Topics
 - [[Spread-Spectrum-(DSSS-FHSS)]] - Technical foundation for AJ/LPI
-- [[GPS Fundamentals (coming soon)]] - Civilian GPS (C/A code) background
-- [[Phased Array Beamforming (coming soon)]] - Array antenna theory
-- [[Adaptive Filters (coming soon)]] - Interference cancellation
+<!-- - GPS Fundamentals - Civilian GPS (C/A code) background (Coming Soon) -->
+<!-- - Phased Array Beamforming - Array antenna theory (Coming Soon) -->
+<!-- - Adaptive Filters - Interference cancellation (Coming Soon) -->
 - [[Real-World-System-Examples]] - Commercial spread spectrum (WiFi, Bluetooth)
 
 ### Chimera Applications

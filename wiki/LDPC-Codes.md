@@ -262,4 +262,4 @@ Coding gain: ~40 dB
 - [[Forward-Error-Correction-(FEC)]] - General FEC concepts
 - [[Bit-Error-Rate-(BER)]] - What LDPC improves
 - [[Signal-to-Noise-Ratio-(SNR)]] - LDPC enables lower SNR
-- [Chimera Technical Overview](../docs/chimera_technical_overview.md) - Implementation details
+- [Architecture Documentation](../docs/architecture-node-graph.md) - System design details

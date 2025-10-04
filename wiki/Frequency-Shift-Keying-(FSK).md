@@ -345,11 +345,11 @@ f₀ |     • Symbol "0"
 
 | Modulation | Bits/Symbol | Bandwidth | E_b/N₀ @ BER=10⁻⁶ | Envelope | Detection |
 |------------|-------------|-----------|-------------------|----------|-----------|
-| [[On-Off Keying (OOK)\|OOK]] | 1 | 2R_b | 13.5 dB | Variable | Non-coherent |
+| [[On-Off-Keying-(OOK)|OOK]] | 1 | 2R_b | 13.5 dB | Variable | Non-coherent |
 | **FSK** | 1 | 2R_b | 12.5 dB | Constant | Non-coherent |
 | **MSK** | 1 | 1.5R_b | 10.5 dB | Constant | Coherent |
 | [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] | 1 | R_b | 10.5 dB | Constant | Coherent |
-| [[QPSK Modulation\|QPSK]] | 2 | R_b | 10.5 dB | Constant | Coherent |
+| [[QPSK-Modulation|QPSK]] | 2 | R_b | 10.5 dB | Constant | Coherent |
 
 **Key insight**: FSK trades bandwidth for simplicity. [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]/[[QPSK-Modulation]] are more efficient but require phase synchronization.
 

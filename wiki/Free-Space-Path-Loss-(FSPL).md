@@ -328,7 +328,7 @@ Indoor: n = 4-6
 - [[Antenna-Theory-Basics]] - Antenna gain (G_T, G_R)
 - [[Link-Loss-vs-Noise]] - FSPL vs additive noise
 - [[Atmospheric-Effects-(Ionospheric,-Tropospheric)|Atmospheric Effects]] - Additional losses beyond FSPL *(coming soon)*
-- [[Multipath Propagation & Fading]] - Deviations from FSPL *(coming soon)*
+- [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)|Multipath Propagation & Fading]] - Deviations from FSPL
 - [[Terahertz-(THz)-Technology]] - Extreme FSPL regime
 
 ---

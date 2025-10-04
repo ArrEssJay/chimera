@@ -82,7 +82,7 @@ $$
 **Phased Array**:
 - Multiple elements with controllable phase
 - **Electronically steerable** beam (no mechanical movement)
-- Used in: Radar, 5G base stations, [[AID Protocol|AID Protocol]] (THz)
+- Used in: Radar, 5G base stations, [[AID-Protocol-Case-Study|AID Protocol]] (THz)
 
 ---
 
@@ -334,7 +334,7 @@ Where:
 **Applications**:
 - Radar (military, automotive 77 GHz)
 - 5G base stations (massive MIMO, 64-256 elements)
-- [[AID Protocol|AID Protocol]] (THz phased array for coherent combining)
+- [[AID-Protocol-Case-Study|AID Protocol]] (THz phased array for coherent combining)
 
 ---
 

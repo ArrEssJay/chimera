@@ -195,10 +195,11 @@ Chimera is a browser-based DSP simulator implementing:
 
 ## 📊 Practical Guides (Coming Soon)
 
-- Reading the Constellation - Interpreting TX/RX scatter plots
-- Understanding BER Curves - Performance analysis
-- Tuning Parameters - Optimizing SNR and link loss settings
-- Building Your First Link - Step-by-step tutorial
+<!-- These guides are planned for future releases -->
+- **Reading the Constellation** - Interpreting TX/RX scatter plots
+- **Understanding BER Curves** - Performance analysis
+- **Tuning Parameters** - Optimizing SNR and link loss settings
+- **Building Your First Link** - Step-by-step tutorial
 
 ---
 

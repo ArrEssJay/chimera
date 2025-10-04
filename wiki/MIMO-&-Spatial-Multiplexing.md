@@ -815,7 +815,7 @@ print(f"Effective rate: {nT}× single antenna")
 
 ### Related Topics
 - [[OFDM-&-Multicarrier-Modulation]] - MIMO-OFDM combination
-- [[Beamforming (coming soon)]] - Advanced spatial processing
+<!-- - Beamforming - Advanced spatial processing (Coming Soon) -->
 - [[Channel-Equalization]] - MIMO detection algorithms
 - [[Real-World-System-Examples]] - LTE, 5G, WiFi implementations
 - [[Adaptive-Modulation-&-Coding-(AMC)]] - Per-stream adaptation

@@ -136,7 +136,7 @@ Where $h = 6.626 \times 10^{-34}$ J·s (Planck's constant)
 ### Terahertz (THz) Gap: 300 GHz - 10 THz
 
 - **Wavelength**: 1 mm - 30 μm
-- **Applications**: Security imaging, spectroscopy, biomedical sensing, **[[AID Protocol|AID Protocol]]** (1.875 THz)
+- **Applications**: Security imaging, spectroscopy, biomedical sensing, **[[AID-Protocol-Case-Study|AID Protocol]]** (1.875 THz)
 - **Propagation**: Atmospheric absorption severe (H₂O lines), limited range
 - **Technology**: Quantum cascade lasers (QCLs), photoconductive switches
 - **Status**: "THz gap" (historically difficult to generate/detect)

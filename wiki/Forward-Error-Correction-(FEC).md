@@ -231,4 +231,4 @@ where:
 - [[LDPC-Codes]] - Specific FEC code used in Chimera
 - [[Bit-Error-Rate-(BER)]] - What FEC improves
 - [[Signal-to-Noise-Ratio-(SNR)]] - FEC enables lower SNR operation
-- [[Understanding BER Curves]] - Visualizing FEC performance
+<!-- - Understanding BER Curves - Visualizing FEC performance (Coming Soon) -->

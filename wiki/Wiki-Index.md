@@ -390,7 +390,9 @@ The wiki uses **filename-based linking**. Filenames use:
 - Parentheses for disambiguation: `Energy-Ratios-(Es-N0-and-Eb-N0).md`
 
 ### External Docs Links
-Use relative paths: `[Display Text](../docs/filename.md)`
+Use relative paths for docs: `[Display Text](../docs/filename.md)`
+
+Example: `[HRP Framework Paper](../docs/hrp_framework_paper.md)` → [HRP Framework Paper](../docs/hrp_framework_paper.md)
 
 ### Common Mistakes
 ❌ `[[AWGN]]` → File is `Additive-White-Gaussian-Noise-(AWGN).md`
