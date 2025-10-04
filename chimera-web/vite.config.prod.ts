@@ -23,6 +23,7 @@ export default defineConfig({
       },
     },
     rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
       output: {
         manualChunks: {
           // Vendor chunk for React and React-DOM
