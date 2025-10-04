@@ -1059,9 +1059,7 @@ fn draw_constellation_svg(
     ));
 
     // Background
-    svg.push_str(
-        "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>",
-    );
+    svg.push_str("<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"transparent\"/>");
 
     // Title
     svg.push_str(&format!(
