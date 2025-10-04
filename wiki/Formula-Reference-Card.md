@@ -7,7 +7,7 @@
 ## 📡 Link Budget & Propagation
 
 ### Friis Transmission Equation
-See [[Free-Space Path Loss (FSPL)]]
+See [[Free-Space-Path-Loss-(FSPL)]]
 
 $$
 P_r = \frac{P_t G_t G_r \lambda^2}{(4\pi R)^2}
@@ -36,7 +36,7 @@ $$
 Where: R in meters, f in Hz
 
 ### Power Density
-See [[Power Density & Field Strength]]
+See [[Power-Density-&-Field-Strength]]
 
 $$
 S = \frac{P_t G}{4\pi R^2} \quad (\text{W/m}^2)
@@ -51,7 +51,7 @@ $$
 ## 📶 Signal Quality Metrics
 
 ### Signal-to-Noise Ratio
-See [[Signal-to-Noise Ratio (SNR)]]
+See [[Signal-to-Noise-Ratio-(SNR)]]
 
 $$
 \text{SNR} = \frac{P_{\text{signal}}}{P_{\text{noise}}}
@@ -64,7 +64,7 @@ $$
 $$
 
 ### Energy Ratios
-See [[Energy Ratios (Es/N0 and Eb/N0)]]
+See [[Energy-Ratios-(Es-N0-and-Eb-N0)]]
 
 $$
 \frac{E_b}{N_0} = \frac{P_r}{R_b N_0} = \text{SNR} \cdot \frac{B}{R_b}
@@ -77,7 +77,7 @@ $$
 Where M = constellation size
 
 ### Thermal Noise Power
-See [[Noise Sources & Noise Figure]]
+See [[Noise-Sources-&-Noise-Figure]]
 
 $$
 N = kTB
@@ -101,14 +101,14 @@ For T = 290 K, B in Hz
 ## 📊 Information Theory
 
 ### Shannon Channel Capacity
-See [[Shannon's Channel Capacity Theorem]]
+See [[Shannon's-Channel-Capacity-Theorem]]
 
 $$
 C = B \log_2(1 + \text{SNR}) \quad (\text{bits/sec})
 $$
 
 ### Spectral Efficiency
-See [[Spectral Efficiency & Bit Rate]]
+See [[Spectral-Efficiency-&-Bit-Rate]]
 
 $$
 \eta = \frac{R_b}{B} \quad (\text{bits/sec/Hz})
@@ -124,7 +124,7 @@ $$
 
 ## 🎯 Bit Error Rate (BER)
 
-See [[Bit Error Rate (BER)]]
+See [[Bit-Error-Rate-(BER)]]
 
 ### Q-Function
 
@@ -139,14 +139,14 @@ Q(x) \approx \frac{1}{x\sqrt{2\pi}} e^{-x^2/2} \quad (x > 3)
 $$
 
 ### BPSK in AWGN
-See [[Binary Phase-Shift Keying (BPSK)]]
+See [[Binary-Phase-Shift-Keying-(BPSK)]]
 
 $$
 \text{BER} = Q\left(\sqrt{\frac{2E_b}{N_0}}\right)
 $$
 
 ### QPSK in AWGN
-See [[QPSK Modulation]]
+See [[QPSK-Modulation]]
 
 $$
 \text{BER} \approx Q\left(\sqrt{\frac{2E_b}{N_0}}\right)
@@ -161,7 +161,7 @@ $$
 $$
 
 ### M-QAM in AWGN
-See [[Quadrature Amplitude Modulation (QAM)]]
+See [[Quadrature-Amplitude-Modulation-(QAM)]]
 
 $$
 \text{BER} \approx \frac{4}{\log_2(M)}\left(1 - \frac{1}{\sqrt{M}}\right) Q\left(\sqrt{\frac{3\log_2(M)}{M-1} \cdot \frac{E_b}{N_0}}\right)
@@ -172,7 +172,7 @@ $$
 ## 📻 Modulation
 
 ### IQ Representation
-See [[IQ Representation]]
+See [[IQ-Representation]]
 
 $$
 s(t) = I(t)\cos(2\pi f_c t) - Q(t)\sin(2\pi f_c t)
@@ -200,7 +200,7 @@ Where:
 ## 🌊 Propagation Effects
 
 ### Doppler Shift
-See [[Multipath Propagation & Fading (Rayleigh, Rician)]]
+See [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]
 
 $$
 f_d = \frac{v}{\lambda} \cos(\theta) = \frac{vf_c}{c} \cos(\theta)
@@ -223,7 +223,7 @@ $$
 Where B_d = Doppler spread
 
 ### Rayleigh Fading PDF
-See [[Multipath Propagation & Fading (Rayleigh, Rician)]]
+See [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]
 
 $$
 p(r) = \frac{r}{\sigma^2} \exp\left(-\frac{r^2}{2\sigma^2}\right)
@@ -240,7 +240,7 @@ $$
 ## 🛰️ Antenna & Polarization
 
 ### Antenna Gain (Parabolic Dish)
-See [[Antenna Theory Basics]]
+See [[Antenna-Theory-Basics]]
 
 $$
 G \approx \eta_{\text{ant}} \left(\frac{\pi D}{\lambda}\right)^2
@@ -253,7 +253,7 @@ A_e = \frac{G\lambda^2}{4\pi}
 $$
 
 ### Polarization Loss Factor
-See [[Wave Polarization]]
+See [[Wave-Polarization]]
 
 For angle mismatch θ:
 
@@ -272,7 +272,7 @@ $$
 ## 🌧️ Atmospheric Effects
 
 ### Rain Attenuation (ITU-R Model)
-See [[Weather Effects (Rain Fade, Fog Attenuation)]]
+See [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]
 
 $$
 A = \gamma R^{\beta} \quad (\text{dB/km})
@@ -283,7 +283,7 @@ Where:
 - R = Rain rate (mm/hr)
 
 ### Faraday Rotation
-See [[Wave Polarization]]
+See [[Wave-Polarization]]
 
 $$
 \Omega = 2.36 \times 10^4 \frac{B_\parallel \cdot \text{TEC}}{f^2} \quad (\text{radians})
@@ -299,7 +299,7 @@ Where:
 ## 🔐 Error Correction
 
 ### Hamming Distance
-See [[Hamming Distance & Error Detection]]
+See [[Hamming-Distance-&-Error-Detection]]
 
 **Error detection capability**:
 
@@ -332,7 +332,7 @@ Where:
 ## 🎛️ System Parameters
 
 ### Noise Figure
-See [[Noise Sources & Noise Figure]]
+See [[Noise-Sources-&-Noise-Figure]]
 
 $$
 F = \frac{\text{SNR}_{\text{in}}}{\text{SNR}_{\text{out}}}
@@ -351,7 +351,7 @@ F_{\text{total}} = F_1 + \frac{F_2 - 1}{G_1} + \frac{F_3 - 1}{G_1 G_2} + \ldots
 $$
 
 ### Processing Gain (Spread Spectrum)
-See [[Spread Spectrum (DSSS/FHSS)]]
+See [[Spread-Spectrum-(DSSS-FHSS)]]
 
 $$
 G_p = \frac{B_{\text{RF}}}{B_{\text{data}}}
@@ -366,7 +366,7 @@ $$
 ---
 
 ## 📈 MIMO Capacity
-See [[MIMO & Spatial Multiplexing]]
+See [[MIMO-&-Spatial-Multiplexing]]
 
 ### Ergodic Capacity (known CSI at RX)
 

@@ -1,6 +1,6 @@
 # Hamming Distance & Error Detection
 
-[[Home]] | **Coding Theory** | [[Forward Error Correction (FEC)]] | [[Block Codes (Hamming, BCH, Reed-Solomon)]]
+[[Home]] | **Coding Theory** | [[Forward-Error-Correction-(FEC)]] | [[Block-Codes-(Hamming,-BCH,-Reed-Solomon)]]
 
 ---
 
@@ -609,11 +609,11 @@ print(f"Can correct {t_correct} errors, detect {t_detect} errors")
 
 ## Related Topics
 
-- **[[Forward Error Correction (FEC)]]**: Using redundancy for correction
-- **[[Block Codes (Hamming, BCH, Reed-Solomon)]]**: Specific code constructions
-- **[[Convolutional Codes & Viterbi Decoding]]**: Sequential error correction
-- **[[LDPC Codes]]**: Modern capacity-approaching codes
-- **[[Bit Error Rate (BER)]]**: Performance metric
+- **[[Forward-Error-Correction-(FEC)]]**: Using redundancy for correction
+- **[[Block-Codes-(Hamming,-BCH,-Reed-Solomon)]]**: Specific code constructions
+- **[[Convolutional-Codes-&-Viterbi-Decoding]]**: Sequential error correction
+- **[[LDPC-Codes]]**: Modern capacity-approaching codes
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
 
 ---
 

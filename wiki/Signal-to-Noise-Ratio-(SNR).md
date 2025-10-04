@@ -179,7 +179,7 @@ In Chimera's UI, "Channel SNR (dB)" represents **Es/N0** (symbol energy to noise
 
 ## See Also
 
-- [[Energy Ratios (Es N0 and Eb N0)]] - Related energy metrics
-- [[Additive White Gaussian Noise (AWGN)]] - What creates the noise
-- [[Bit Error Rate (BER)]] - How SNR affects errors
-- [[Constellation Diagrams]] - Visualizing SNR impact
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] - Related energy metrics
+- [[Additive-White-Gaussian-Noise-(AWGN)]] - What creates the noise
+- [[Bit-Error-Rate-(BER)]] - How SNR affects errors
+- [[Constellation-Diagrams]] - Visualizing SNR impact

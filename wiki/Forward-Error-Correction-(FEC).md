@@ -143,11 +143,11 @@ BER
 In Chimera's simulation:
 
 ### 1. Encoder
-- Applies [[LDPC Codes|LDPC]] encoding to payload data
+- Applies [[LDPC-Codes|LDPC]] encoding to payload data
 - Adds parity symbols for error correction
 
 ### 2. Channel
-- [[Additive White Gaussian Noise (AWGN)|AWGN]] corrupts the transmitted symbols
+- [[Additive-White-Gaussian-Noise-(AWGN)|AWGN]] corrupts the transmitted symbols
 
 ### 3. Decoder
 - Iterative LDPC decoder corrects errors
@@ -228,7 +228,7 @@ where:
 
 ## See Also
 
-- [[LDPC Codes]] - Specific FEC code used in Chimera
-- [[Bit Error Rate (BER)]] - What FEC improves
-- [[Signal to Noise Ratio (SNR)]] - FEC enables lower SNR operation
+- [[LDPC-Codes]] - Specific FEC code used in Chimera
+- [[Bit-Error-Rate-(BER)]] - What FEC improves
+- [[Signal-to-Noise-Ratio-(SNR)]] - FEC enables lower SNR operation
 - [[Understanding BER Curves]] - Visualizing FEC performance

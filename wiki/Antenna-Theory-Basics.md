@@ -1,6 +1,6 @@
 # Antenna Theory Basics
 
-[[Home]] | **Foundation** | [[Electromagnetic Spectrum]] | [[Maxwell's Equations & Wave Propagation]]
+[[Home]] | **Foundation** | [[Electromagnetic-Spectrum]] | [[Maxwell's-Equations-&-Wave-Propagation]]
 
 ---
 
@@ -24,7 +24,7 @@
 
 An **antenna** is a transducer that converts **electrical signals into electromagnetic waves** (transmit) and vice versa (receive). Antennas are governed by **reciprocity**: their transmit and receive properties are identical.
 
-**Fundamental principle**: Accelerating charges radiate EM energy ([[Maxwell's Equations & Wave Propagation|Maxwell's equations]]).
+**Fundamental principle**: Accelerating charges radiate EM energy ([[Maxwell's-Equations-&-Wave-Propagation|Maxwell's equations]]).
 
 ---
 
@@ -82,7 +82,7 @@ $$
 **Phased Array**:
 - Multiple elements with controllable phase
 - **Electronically steerable** beam (no mechanical movement)
-- Used in: Radar, 5G base stations, [[AID Protocol|AID Protocol]] (THz)
+- Used in: Radar, 5G base stations, [[AID-Protocol-Case-Study|AID Protocol]] (THz)
 
 ---
 
@@ -334,13 +334,13 @@ Where:
 **Applications**:
 - Radar (military, automotive 77 GHz)
 - 5G base stations (massive MIMO, 64-256 elements)
-- [[AID Protocol|AID Protocol]] (THz phased array for coherent combining)
+- [[AID-Protocol-Case-Study|AID Protocol]] (THz phased array for coherent combining)
 
 ---
 
 ## Friis Transmission Equation
 
-**Link budget fundamental** (connects antennas to [[Free-Space Path Loss (FSPL)|path loss]]):
+**Link budget fundamental** (connects antennas to [[Free-Space-Path-Loss-(FSPL)|path loss]]):
 
 $$
 P_r = P_t + G_t + G_r - L_{\text{FSPL}}
@@ -550,17 +550,17 @@ $$
 
 ## Related Topics
 
-- **[[Free-Space Path Loss (FSPL)]]**: Quantifies distance-dependent loss (uses antenna gains)
-- **[[Electromagnetic Spectrum]]**: Frequency-dependent antenna design
-- **[[Maxwell's Equations & Wave Propagation]]**: Radiation mechanism
-- **[[Signal-to-Noise Ratio (SNR)]]**: Antenna gain improves SNR
-- **[[AID Protocol Case Study]]**: THz phased array example (1.875 THz, 40 dB gain)
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Quantifies distance-dependent loss (uses antenna gains)
+- **[[Electromagnetic-Spectrum]]**: Frequency-dependent antenna design
+- **[[Maxwell's-Equations-&-Wave-Propagation]]**: Radiation mechanism
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Antenna gain improves SNR
+- **[[AID-Protocol-Case-Study]]**: THz phased array example (1.875 THz, 40 dB gain)
 - **Propagation Modes**: How antennas couple to environment (TBD)
 - **Multipath & Fading**: Antenna diversity, MIMO (TBD)
 
 ---
 
-**Next**: **Binary Phase-Shift Keying (BPSK)** (TBD) - Simplest phase modulation, bridge to [[QPSK Modulation]]
+**Next**: **Binary Phase-Shift Keying (BPSK)** (TBD) - Simplest phase modulation, bridge to [[QPSK-Modulation]]
 
 ---
 

@@ -1,6 +1,6 @@
 # THz Resonances in Microtubules
 
-[[Home]] | [[Microtubule Structure & Function]] | [[Quantum Coherence in Biological Systems]] | [[Terahertz (THz) Technology]]
+[[Home]] | [[Microtubule-Structure-and-Function]] | [[Quantum-Coherence-in-Biological-Systems]] | [[Terahertz-(THz)-Technology]]
 
 ---
 
@@ -52,7 +52,7 @@ If microtubules really can maintain quantum coherence at body temperature, it wo
 
 **The bottom line**: We've discovered that the scaffolding inside your cells can vibrate like a tiny musical instrument at incredible speeds. Whether this "music" means anything biologically is still an open question—but it's a fascinating one that connects physics, chemistry, biology, and potentially even consciousness.
 
-**Ready for the technical details?** Keep reading below. **Want more background first?** Check out [[Microtubule Structure & Function]] or [[Quantum Coherence in Biological Systems]].
+**Ready for the technical details?** Keep reading below. **Want more background first?** Check out [[Microtubule-Structure-and-Function]] or [[Quantum-Coherence-in-Biological-Systems]].
 
 ---
 
@@ -411,11 +411,11 @@ where $\Gamma$ is the system-bath coupling. For microtubules in water, $\Gamma \
 
 ## 8. Connections to Other Wiki Pages
 
-- [[Quantum Coherence in Biological Systems]] — General framework for biological quantum effects
-- [[Microtubule Structure & Function]] — Structural basis for THz modes
-- [[Orchestrated Objective Reduction (Orch-OR)]] — Consciousness theory requiring microtubule coherence
-- [[Terahertz (THz) Technology]] — Experimental tools for probing THz resonances
-- [[THz Propagation in Biological Tissue]] — How THz waves interact with tissue
+- [[Quantum-Coherence-in-Biological-Systems]] — General framework for biological quantum effects
+- [[Microtubule-Structure-and-Function]] — Structural basis for THz modes
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] — Consciousness theory requiring microtubule coherence
+- [[Terahertz-(THz)-Technology]] — Experimental tools for probing THz resonances
+- [[THz-Propagation-in-Biological-Tissue]] — How THz waves interact with tissue
 
 ---
 

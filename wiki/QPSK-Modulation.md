@@ -76,7 +76,21 @@ Chimera's implementation:
 
 ## See Also
 
-- [[What Are Symbols]] - Understanding the fundamental unit
-- [[IQ Representation]] - In-phase and Quadrature components
-- [[Constellation Diagrams]] - Visualizing QPSK
-- [[Modulation Protocol v4.2]] - Chimera's QPSK implementation details
+- [[What-Are-Symbols]] - Understanding the fundamental unit
+- [[IQ-Representation]] - In-phase and Quadrature components
+- [[Constellation-Diagrams]] - Visualizing QPSK
+- [[Real-World-System-Examples]] - QPSK in GPS, DVB-S2, and LTE
+
+## External Resources
+
+**Interactive Demonstrations**:
+- [GNURadio QPSK Tutorial](https://wiki.gnuradio.org/index.php/Guided_Tutorial_PSK_Demodulation) - Hands-on QPSK implementation
+- [DSP Related: QPSK Articles](https://www.dsprelated.com/showarticle/153.php) - Technical deep dive
+
+**Signal Examples**:
+- [sigidwiki QPSK Signals](https://www.sigidwiki.com/wiki/Category:QPSK) - Real-world QPSK signal recordings
+- [DVB-S2 QPSK Usage](https://www.etsi.org/deliver/etsi_en/302300_302399/30230701/) - Satellite TV standard (ETSI EN 302 307-1)
+
+**Textbook References**:
+- Proakis & Salehi, *Digital Communications* (5th ed.), Chapter 4.2 - QPSK theory
+- See [[Bibliography]] for complete reference list

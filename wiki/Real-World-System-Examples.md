@@ -1,6 +1,6 @@
 # Real-World System Examples
 
-[[Home]] | **System Implementation** | [[Channel Equalization]] | [[Signal Chain (End-to-End Processing)]]
+[[Home]] | **System Implementation** | [[Channel-Equalization]] | [[Signal-Chain-(End-to-End-Processing)]]
 
 ---
 
@@ -598,6 +598,17 @@ $$
 
 **Update rate**: 1 Hz (can be 10 Hz with modern receivers)
 
+### External Resources
+
+**GPS Technical Documentation**:
+- [IS-GPS-200 Interface Specification](https://www.gps.gov/technical/icwg/IS-GPS-200M.pdf) - Official GPS signal specification
+- [GPS.gov](https://www.gps.gov/) - U.S. government GPS information portal
+- [Navipedia GPS Section](https://gssc.esa.int/navipedia/index.php?title=GPS) - Comprehensive GPS technical resource
+
+**Related GNSS Systems**:
+- [Galileo OS SIS ICD](https://www.gsc-europa.eu/sites/default/files/sites/all/files/Galileo_OS_SIS_ICD_v2.0.pdf) - European GNSS signal plan
+- [Navipedia Signal Plan Comparison](https://gssc.esa.int/navipedia/index.php?title=GALILEO_Signal_Plan) - Multi-GNSS signal analysis
+
 **Sensitivity**: -130 dBm (open sky), -145 dBm (aided, indoor marginal)
 
 ---
@@ -888,11 +899,35 @@ $$
 
 ## Related Topics
 
-- **[[Signal Chain (End-to-End Processing)]]**: System block diagrams
-- **[[Complete Link Budget Analysis]]**: Detailed link calculations
-- **[[OFDM & Multicarrier Modulation]]**: WiFi/LTE PHY layer
-- **[[Spread Spectrum (DSSS, FHSS)]]**: GPS, Bluetooth AFH
-- **[[Adaptive Coding & Modulation]]**: LTE, DVB-S2X, LoRaWAN ADR
+- **[[Signal-Chain-(End-to-End-Processing)]]**: System block diagrams
+- **[[Complete-Link-Budget-Analysis]]**: Detailed link calculations
+- **[[OFDM-&-Multicarrier-Modulation]]**: WiFi/LTE PHY layer
+- **[[Spread-Spectrum-(DSSS-FHSS)]]**: GPS, Bluetooth AFH
+- **[[Adaptive-Modulation-&-Coding-(AMC)]]**: LTE, DVB-S2X, LoRaWAN ADR
+
+---
+
+## External Resources & Standards
+
+### WiFi (802.11)
+- [IEEE 802.11 Standards](https://standards.ieee.org/standard/802_11-2020.html) - Official WiFi specifications
+- [WiFi Alliance](https://www.wi-fi.org/) - Certification and technical information
+
+### LTE/5G
+- [3GPP Specifications](https://www.3gpp.org/ftp/Specs/archive/) - Complete LTE/5G standards
+- [3GPP TS 36.211](https://www.3gpp.org/ftp/Specs/archive/36_series/36.211/) - LTE Physical channels and modulation
+- [3GPP TS 36.212](https://www.3gpp.org/ftp/Specs/archive/36_series/36.212/) - LTE Channel coding
+
+### DVB Satellite
+- [ETSI EN 302 307-1](https://www.etsi.org/deliver/etsi_en/302300_302399/30230701/) - DVB-S2 Standard
+- [DVB Project](https://www.dvb.org/) - Digital Video Broadcasting organization
+
+### Signal Identification
+- [sigidwiki](https://www.sigidwiki.com/wiki/Signal_Identification_Guide) - Comprehensive RF signal database
+- [RadioReference](https://www.radioreference.com/) - Frequency allocations and trunked systems
+
+### Full Bibliography
+- See [[Bibliography]] for complete list of 60+ references, textbooks, and resources
 
 ---
 

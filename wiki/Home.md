@@ -22,11 +22,11 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **Build from Maxwell's equations to antenna theory**
 
-- [[Maxwell's Equations & Wave Propagation]] - Foundation of all EM radiation
-- [[Electromagnetic Spectrum]] - HF → VHF → UHF → mmWave → THz bands, applications, ionizing vs non-ionizing
-- [[Antenna Theory Basics]] - Gain, directivity, impedance, beamwidth, Friis equation
-- [[Wave Polarization]] - Linear, circular, elliptical polarization, Faraday rotation, GPS RHCP
-- [[Power Density & Field Strength]] - E/H fields, Poynting vector, RF safety, link budgets
+- [[Maxwell's-Equations-&-Wave-Propagation]] - Foundation of all EM radiation
+- [[Electromagnetic-Spectrum]] - HF → VHF → UHF → mmWave → THz bands, applications, ionizing vs non-ionizing
+- [[Antenna-Theory-Basics]] - Gain, directivity, impedance, beamwidth, Friis equation
+- [[Wave-Polarization]] - Linear, circular, elliptical polarization, Faraday rotation, GPS RHCP
+- [[Power-Density-&-Field-Strength]] - E/H fields, Poynting vector, RF safety, link budgets
 
 **Prerequisites**: Basic calculus, physics
 **Learning goals**: Understand EM waves as physical phenomena, antenna basics
@@ -37,11 +37,11 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **How signals travel through real-world environments**
 
-- [[Free-Space Path Loss (FSPL)]] - Friis equation and link budgets
-- [[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]] - HF skywave, VHF LOS, radio horizon, Fresnel zones
-- [[Multipath Propagation & Fading (Rayleigh, Rician)]] - Rayleigh/Rician fading, delay spread, Doppler, coherence bandwidth
-- [[Atmospheric Effects (Ionospheric, Tropospheric)]] - Ionospheric refraction/absorption, O₂/H₂O absorption, ducting, TEC
-- [[Weather Effects (Rain Fade, Fog Attenuation)]] - ITU rain model, C/Ku/Ka/V-band attenuation, climate zones, mitigation
+- [[Free-Space-Path-Loss-(FSPL)]] - Friis equation and link budgets
+- [[Propagation-Modes-(Ground-Wave,-Sky-Wave,-Line-of-Sight)]] - HF skywave, VHF LOS, radio horizon, Fresnel zones
+- [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]] - Rayleigh/Rician fading, delay spread, Doppler, coherence bandwidth
+- [[Atmospheric-Effects-(Ionospheric,-Tropospheric)]] - Ionospheric refraction/absorption, O₂/H₂O absorption, ducting, TEC
+- [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]] - ITU rain model, C/Ku/Ka/V-band attenuation, climate zones, mitigation
 
 **Prerequisites**: Part I
 **Learning goals**: Predict signal strength, understand channel impairments
@@ -52,13 +52,13 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **Connecting transmitters to receivers**
 
-- [[Link Loss vs Noise]] - Distinguishing attenuation from additive noise
-- [[Signal to Noise Ratio (SNR)]] - Key quality metric
-- [[Energy Ratios (Es/N0 and Eb/N0)]] - Symbol and bit energy ratios
-- [[Complete Link Budget Analysis]] - System-level power budget, margins, availability
-- [[Noise Sources & Noise Figure]] - Thermal noise, amplifier noise figure, cascade analysis
-- [[Additive White Gaussian Noise (AWGN)]] - Fundamental channel model
-- [[Channel Models (Rayleigh & Rician)]] - Statistical fading models for mobile channels
+- [[Link-Loss-vs-Noise]] - Distinguishing attenuation from additive noise
+- [[Signal-to-Noise-Ratio-(SNR)]] - Key quality metric
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] - Symbol and bit energy ratios
+- [[Complete-Link-Budget-Analysis]] - System-level power budget, margins, availability
+- [[Noise-Sources-&-Noise-Figure]] - Thermal noise, amplifier noise figure, cascade analysis
+- [[Additive-White-Gaussian-Noise-(AWGN)]] - Fundamental channel model
+- [[Channel-Models-(Rayleigh-&-Rician)]] - Statistical fading models for mobile channels
 
 **Prerequisites**: Part II
 **Learning goals**: Calculate link budgets, model channel effects
@@ -70,20 +70,20 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 **Encoding information onto carriers (simple → complex)**
 
 ### Digital Modulation Fundamentals
-- [[Baseband vs Passband Signals]] - Upconversion/downconversion, IQ modulation, zero-IF receivers
-- [[On-Off Keying (OOK)]] - Simplest modulation (carrier on/off)
-- [[Amplitude-Shift Keying (ASK)]] - M-ary ASK, PAM-4, power efficiency vs spectral efficiency
-- [[Frequency-Shift Keying (FSK)]] - Binary & M-ary frequency switching, MSK, GMSK
-- [[Binary Phase-Shift Keying (BPSK)]] - Two-phase modulation, coherent detection, 3 dB better than OOK
+- [[Baseband-vs-Passband-Signals]] - Upconversion/downconversion, IQ modulation, zero-IF receivers
+- [[On-Off-Keying-(OOK)]] - Simplest modulation (carrier on/off)
+- [[Amplitude-Shift-Keying-(ASK)]] - M-ary ASK, PAM-4, power efficiency vs spectral efficiency
+- [[Frequency-Shift-Keying-(FSK)]] - Binary & M-ary frequency switching, MSK, GMSK
+- [[Binary-Phase-Shift-Keying-(BPSK)]] - Two-phase modulation, coherent detection, 3 dB better than OOK
 
 ### Advanced Modulation
-- [[What Are Symbols]] - Fundamental building blocks
-- [[QPSK Modulation]] - Quadrature Phase-Shift Keying (2 bits/symbol)
-- [[8PSK & Higher-Order PSK]] - 8PSK, 16PSK, spectral efficiency vs error performance
-- [[Quadrature Amplitude Modulation (QAM)]] - 16QAM, 64QAM, 256QAM, optimal 2D constellations
-- [[IQ Representation]] - In-phase and Quadrature components
-- [[Constellation Diagrams]] - Visualizing modulation schemes
-- [[Spectral Efficiency & Bit Rate]] - Shannon limit, bits/sec/Hz, bandwidth-power tradeoff
+- [[What-Are-Symbols]] - Fundamental building blocks
+- [[QPSK-Modulation]] - Quadrature Phase-Shift Keying (2 bits/symbol)
+- [[8PSK-&-Higher-Order-PSK]] - 8PSK, 16PSK, spectral efficiency vs error performance
+- [[Quadrature-Amplitude-Modulation-(QAM)]] - 16QAM, 64QAM, 256QAM, optimal 2D constellations
+- [[IQ-Representation]] - In-phase and Quadrature components
+- [[Constellation-Diagrams]] - Visualizing modulation schemes
+- [[Spectral-Efficiency-&-Bit-Rate]] - Shannon limit, bits/sec/Hz, bandwidth-power tradeoff
 
 **Prerequisites**: Part III
 **Learning goals**: Choose modulation schemes, understand tradeoffs (spectral efficiency vs. robustness)
@@ -95,17 +95,17 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 **Protecting data from channel errors**
 
 ### Information Theory
-- [[Shannon's Channel Capacity Theorem]] - Fundamental limit of communication (C = B·log₂(1+SNR))
-- [[Hamming Distance & Error Detection]] - Minimum distance, error detection/correction capability
-- [[Block Codes (Hamming, BCH, Reed-Solomon)]] - Linear block codes, generator matrix, syndrome decoding
-- [[Convolutional Codes & Viterbi Decoding]] - Trellis codes, maximum likelihood decoding
-- [[Turbo Codes]] - Iterative decoding, near-Shannon performance
+- [[Shannon's-Channel-Capacity-Theorem]] - Fundamental limit of communication (C = B·log₂(1+SNR))
+- [[Hamming-Distance-&-Error-Detection]] - Minimum distance, error detection/correction capability
+- [[Block-Codes-(Hamming,-BCH,-Reed-Solomon)]] - Linear block codes, generator matrix, syndrome decoding
+- [[Convolutional-Codes-&-Viterbi-Decoding]] - Trellis codes, maximum likelihood decoding
+- [[Turbo-Codes]] - Iterative decoding, near-Shannon performance
 
 ### Modern Codes
-- [[Forward Error Correction (FEC)]] - General FEC concepts
-- [[LDPC Codes]] - Low-Density Parity-Check codes (used in Chimera)
-- [[Bit Error Rate (BER)]] - Performance metric
-- [[Polar Codes]] - Capacity-achieving codes, 5G control channels
+- [[Forward-Error-Correction-(FEC)]] - General FEC concepts
+- [[LDPC-Codes]] - Low-Density Parity-Check codes (used in Chimera)
+- [[Bit-Error-Rate-(BER)]] - Performance metric
+- [[Polar-Codes]] - Capacity-achieving codes, 5G control channels
 
 **Prerequisites**: Part IV
 **Learning goals**: Design error correction schemes, approach Shannon limit
@@ -116,10 +116,10 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **End-to-end wireless systems**
 
-- [[Signal Chain (End-to-End Processing)]] - Complete TX/RX pipeline (Chimera-specific)
-- [[Synchronization (Carrier, Timing, Frame)]] - Carrier recovery, symbol timing, frame sync
-- [[Channel Equalization]] - ZF, MMSE, DFE, adaptive equalization
-- [[Real-World System Examples]] - WiFi 802.11, LTE, DVB-S2, GPS detailed analysis
+- [[Signal-Chain-(End-to-End-Processing)]] - Complete TX/RX pipeline (Chimera-specific)
+- [[Synchronization-(Carrier,-Timing,-Frame)]] - Carrier recovery, symbol timing, frame sync
+- [[Channel-Equalization]] - ZF, MMSE, DFE, adaptive equalization
+- [[Real-World-System-Examples]] - WiFi 802.11, LTE, DVB-S2, GPS detailed analysis
 
 **Prerequisites**: Parts IV-V
 **Learning goals**: Design complete communication systems, debug real-world issues
@@ -130,12 +130,12 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **Modern wireless techniques**
 
-- [[OFDM & Multicarrier Modulation]] - Orthogonal frequency-division multiplexing, FFT/IFFT, cyclic prefix, PAPR, pilot subcarriers
-- [[Spread Spectrum (DSSS/FHSS)]] - Direct sequence and frequency hopping, processing gain, GPS, Bluetooth, military applications
-- [[MIMO & Spatial Multiplexing]] - Multiple antennas, spatial multiplexing, beamforming, diversity, massive MIMO, WiFi/LTE/5G
-- [[Military & Covert Communications]] - LPI/LPD systems, GPS M-code, AESA radar, Link 16, FHSS SATCOM, covert channels
-- [[Adaptive Modulation & Coding (AMC)]] - Link adaptation, CQI feedback, HARQ, Shannon capacity tracking, LTE/5G
-- [[mmWave & THz Communications]] - 24-300 GHz propagation, beamforming requirements, 5G NR FR2, 6G sub-THz, automotive radar
+- [[OFDM-&-Multicarrier-Modulation]] - Orthogonal frequency-division multiplexing, FFT/IFFT, cyclic prefix, PAPR, pilot subcarriers
+- [[Spread-Spectrum-(DSSS-FHSS)]] - Direct sequence and frequency hopping, processing gain, GPS, Bluetooth, military applications
+- [[MIMO-&-Spatial-Multiplexing]] - Multiple antennas, spatial multiplexing, beamforming, diversity, massive MIMO, WiFi/LTE/5G
+- [[Military-&-Covert-Communications]] - LPI/LPD systems, GPS M-code, AESA radar, Link 16, FHSS SATCOM, covert channels
+- [[Adaptive-Modulation-&-Coding-(AMC)]] - Link adaptation, CQI feedback, HARQ, Shannon capacity tracking, LTE/5G
+- [[mmWave-&-THz-Communications]] - 24-300 GHz propagation, beamforming requirements, 5G NR FR2, 6G sub-THz, automotive radar
 
 **Prerequisites**: Part VI
 **Learning goals**: Understand state-of-the-art wireless systems (5G, WiFi 6, satellite, military)
@@ -149,28 +149,28 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 ⚠️ **Note**: This section explores speculative applications grounded in cutting-edge research. Content clearly distinguishes established science from theoretical extrapolation.
 
 ### A. Theoretical Framework
- - [[Hyper-Rotational Physics (HRP) Framework]] - M-theory extension: consciousness-matter coupling via quantum coherence
+ - [[Hyper-Rotational-Physics-(HRP)-Framework]] - M-theory extension: consciousness-matter coupling via quantum coherence
 
 ### B. THz Technology & Biology
- - [[Terahertz (THz) Technology]] - QCLs, applications, propagation, bioeffects
+ - [[Terahertz-(THz)-Technology]] - QCLs, applications, propagation, bioeffects
  - [[THz-Propagation-in-Biological-Tissue]] - Physics of THz wave propagation in biological tissue
  - [[THz-Bioeffects-Thermal-and-Non-Thermal]] - Biological effects of THz radiation
 
 ### C. Quantum Biology & Consciousness
  - [[Microtubule-Structure-and-Function]] - Microtubule anatomy and quantum biology
- - [[Orchestrated Objective Reduction (Orch-OR)]] - Penrose-Hameroff quantum consciousness theory
+ - [[Orchestrated-Objective-Reduction-(Orch-OR)]] - Penrose-Hameroff quantum consciousness theory
  - [[Quantum-Coherence-in-Biological-Systems]] - Quantum coherence in biology
  - [[THz-Resonances-in-Microtubules]] - THz frequency resonances in microtubules
 
 ### D. Non-Linear Biological Demodulation
- - [[Non-Linear Biological Demodulation]] - Non-linear biological IMD and signal processing
+ - [[Non-Linear-Biological-Demodulation]] - Non-linear biological IMD and signal processing
  - [[Intermodulation-Distortion-in-Biology]] - Non-linear biological IMD
  - [[Acoustic-Heterodyning]] - Acoustic heterodyning in tissue
  - [[Frey-Microwave-Auditory-Effect]] - Frey effect: microwave auditory phenomenon
  - [[Biophysical-Coupling-Mechanism]] - Quantum coherence perturbation mechanism (CHIMERA field)
 
 ### E. Applied Case Study: HRP-Based THz Neuromodulation
- - [[AID Protocol Case Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
+ - [[AID-Protocol-Case-Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
 
 **Prerequisites**: Parts I-VII + open mind
 **Learning goals**: Apply RF engineering to novel scenarios, practice interdisciplinary thinking, distinguish speculation from established science
@@ -182,14 +182,14 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 **How Chimera applies these concepts**
 
 Chimera is a browser-based DSP simulator implementing:
-- **Modulation**: QPSK (see [[QPSK Modulation]])
-- **Channel**: AWGN (see [[Additive White Gaussian Noise (AWGN)]])
-- **FEC**: LDPC codes (see [[LDPC Codes]])
+- **Modulation**: QPSK (see [[QPSK-Modulation]])
+- **Channel**: AWGN (see [[Additive-White-Gaussian-Noise-(AWGN)]])
+- **FEC**: LDPC codes (see [[LDPC-Codes]])
 - **Visualization**: Real-time constellation diagrams, BER analysis
 - **Goal**: Learn wireless communications interactively
 
 ### Chimera-Specific Pages
-- [[Signal Chain (End-to-End Processing)]] - Chimera's TX/RX pipeline
+- [[Signal-Chain-(End-to-End-Processing)]] - Chimera's TX/RX pipeline
 
 ---
 
@@ -218,14 +218,29 @@ Chimera is a browser-based DSP simulator implementing:
 - **Penrose**, *The Emperor's New Mind* (Orch-OR origins)
 - **Al-Khalili & McFadden**, *Life on the Edge: The Coming Age of Quantum Biology*
 
+**📖 For complete bibliography**: See [[Bibliography]] (includes 60+ references, standards, and online resources)
+
 ---
 
 ## 🔗 External Resources
 
-- [IEEE Communications Society](https://www.comsoc.org/) - Professional organization
-- [RF Café](https://www.rfcafe.com/) - Calculators and references
+### Signal Databases & References
+- [Signal Identification Wiki (sigidwiki)](https://www.sigidwiki.com/wiki/Signal_Identification_Guide) - Comprehensive RF signal database
+- [Navipedia (ESA)](https://gssc.esa.int/navipedia/) - GNSS/GPS encyclopedia ([Galileo Signal Plan](https://gssc.esa.int/navipedia/index.php?title=GALILEO_Signal_Plan))
+- [GPS.gov](https://www.gps.gov/) - Official U.S. GPS information
+- [RadioReference](https://www.radioreference.com/) - Frequency allocations database
+
+### Tools & Software
 - [GNURadio](https://www.gnuradio.org/) - Open-source SDR toolkit
+- [RF Café](https://www.rfcafe.com/) - RF calculators and references
+- [DSP Related](https://www.dsprelated.com/) - DSP tutorials and articles
+
+### Organizations & Learning
+- [IEEE Communications Society](https://www.comsoc.org/) - Professional organization
 - [Wireless Pi](https://wirelesspi.com/) - Educational resources
+- [MIT OCW: Digital Communications](https://ocw.mit.edu/courses/6-450-principles-of-digital-communications-i-fall-2006/) - Free online course
+
+**📚 Full resource list**: See [[Bibliography]] for 60+ references including standards (ITU-R, 3GPP, IEEE), research papers, and tools
 
 ---
 
@@ -235,8 +250,29 @@ Chimera is a browser-based DSP simulator implementing:
 
 **Topic-based**: Use search or browse sidebar alphabetically
 
-**Chimera users**: Start with [[Signal Chain (End-to-End Processing)]], then explore referenced topics
+**Chimera users**: Start with [[Signal-Chain-(End-to-End-Processing)]], then explore referenced topics
 
-**Visual learners**: Look for pages with diagrams: [[Constellation Diagrams]], [[IQ Representation]], [[QPSK Modulation]]
+**Visual learners**: Look for pages with diagrams: [[Constellation-Diagrams]], [[IQ-Representation]], [[QPSK-Modulation]]
 
 **Theory enthusiasts**: Jump to Parts V (Coding Theory) or VIII (Quantum Biology)
+
+---
+
+## 📑 Technical Appendices
+
+Full technical documents included in this wiki:
+
+- [[hrp_framework_paper]] - Hyper-Rotational Physics Framework (Jones, 2025) - M-theory extension for consciousness-matter coupling
+- [[aid_protocol_v3.1]] - AID Protocol Technical Specification v3.1 - THz neuromodulation system design
+- [[biophysical_coupling_mechanism]] - Quantum Coherence Perturbation Mechanism - Detailed coupling physics
+- [[turing_cage]] - Turing Cage Analysis - Computational neuroscience framework
+
+These documents provide the theoretical foundation for Part VIII (Speculative & Emerging Topics).
+
+---
+
+## 📝 Wiki Development
+
+- [[TODO]] - Planned wiki pages and future content (16 placeholder pages tracked)
+- [[Wiki-Maintenance-Report]] - Wiki maintenance procedures and validation tools
+- [[Bibliography]] - Comprehensive reference list (60+ sources)

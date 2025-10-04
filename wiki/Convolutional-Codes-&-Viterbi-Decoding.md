@@ -1,6 +1,6 @@
 # Convolutional Codes & Viterbi Decoding
 
-[[Home]] | **Coding Theory** | [[Block Codes (Hamming, BCH, Reed-Solomon)]] | [[Turbo Codes]]
+[[Home]] | **Coding Theory** | [[Block-Codes-(Hamming,-BCH,-Reed-Solomon)]] | [[Turbo-Codes]]
 
 ---
 
@@ -720,11 +720,11 @@ Match: True
 
 ## Related Topics
 
-- **[[Block Codes (Hamming, BCH, Reed-Solomon)]]**: Alternative FEC approach
-- **[[Turbo Codes]]**: Concatenated convolutional codes (next-gen)
-- **[[LDPC Codes]]**: Modern capacity-approaching codes
-- **[[Forward Error Correction (FEC)]]**: General FEC overview
-- **[[Bit Error Rate (BER)]]**: Performance metric
+- **[[Block-Codes-(Hamming,-BCH,-Reed-Solomon)]]**: Alternative FEC approach
+- **[[Turbo-Codes]]**: Concatenated convolutional codes (next-gen)
+- **[[LDPC-Codes]]**: Modern capacity-approaching codes
+- **[[Forward-Error-Correction-(FEC)]]**: General FEC overview
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
 
 ---
 

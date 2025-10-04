@@ -60,7 +60,7 @@ where:
 - SNR = signal-to-noise ratio (linear, not dB!)
 ```
 
-**In terms of [[Energy Ratios (Es/N0 and Eb/N0)|Eb/N0]]**:
+**In terms of [[Energy-Ratios-(Es-N0-and-Eb-N0)|Eb/N0]]**:
 
 ```
 C/B = log₂(1 + (Eb/N₀) · (R/B))
@@ -160,7 +160,7 @@ Chimera uses: R = 32 bps (16 sym/s × 2 bits/sym)
 
 R/C = 32/0.9 = 35.6 >> 1  ← Operating FAR above capacity!
 
-This is why [[LDPC Codes]] are essential. Without FEC, BER would be ~50% (random guessing).
+This is why [[LDPC-Codes]] are essential. Without FEC, BER would be ~50% (random guessing).
 With LDPC (rate 1/2), effective R = 16 bps, still R/C = 17.8 (high, but FEC provides ~35 dB coding gain).
 ```
 
@@ -189,9 +189,9 @@ Examples:
 | GSM | ~10 | 0.5 | ~30% |
 | WiFi 802.11n | ~20 | 3-4 | ~60% |
 | LTE Advanced | ~25 | 5-6 | ~75% |
-| [[LDPC Codes\|LDPC]] (DVB-S2) | Variable | Adaptive | ~90% |
+| [[LDPC-Codes|LDPC]] (DVB-S2) | Variable | Adaptive | ~90% |
 
-**Modern codes** ([[LDPC Codes|LDPC]], Turbo, Polar) achieve **> 95% of Shannon limit**!
+**Modern codes** ([[LDPC-Codes|LDPC]], Turbo, Polar) achieve **> 95% of Shannon limit**!
 
 ---
 
@@ -258,7 +258,7 @@ where S and N are signal and noise POWER (not ratios)
 | 1950 | Hamming codes | ~7 dB |
 | 1960 | Convolutional codes | ~3 dB |
 | 1993 | **Turbo codes** | ~0.7 dB (breakthrough!) |
-| 1996 | **[[LDPC Codes]] rediscovered** | ~0.5 dB |
+| 1996 | **[[LDPC-Codes]] rediscovered** | ~0.5 dB |
 | 2008 | **Polar codes** | ~0.5 dB |
 | 2020 | Modern LDPC (DVB-S2X) | ~0.2 dB |
 
@@ -307,7 +307,7 @@ Decrease B → Need more P for same C
 
 ---
 
-### 2. [[Forward Error Correction (FEC)]]
+### 2. [[Forward-Error-Correction-(FEC)]]
 
 **FEC adds redundancy** (lowers rate):
 ```
@@ -403,7 +403,7 @@ Maximization over input distribution p(x).
 1. **Fundamental limit**: C = B · log₂(1 + SNR) is hard barrier
 2. **Always achievable**: Codes exist that reach arbitrarily close to C
 3. **Trade-offs**: Can exchange bandwidth for power (spread spectrum)
-4. **Modern codes**: [[LDPC Codes|LDPC]], Turbo, Polar are within 0.2-0.5 dB of limit
+4. **Modern codes**: [[LDPC-Codes|LDPC]], Turbo, Polar are within 0.2-0.5 dB of limit
 5. **System design**: Target R < C, use adaptive coding/modulation
 6. **Chimera context**: Extreme low SNR (-25 dB) requires very low rate or powerful FEC
 
@@ -411,11 +411,11 @@ Maximization over input distribution p(x).
 
 ## 🔗 See Also
 
-- [[Forward Error Correction (FEC)]] - How to approach Shannon limit
-- [[LDPC Codes]] - Modern capacity-approaching codes
-- [[Bit Error Rate (BER)]] - Performance metric
-- [[Energy Ratios (Es/N0 and Eb/N0)]] - Related to SNR and capacity
-- [[Signal to Noise Ratio (SNR)]] - Key parameter in capacity formula
+- [[Forward-Error-Correction-(FEC)]] - How to approach Shannon limit
+- [[LDPC-Codes]] - Modern capacity-approaching codes
+- [[Bit-Error-Rate-(BER)]] - Performance metric
+- [[Energy-Ratios-(Es-N0-and-Eb-N0)]] - Related to SNR and capacity
+- [[Signal-to-Noise-Ratio-(SNR)]] - Key parameter in capacity formula
 
 ---
 

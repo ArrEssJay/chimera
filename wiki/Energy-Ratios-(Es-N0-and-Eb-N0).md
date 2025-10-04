@@ -125,7 +125,7 @@ where erfc is the complementary error function
 
 ## See Also
 
-- [[Signal to Noise Ratio (SNR)]] - Related power ratio
-- [[Bit Error Rate (BER)]] - Performance metric
-- [[QPSK Modulation]] - 2 bits per symbol
-- [[Link Budget Analysis]] - Using energy ratios in system design
+- [[Signal-to-Noise-Ratio-(SNR)]] - Related power ratio
+- [[Bit-Error-Rate-(BER)]] - Performance metric
+- [[QPSK-Modulation]] - 2 bits per symbol
+- [[Complete-Link-Budget-Analysis]] - Using energy ratios in system design

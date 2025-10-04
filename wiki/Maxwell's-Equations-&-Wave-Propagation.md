@@ -387,11 +387,11 @@ Maxwell's equations apply to **all frequencies**:
 
 ## 🔗 See Also
 
-- [[Electromagnetic Spectrum]] - Detailed frequency breakdown
-- [[Antenna Theory Basics]] - How to radiate/receive EM waves
-- [[Wave Polarization]] - E field orientation
-- [[Free-Space Path Loss]] - How waves weaken with distance
-- [[Terahertz (THz) Technology]] - Specific THz band applications
+- [[Electromagnetic-Spectrum]] - Detailed frequency breakdown
+- [[Antenna-Theory-Basics]] - How to radiate/receive EM waves
+- [[Wave-Polarization]] - E field orientation
+- [[Free-Space-Path-Loss-(FSPL)]] - How waves weaken with distance
+- [[Terahertz-(THz)-Technology]] - Specific THz band applications
 
 ---
 

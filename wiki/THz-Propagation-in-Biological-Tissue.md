@@ -1,6 +1,6 @@
 # THz Propagation in Biological Tissue
 
-[[Home]] | [[Terahertz (THz) Technology]] | [[THz Bioeffects Thermal and Non-Thermal]] | [[mmWave & THz Communications]]
+[[Home]] | [[Terahertz-(THz)-Technology]] | [[THz-Bioeffects-Thermal-and-Non-Thermal]] | [[mmWave-&-THz-Communications]]
 
 ---
 
@@ -9,7 +9,7 @@
 **Terahertz (THz) radiation** (0.1-10 THz, 30 μm-3 mm wavelength) occupies the spectral gap between microwaves and infrared. THz waves interact strongly with biological tissue due to resonances with molecular vibrations and rotations, particularly water. Understanding THz propagation is critical for:
 - **Medical imaging**: Cancer detection, burn assessment
 - **Security**: Concealed weapons/explosives detection through clothing
-- **Neuromodulation**: Speculative applications in neural stimulation (see [[AID Protocol Case Study]])
+- **Neuromodulation**: Speculative applications in neural stimulation (see [[AID-Protocol-Case-Study]])
 
 ---
 
@@ -264,7 +264,7 @@ where $U$ is fluence rate, $L = 1/\sqrt{3\mu_a \mu_s'}$ is diffusion length ($\m
 **Mechanisms** (proposed):
 - **Thermal**: Localized heating triggers temperature-sensitive ion channels (TRPV1)
 - **Non-thermal**: THz resonates with protein vibrational modes → conformational changes
-- **Quantum**: Vibronic coupling in microtubules (see [[THz Resonances in Microtubules]])
+- **Quantum**: Vibronic coupling in microtubules (see [[THz-Resonances-in-Microtubules]])
 
 **Challenges**:
 - Penetration: THz cannot reach deep brain structures transcranially (skull absorption + scalp)
@@ -314,7 +314,7 @@ Extract optical properties via model fitting (stratified media)
 - **Power density limit**: 10 mW/cm² (averaged over 6 minutes) for 0.3-3 THz
 - **Temperature rise**: Must stay below 1°C for prolonged exposure
 
-**Non-thermal effects**: Controversial (see [[THz Bioeffects Thermal and Non-Thermal]])
+**Non-thermal effects**: Controversial (see [[THz-Bioeffects-Thermal-and-Non-Thermal]])
 
 **Current assessment**: THz radiation is non-ionizing (photon energy ~4 meV << 13.6 eV ionization potential). At low intensities (<1 W/cm²), considered safe for brief exposure.
 
@@ -322,11 +322,11 @@ Extract optical properties via model fitting (stratified media)
 
 ## 9. Connections to Other Wiki Pages
 
-- [[Terahertz (THz) Technology]] — THz sources and detectors
-- [[THz Bioeffects Thermal and Non-Thermal]] — Biological effects
-- [[THz Resonances in Microtubules]] — Speculative quantum effects
-- [[mmWave & THz Communications]] — Wireless applications
-- [[Free-Space Path Loss (FSPL)]] — Propagation fundamentals
+- [[Terahertz-(THz)-Technology]] — THz sources and detectors
+- [[THz-Bioeffects-Thermal-and-Non-Thermal]] — Biological effects
+- [[THz-Resonances-in-Microtubules]] — Speculative quantum effects
+- [[mmWave-&-THz-Communications]] — Wireless applications
+- [[Free-Space-Path-Loss-(FSPL)]] — Propagation fundamentals
 
 ---
 
