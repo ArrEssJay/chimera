@@ -1,6 +1,6 @@
 # Hyper-Rotational Physics (HRP) Framework
 
-**⚠️ ADVANCED THEORETICAL PHYSICS**: This page presents cutting-edge theoretical research (Jones, 2025) that extends M-theory to model consciousness-matter interactions. Content is  unverified but mathematically rigorous.
+**⚠️ ADVANCED THEORETICAL PHYSICS**: This page presents cutting-edge theoretical research (Jones, 2025) that extends M-theory to model consciousness-matter interactions. Content is unverified but mathematically rigorous.
 
 ---
 
