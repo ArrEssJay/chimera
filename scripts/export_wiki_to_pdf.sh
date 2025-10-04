@@ -53,22 +53,35 @@ else
   echo "Using Latin Modern fonts (limited Unicode support, some characters may not render)"
 fi
 
+# Check if custom template exists
+TEMPLATE_PATH="$(dirname "$0")/pandoc-template.tex"
+TEMPLATE_ARG=""
+if [ -f "$TEMPLATE_PATH" ]; then
+  TEMPLATE_ARG="--template=$TEMPLATE_PATH"
+  echo "Using custom pandoc template: $TEMPLATE_PATH"
+else
+  echo "Custom template not found, using default pandoc template"
+fi
+
 # Convert markdown directly to PDF using pandoc with xelatex (supports Unicode/emoji)
 pandoc "$TMP_MD" \
   -o "$OUTPUT_PDF" \
   --pdf-engine=xelatex \
+  $TEMPLATE_ARG \
   --metadata title="Chimera DSP Wiki" \
   --metadata author="Chimera Project" \
   --metadata date="$(date +%Y-%m-%d)" \
   --toc \
-  --toc-depth=2 \
+  --toc-depth=3 \
   --number-sections \
+  --listings \
   -V geometry:margin=1in \
   -V linkcolor:blue \
   -V fontsize=11pt \
   -V documentclass:article \
   -V mainfont="$MAIN_FONT" \
-  -V monofont="$MONO_FONT"
+  -V monofont="$MONO_FONT" \
+  -V papersize:letter
 
 rm -f "$TMP_MD"
 

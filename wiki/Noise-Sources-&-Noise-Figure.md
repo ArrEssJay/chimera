@@ -1,6 +1,6 @@
 # Noise Sources & Noise Figure
 
-[[Home]] | **Link Budget & System Performance** | [[Signal-to-Noise Ratio (SNR)]] | [[Complete Link Budget Analysis]]
+[[Home]] | **Link Budget & System Performance** | [[Signal-to-Noise-Ratio-(SNR)]] | [[Complete-Link-Budget-Analysis]]
 
 ---
 
@@ -441,7 +441,7 @@ $$
 - Phase noise: -90 dBc/Hz @ 10 kHz offset
 - Degrades SNR in adjacent channels
 
-**See**: [[Synchronization]] for impact on coherent demodulation
+**See**: [[Synchronization-(Carrier,-Timing,-Frame)]] for impact on coherent demodulation
 
 ---
 
@@ -677,12 +677,12 @@ Where Y = ratio of power with noise source ON/OFF
 
 ## Related Topics
 
-- **[[Signal-to-Noise Ratio (SNR)]]**: Determines BER performance
-- **[[Complete Link Budget Analysis]]**: Uses NF for sensitivity
-- **[[Bit Error Rate (BER)]]**: Degrades with noise
-- **[[Energy Ratios (Es N0 and Eb N0)]]**: Normalized SNR metrics
-- **[[Antenna Theory Basics]]**: Antenna noise temperature
-- **[[Free-Space Path Loss (FSPL)]]**: Path loss + noise → Link budget
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Determines BER performance
+- **[[Complete-Link-Budget-Analysis]]**: Uses NF for sensitivity
+- **[[Bit-Error-Rate-(BER)]]**: Degrades with noise
+- **[[Energy-Ratios-(Es-N0-and-Eb-N0)]]**: Normalized SNR metrics
+- **[[Antenna-Theory-Basics]]**: Antenna noise temperature
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Path loss + noise → Link budget
 
 ---
 

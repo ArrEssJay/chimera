@@ -1,6 +1,6 @@
 # Acoustic Heterodyning
 
-[[Home]] | [[Intermodulation Distortion in Biology]] | [[Frey Microwave Auditory Effect]] | [[Non-Linear Biological Demodulation]]
+[[Home]] | [[Intermodulation-Distortion-in-Biology]] | [[Frey-Microwave-Auditory-Effect]] | [[Non-Linear-Biological-Demodulation]]
 
 ---
 
@@ -144,9 +144,9 @@ where $\alpha_\Delta$ is absorption at difference frequency.
 
 ## 10. Connections
 
-- [[Intermodulation Distortion in Biology]] — General nonlinear mixing  
-- [[Frey Microwave Auditory Effect]] — EM-to-acoustic (different mechanism)  
-- [[Non-Linear Biological Demodulation]] — Overview page
+- [[Intermodulation-Distortion-in-Biology]] — General nonlinear mixing  
+- [[Frey-Microwave-Auditory-Effect]] — EM-to-acoustic (different mechanism)  
+- [[Non-Linear-Biological-Demodulation]] — Overview page
 
 ---
 

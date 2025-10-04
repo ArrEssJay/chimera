@@ -1,6 +1,6 @@
 # Quantum Coherence in Biological Systems
 
-[[Home]] | [[Hyper-Rotational Physics (HRP) Framework]] | [[Orchestrated Objective Reduction (Orch-OR)]]
+[[Home]] | [[Hyper-Rotational-Physics-(HRP)-Framework]] | [[Orchestrated-Objective-Reduction-(Orch-OR)]]
 
 ---
 
@@ -145,7 +145,7 @@ Recent theoretical work (e.g., VE-TFCC theory) shows that **vibronic coupling**�
 **Possible mechanisms for coherence protection**:
 1. **Ordered water layers**: Structured water near microtubule surfaces reduces decoherence
 2. **THz vibrational modes**: Collective oscillations in 0.1-10 THz range create coherent phonon modes
-3. **Vibronic coupling**: Electronic states in aromatic amino acids couple to lattice vibrations (see [[THz Resonances in Microtubules]])
+3. **Vibronic coupling**: Electronic states in aromatic amino acids couple to lattice vibrations (see [[THz-Resonances-in-Microtubules]])
 
 ### 3.2 Quantum Coherence at 310 K: Is It Possible?
 
@@ -207,7 +207,7 @@ where:
 
 ### 5.1 Orch-OR Connection
 
-The [[Orchestrated Objective Reduction (Orch-OR)]] theory posits:
+The [[Orchestrated-Objective-Reduction-(Orch-OR)]] theory posits:
 - Quantum coherence in microtubules → superposed brain states
 - Objective reduction (OR) via quantum gravity → conscious moments
 - OR threshold: $E \cdot \tau \sim \hbar$ (energy × time $\approx$ Planck constant)
@@ -262,11 +262,11 @@ The [[Orchestrated Objective Reduction (Orch-OR)]] theory posits:
 
 ## 8. Connections to Other Wiki Pages
 
-- [[Hyper-Rotational Physics (HRP) Framework]] — Theoretical framework extending M-theory to consciousness
-- [[Orchestrated Objective Reduction (Orch-OR)]] — Penrose-Hameroff consciousness theory requiring quantum coherence
-- [[THz Resonances in Microtubules]] — Specific vibrational modes that could protect coherence
-- [[Microtubule Structure & Function]] — Structural basis for quantum effects
-- [[Terahertz (THz) Technology]] — Experimental tools for probing vibronic coupling
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] — Theoretical framework extending M-theory to consciousness
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] — Penrose-Hameroff consciousness theory requiring quantum coherence
+- [[THz-Resonances-in-Microtubules]] — Specific vibrational modes that could protect coherence
+- [[Microtubule-Structure-and-Function]] — Structural basis for quantum effects
+- [[Terahertz-(THz)-Technology]] — Experimental tools for probing vibronic coupling
 
 ---
 

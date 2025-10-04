@@ -1,6 +1,6 @@
 # THz Bioeffects: Thermal and Non-Thermal
 
-[[Home]] | [[Terahertz (THz) Technology]] | [[THz Propagation in Biological Tissue]] | [[THz Resonances in Microtubules]]
+[[Home]] | [[Terahertz-(THz)-Technology]] | [[THz-Propagation-in-Biological-Tissue]] | [[THz-Resonances-in-Microtubules]]
 
 ---
 
@@ -154,7 +154,7 @@ For $r = 10$ μm, $E = 10$ kV/cm: $V_m \approx 15$ mV (below electroporation thr
 
 #### 2.2.3 Microtubule Resonances
 
-**Hypothesis**: THz resonates with microtubule vibrational modes → alters quantum coherence → affects neural function (see [[THz Resonances in Microtubules]]).
+**Hypothesis**: THz resonates with microtubule vibrational modes → alters quantum coherence → affects neural function (see [[THz-Resonances-in-Microtubules]]).
 
 **Predicted frequencies**: 0.5-10 THz (acoustic phonons, optical phonons)
 
@@ -322,7 +322,7 @@ For $r = 10$ μm, $E = 10$ kV/cm: $V_m \approx 15$ mV (below electroporation thr
 
 ### 7.2 Proposed Mechanisms to Test
 
-- **Vibronic coupling in microtubules**: Measure quantum variance (see [[Quantum Coherence in Biological Systems]]); test if THz modulates coherence time
+- **Vibronic coupling in microtubules**: Measure quantum variance (see [[Quantum-Coherence-in-Biological-Systems]]); test if THz modulates coherence time
 - **Water structuring**: Time-resolved spectroscopy of vicinal water during THz exposure
 - **Resonant protein excitation**: Site-directed mutagenesis to shift vibrational frequencies; predict altered THz sensitivity
 
@@ -330,11 +330,11 @@ For $r = 10$ μm, $E = 10$ kV/cm: $V_m \approx 15$ mV (below electroporation thr
 
 ## 8. Connections to Other Wiki Pages
 
-- [[THz Propagation in Biological Tissue]] — Absorption and penetration depth
-- [[THz Resonances in Microtubules]] — Speculative quantum mechanism
-- [[Terahertz (THz) Technology]] — Sources and detectors
-- [[Quantum Coherence in Biological Systems]] — Theoretical framework for non-thermal effects
-- [[Frey Microwave Auditory Effect]] — Analogous RF non-thermal effect (pulsed microwaves → auditory perception)
+- [[THz-Propagation-in-Biological-Tissue]] — Absorption and penetration depth
+- [[THz-Resonances-in-Microtubules]] — Speculative quantum mechanism
+- [[Terahertz-(THz)-Technology]] — Sources and detectors
+- [[Quantum-Coherence-in-Biological-Systems]] — Theoretical framework for non-thermal effects
+- [[Frey-Microwave-Auditory-Effect]] — Analogous RF non-thermal effect (pulsed microwaves → auditory perception)
 
 ---
 
