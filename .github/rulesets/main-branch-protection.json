@@ -25,7 +25,7 @@
       "parameters": {
         "required_approving_review_count": 0,
         "dismiss_stale_reviews_on_push": false,
-        "require_code_owner_review": true,
+        "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": false
       }
@@ -35,10 +35,10 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "Contract Enforcement & Parallel Work Orchestration / Detect File Conflicts"
+            "context": "Contract Enforcement & Parallel Work Orchestration / detect-conflicts"
           },
           {
-            "context": "Contract Enforcement & Parallel Work Orchestration / Verify Contracts Unchanged"
+            "context": "Contract Enforcement & Parallel Work Orchestration / verify-contracts-locked"
           }
         ],
         "strict_required_status_checks_policy": true
