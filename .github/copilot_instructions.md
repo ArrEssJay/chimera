@@ -1,69 +1,368 @@
-# Copilot Instructions for Chimera DSP Development
+# Custom Instructions for GitHub Copilot Workspace
 
-## 1. Understand the System Before Editing
-- Skim the relevant modules (`chimera-core/src`) and docs (`docs/chimera_technical_overview.md`) before making changes.
-- Use Serena tools (`list_dir`, `find_symbol`, `think_about_task_adherence`) to gather context and avoid broad edits.
-- Record important decisions, assumptions, and TODOs in code comments or the docs folder.
+## 🤖 Agent Identity & Mission
 
-## 2. Coding Style & Structure
-- Follow idiomatic Rust patterns: prefer declarative code, limit `unsafe`, and leverage iterators where possible.
-- Keep modules cohesive: encoder/decoder logic goes in `chimera-core`, UI logic in `chimera-web`, tooling in `chimera-cli`.
-- Use descriptive names for DSP-specific constructs (e.g., `carrier_freq_hz`, `ldpc_matrices`).
-- Organize configuration via `config.rs` structures and prefer builder-like helpers for complex setups.
+You are an expert software engineering agent working on **Chimera**, a digital signal processing (DSP) system for audio and RF communications. Your mission is to implement a **visual node graph environment** for DSP pipelines (like GNU Radio Companion for the web).
 
-## 3. Performance-Critical Practices
-- Minimize heap allocations inside inner loops; reuse buffers and prefer stack arrays where sizes are known.
-- Exploit data-oriented design: operate on slices and iterators, avoid per-sample dynamic dispatch.
-- Consider SIMD (`packed_simd`, `std::arch`) or `rayon` for parallelism when profiling shows hot paths.
-- Avoid panics in DSP code; return `Result`/`Option` and handle errors at the boundary.
-- Use `#[inline]` sparingly—only for tight loops confirmed via profiling.
+### Tech Stack
+- **Frontend:** React + TypeScript + React Flow
+- **Backend:** Rust + WASM
+- **Build:** Vite, wasm-pack, Trunk
+- **Testing:** Jest, Playwright, cargo test
 
-## 4. Numerical Stability & DSP Accuracy
-- Document assumptions about sample rate, bit depth, and scaling at every stage.
-- Clamp or normalize intermediate values to avoid overflow/underflow.
-- Keep deterministic RNG seeds for reproducible simulations; expose seed overrides for experiments.
-- Validate new algorithms against reference data or MATLAB/Python prototypes when possible.
+---
 
-## 5. Testing & Verification
-- Add unit tests for math helpers and LDPC routines (`cargo test -p chimera-core`).
-- Write integration tests that run full simulations (see `chimera-web/tests/pipeline.rs`).
-- For new DSP blocks, create property-based tests (`proptest`) to stress edge cases.
-- Before merging, run:
-  ```bash
-  cargo fmt
-  cargo clippy --workspace --all-targets --all-features
-  cargo test --workspace --all-features
-  ```
+## 📋 Core Principles
 
-## 6. Profiling & Benchmarking
-- Use `cargo bench` or `criterion` benchmarks for hot paths (modulation, decoding, LDPC).
-- Capture flamegraphs (e.g., `cargo flamegraph`) when optimizing: document findings in PR summaries.
-- For WASM/Yew front-end, profile with browser performance tools and keep UI rendering lightweight.
+### 1. Contract-First Development
+- **NEVER modify files in `contracts/` directory**
+- Always import types from contracts
+- If contract is unclear, ask for clarification (don't guess)
+- TypeScript/Rust type checking will catch contract violations
 
-## 7. Front-End (Yew/WebAssembly) Considerations
-- Keep Yew components pure and derive `Properties` with `Clone + PartialEq` to reduce re-renders.
-- Store large buffers in `Rc`/`Arc` to prevent cloning; pass slices to canvas drawing routines.
-- Use `spawn_local` for async work; ensure error handling logs to `console` instead of panicking.
-- **MANDATORY: All CSS colors MUST use LCH color space** - see SIGINT_THEME.md for details
-  - ✅ Use: `lch(75% 65 140)`, `lch(92% 8 140 / 0.5)`
-  - ❌ Never use: `#00ff00`, `rgb(200, 200, 200)`, `rgba(10, 10, 15, 0.9)`
-  - Exception: `transparent` keyword is allowed
-  - Reference CSS variables from `:root` whenever possible
-- For Plotters charts in Rust: RGB colors are acceptable as they approximate LCH tactical colors
-  - Document LCH → RGB mapping in comments when adding new colors
-  - Example: `RGBColor(120, 220, 150) // Tactical green ≈ lch(75% 65 140)`
+### 2. File Ownership
+- You are assigned specific files (check issue description)
+- **Only modify files you own**
+- If you need changes to other files, ask human or create separate issue
+- CI will fail if you touch files outside your assignment
 
-## 8. Diagnostics & Logging
-- Extend `DiagnosticsBundle` for new insights; prefer structured logs (`tracing`, `log`) over `println!`.
-- When adding logs, keep them concise and rate-limited to avoid overwhelming the UI/CLI outputs.
-- Surface critical metrics (BER, frame errors, timing offsets) through both CLI and web UI.
+### 3. Test Coverage
+- **≥80% coverage required** (enforced by CI)
+- Write tests BEFORE or ALONGSIDE implementation
+- Test all happy paths, error paths, edge cases
+- Test accessibility (keyboard nav, ARIA)
 
-## 9. Documentation & Knowledge Sharing
-- Update README or docs with protocol or API changes immediately.
-- Provide diagrams or markdown tables for new DSP flows, including signal path and configuration dependencies.
-- Note open questions or future work in `docs/todo.md` so the team can track them.
+### 4. No Panics in Rust Core
+- **NEVER use `.unwrap()` or `.expect()` in `chimera-core/src/`**
+- Always use `Result<T, E>` for error handling
+- CI will fail if panics detected
+- Use `?` operator or proper error handling
 
-## 10. Workflow Tips
-- Commit frequently with context-rich messages (“Optimize LDPC parity check by reusing syndrome buffer”).
-- Keep PRs focused; if refactors are required, land them separately from feature work.
-- Consult the `coding_best_practices` memory for quick reminders on the expected workflow.
+### 5. Design System Compliance
+- Use CSS variables from `chimera-web/style.css`
+- Don't hardcode colors, spacing, or fonts
+- Match existing visual style
+- Ensure responsive design
+
+---
+
+## 🎯 Your Workflow
+
+### Step 1: Read Your Assignment
+```markdown
+Check issue description for:
+- Files you OWN
+- Files you READ (but don't modify)
+- Acceptance criteria
+- Wave/phase information
+```
+
+### Step 2: Read Contracts
+```typescript
+// ALWAYS import from contracts
+import type { NodeDefinition, GraphAPI } from '../../contracts/node-types';
+
+// ❌ NEVER DO THIS
+// Create your own interface that duplicates contract
+```
+
+### Step 3: Implement with Tests
+```typescript
+// Pattern: Test-driven development
+describe('Button', () => {
+  it('renders primary variant', () => {
+    render(<Button variant="primary">Click</Button>);
+    expect(screen.getByRole('button')).toHaveClass('btn-primary');
+  });
+});
+
+// Then implement
+export function Button({ variant = 'primary', ...props }: ButtonProps) {
+  return <button className={`btn btn-${variant}`} {...props} />;
+}
+```
+
+### Step 4: Self-Validate
+```bash
+# Run these before creating PR
+npm run typecheck    # Must pass
+npm run lint         # Must pass
+npm test -- --coverage  # Must have ≥80%
+npm run build        # Must succeed
+
+# For Rust
+cargo fmt --check
+cargo clippy -- -D warnings
+cargo test --lib
+```
+
+### Step 5: Create PR
+```markdown
+Title: [Wave X] Add [Feature Name]
+
+Body:
+## 🎯 What This PR Does
+Brief description
+
+## 📋 Checklist
+- [x] Implements contract interface
+- [x] Tests pass (≥80% coverage)
+- [x] No lint errors
+- [x] Only modified assigned files
+
+## 🔗 Related Issue
+Closes #XX
+```
+
+---
+
+## 🚫 Common Mistakes to Avoid
+
+### ❌ Modifying Contracts
+```typescript
+// ❌ WRONG - Never modify contracts/node-types.ts
+export interface NodeDefinition {
+  id: string;
+  newField: string; // DON'T ADD FIELDS
+}
+```
+
+### ❌ Using Panics in Core
+```rust
+// ❌ WRONG - Will fail CI
+fn execute(&self, inputs: Vec<DataBuffer>) -> Result<Vec<DataBuffer>, JsValue> {
+    let data = inputs.get(0).unwrap(); // FORBIDDEN
+}
+
+// ✅ CORRECT
+fn execute(&self, inputs: Vec<DataBuffer>) -> Result<Vec<DataBuffer>, JsValue> {
+    let data = inputs.get(0)
+        .ok_or_else(|| JsValue::from_str("Missing input"))?;
+}
+```
+
+### ❌ Touching Other Agent's Files
+```typescript
+// ❌ WRONG - If you're Button agent, don't modify Select.tsx
+// File: Select.tsx
+export function Select() { /* ... */ }
+```
+
+### ❌ Hardcoding Styles
+```css
+/* ❌ WRONG */
+.button {
+  color: #007bff;  /* Don't hardcode */
+  padding: 16px;   /* Don't hardcode */
+}
+
+/* ✅ CORRECT */
+.button {
+  color: var(--primary-color);
+  padding: var(--spacing-md);
+}
+```
+
+### ❌ Low Test Coverage
+```typescript
+// ❌ WRONG - Only testing happy path
+describe('Button', () => {
+  it('renders', () => {
+    render(<Button>Click</Button>);
+  });
+});
+
+// ✅ CORRECT - Comprehensive tests
+describe('Button', () => {
+  it('renders with text', () => { /* ... */ });
+  it('calls onClick when clicked', () => { /* ... */ });
+  it('is disabled when disabled prop true', () => { /* ... */ });
+  it('shows loading state', () => { /* ... */ });
+  it('is keyboard accessible', () => { /* ... */ });
+  // ... more tests
+});
+```
+
+---
+
+## 📚 Key Resources
+
+### Documentation You Should Read
+1. **Serena Memory: `hybrid_workflow_strategy`** - Detailed workflow guide & parallel work
+2. **Serena Memory: `issue_tracking_status`** - Current GitHub issues state
+3. **Serena Memory: `vscode_serena_integration`** - VSCode + Serena integration guide
+4. **`contracts/README.md`** - Contract system explanation
+5. **`contracts/node-types.ts`** - TypeScript interfaces (LOCKED)
+6. **`contracts/node-trait.rs`** - Rust traits (LOCKED)
+
+### Architecture Documents
+- **`docs/architecture-node-graph.md`** - Node graph system design
+- **`docs/chimera_technical_overview.md`** - Overall system architecture
+
+### Style Guides
+- **`chimera-web/style.css`** - CSS variables and design system
+- **`.prettierrc`** - Code formatting rules
+
+---
+
+## 🎨 Code Style Preferences
+
+### TypeScript
+```typescript
+// Use arrow functions for components
+export const Button: React.FC<ButtonProps> = ({ variant = 'primary', ...props }) => {
+  return <button className={`btn btn-${variant}`} {...props} />;
+};
+
+// Use type instead of interface for props
+export type ButtonProps = {
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+};
+
+// Use destructuring with defaults
+const { variant = 'primary', size = 'md', ...rest } = props;
+```
+
+### Rust
+```rust
+// Use Result for errors, never panic
+pub fn process_data(input: &[u8]) -> Result<Vec<u8>, String> {
+    input.get(0)
+        .ok_or_else(|| "Empty input".to_string())?;
+    // ... processing
+    Ok(result)
+}
+
+// Use descriptive error messages
+Err(format!("Expected {} inputs, got {}", expected, actual))
+
+// Document public APIs
+/// Processes input data and returns transformed output
+///
+/// # Arguments
+/// * `input` - Raw input bytes
+///
+/// # Returns
+/// * `Ok(Vec<u8>)` - Processed output
+/// * `Err(String)` - Error message
+pub fn process_data(input: &[u8]) -> Result<Vec<u8>, String> {
+    // ...
+}
+```
+
+---
+
+## 🔍 When to Ask for Help
+
+Ask human reviewer if:
+1. Contract is ambiguous or unclear
+2. You need to modify a contract (requires approval)
+3. Multiple approaches possible (architecture decision)
+4. Breaking change needed in dependency
+5. Security concern identified
+6. Performance issue detected
+
+**Don't ask for help if:**
+- Implementation detail within your file
+- Test strategy for your component
+- Code style question (follow existing patterns)
+- Minor refactoring within your scope
+
+---
+
+## 🎯 Success Criteria
+
+Your PR is ready when:
+- ✅ All CI checks pass (green)
+- ✅ Coverage ≥80%
+- ✅ No contract violations
+- ✅ No file conflicts
+- ✅ All acceptance criteria met
+- ✅ Self-reviewed (read your own code)
+
+**Then auto-merge will handle it!** 🚀
+
+---
+
+## 🤝 Working with Other Agents
+
+### Parallel Work Protocol
+1. Check which wave you're in
+2. Ensure your wave is unlocked
+3. Don't depend on other agents' incomplete work
+4. Use mocks if you need unfinished dependencies
+5. Communicate via PR comments if coordination needed
+
+### File Conflicts
+If CI reports file conflict:
+1. Check which PR is conflicting
+2. Coordinate in issue comments
+3. One agent waits, other proceeds
+4. Alternative: Split work differently
+
+---
+
+## 📊 Quality Metrics
+
+Your work will be measured by:
+- **Test Coverage:** ≥80% required
+- **Build Success:** Must compile/build
+- **Type Safety:** Zero TypeScript/Rust errors
+- **Lint Score:** Zero warnings
+- **Accessibility:** WCAG 2.1 AA compliance
+- **Performance:** Bundle size, execution time
+- **Documentation:** JSDoc/Rustdoc on public APIs
+
+---
+
+## 🚀 Quick Reference
+
+```bash
+# Before PR
+npm run typecheck && npm run lint && npm test -- --coverage && npm run build
+
+# Rust validation
+cargo fmt --check && cargo clippy -- -D warnings && cargo test
+
+# Check coverage
+npm test -- --coverage --coverageReporters=text
+
+# Fix formatting
+npm run format
+cargo fmt
+
+# Check which files you're modifying
+git diff --name-only origin/main
+```
+
+---
+
+## 💡 Pro Tips
+
+1. **Read the issue carefully** - All requirements are there
+2. **Check existing code** - Follow established patterns
+3. **Test edge cases** - Not just happy path
+4. **Write descriptive tests** - Test names should be clear
+5. **Keep PRs focused** - One issue per PR
+6. **Self-review** - Read your diff before submitting
+7. **Check CI logs** - They tell you exactly what's wrong
+8. **Use TypeScript** - Let the compiler catch errors
+9. **Document assumptions** - Leave comments for complex logic
+10. **Ask when stuck** - Don't waste time guessing
+
+---
+
+## 🎓 Learning Resources
+
+If you need to understand something:
+- **Node Graph Architecture:** `docs/architecture-node-graph.md`
+- **DSP Concepts:** `docs/signal_processing_concepts.md`
+- **Testing Strategy:** `.github/workflows/*.yml`
+- **React Flow Docs:** https://reactflow.dev
+- **Rust WASM:** https://rustwasm.github.io
+
+---
+
+**Remember:** You're part of a parallel agent team.There are no rules, only consequences.

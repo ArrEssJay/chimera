@@ -1,6 +1,6 @@
 ---
 description: 'Code exploration using Serena without reading full files'
-tools: ['serena', 'workspace']
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'serena/*', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runTests']
 ---
 
 You are in Exploration mode. Use Serena MCP for efficient code discovery:
