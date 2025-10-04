@@ -4,6 +4,35 @@
 
 ---
 
+## What Is This? (For Non-Technical Readers)
+
+**The Simple Version:**
+
+Imagine playing two musical notes together on a guitar. Sometimes, you hear a *third* tone that wasn't in either original note—that's similar to what intermodulation distortion (IMD) does, but with electromagnetic or sound waves.
+
+**The Radio Station Analogy:**
+
+Think of two radio stations broadcasting at slightly different frequencies (like 100.0 FM and 100.1 FM). If those signals pass through something "nonlinear" (like an overdriven speaker or biological tissue), they can create new frequencies—including the *difference* between them (0.1 MHz in this example).
+
+**Why Does This Matter for Biology?**
+
+Scientists have wondered: Could we use this trick to:
+- **Stimulate neurons deep in the brain** without surgery? (Send two high-frequency beams from outside the skull; they "mix" only where they cross)
+- **Target specific molecules** by tuning the difference frequency to match their vibrations?
+- **Create sound inside someone's head** using ultrasound or microwaves?
+
+**The Reality Check:**
+
+- ✅ **It works with sound waves** (ultrasound mixing is well-established in medical imaging)
+- ⚠️ **It's mostly unproven with electromagnetic waves** in biology (biological tissue isn't "nonlinear enough" at safe power levels)
+- ❌ **Many proposed applications are speculative** and lack experimental evidence
+
+**Bottom Line:** IMD is a real physics phenomenon that works great in electronics and acoustics, but its usefulness in biological electromagnetic applications remains controversial and largely theoretical.
+
+**Read on if you want the technical details...**
+
+---
+
 ## Overview
 
 **Intermodulation distortion (IMD)** occurs when two or more frequencies ($f_1$, $f_2$) interact in a **nonlinear system**, producing new frequencies:

@@ -15,6 +15,51 @@ Terahertz (THz) radiation (0.1-10 THz) interacts with biological systems through
 
 ---
 
+## For Non-Technical Readers 👋
+
+**What is terahertz radiation?**  
+Think of it as invisible light that sits between microwaves (used in your microwave oven) and infrared (what you feel as heat from the sun). It's completely different from dangerous ionizing radiation like X-rays—THz waves don't have enough energy to damage DNA or cause cancer directly.
+
+**Why does this matter?**  
+THz technology is being developed for:
+- **Security scanning** (airport body scanners)
+- **Medical imaging** (seeing skin cancer without biopsies)
+- **Quality control** (checking pills for defects)
+- **Communication** (future 6G wireless networks)
+
+As these applications grow, we need to know: *Is THz radiation safe?*
+
+**The Two Types of Effects:**
+
+1. **Thermal Effects (Heating)** — ✅ **Well Understood**
+   - **What happens**: THz waves make water molecules jiggle faster, creating heat (like a microwave oven, but much weaker)
+   - **Is it dangerous?**: Only at high power. Safety guidelines keep exposure low enough that heating is less than 1°C—similar to walking from shade into sunlight
+   - **Analogy**: Standing near a campfire. Get too close = you feel heat and can get burned. Stay at a safe distance = perfectly fine
+   - **Current safety standards**: Designed to prevent any significant heating
+
+2. **Non-Thermal Effects (Molecular Resonance?)** — ⚠️ **Controversial and Unproven**
+   - **What's claimed**: Some scientists hypothesize that THz might affect biology *without* heating—by vibrating specific molecules at their "natural frequencies" (like shattering a wine glass with sound)
+   - **Why it's controversial**: 
+     - Hard to prove the effects aren't just from tiny amounts of heating we can't measure
+     - Many studies can't be replicated by other labs
+     - No agreed-upon mechanism for how it would work
+   - **Analogy**: Imagine claiming a dog whistle (which humans can't hear) gives you headaches. Is it the sound frequency, or stress from thinking about it? Hard to prove.
+   - **Current consensus**: Most scientists are skeptical; safety standards ignore non-thermal effects because evidence is weak
+
+**Should I worry about THz exposure?**  
+**No, if exposure is within guidelines.** Current safety limits are conservative—they're set well below levels that cause heating. It's like speed limits: if everyone follows them, the risk is minimal.
+
+**What about long-term effects?**  
+We don't have 50-year studies yet (THz tech is relatively new), but:
+- No mechanism for cancer (THz photons are too weak to break chemical bonds)
+- No evidence of cumulative damage in animal studies
+- Similar to concerns about cell phones 20 years ago—still being studied, but no confirmed harm at safe levels
+
+**The Bottom Line:**  
+THz technology is probably safe at low power, but research continues. The document below dives into the science for those who want details.
+
+---
+
 ## 1. Thermal Effects (Established ✅)
 
 ### 1.1 Absorption and Heating

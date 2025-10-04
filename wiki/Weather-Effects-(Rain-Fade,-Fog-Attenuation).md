@@ -4,6 +4,63 @@
 
 ---
 
+## For Non-Technical Readers
+
+**Think of radio waves like light beams traveling through the air.**
+
+When it rains, you notice that:
+- **Headlights look dimmer** through heavy rain
+- **You can't see as far** in fog
+- **Everything gets blurry** during a storm
+
+**The exact same thing happens to satellite TV, 5G cell signals, and WiFi** — but you can't see it with your eyes.
+
+### The Core Problem
+
+**Raindrops absorb and scatter radio waves**, weakening the signal. The bigger the problem when:
+
+1. **Higher frequencies** (like 5G's "millimeter wave") are used
+   - Think: FM radio (low frequency) works fine in rain, but satellite internet (high frequency) struggles
+   
+2. **Heavier rain** falls
+   - Light drizzle: barely noticeable
+   - Thunderstorm: your satellite dish might lose connection entirely
+
+3. **Longer distances** through the weather
+   - Short WiFi connection (30 feet): rain doesn't matter much
+   - Satellite signal (22,000 miles up): crosses miles of rain clouds
+
+### Real-World Examples You've Experienced
+
+**📺 Satellite TV going out during storms**
+- Your dish is trying to receive a signal from space
+- Heavy rain blocks 50-90% of the signal strength
+- Below a threshold → "Searching for signal..."
+- This is called **rain fade**
+
+**📱 Slower 5G during rain**
+- 5G "mmWave" uses very high frequencies (like satellite dishes)
+- Rain weakens the signal between tower and your phone
+- Phone automatically switches to slower but more reliable 4G
+- You don't notice the rain, just "slower internet"
+
+**🛰️ Why your GPS still works**
+- GPS uses lower frequencies (1.5 GHz) than satellite TV (12+ GHz)
+- Rain barely affects it (like how radio stations work in any weather)
+
+### The Math Part (Optional)
+
+The technical sections below answer questions like:
+- **"Exactly how much weaker?"** (e.g., 10 dB loss = 90% power lost)
+- **"At what frequency does rain start mattering?"** (~10 GHz threshold)
+- **"How do engineers design systems that work in rain?"** (Add backup power, use multiple frequencies, switch to lower data rates)
+
+**You don't need to understand the equations** to grasp the main point:
+
+> **Rain affects high-frequency radio signals a lot, low-frequency signals barely at all. Engineers compensate by adding extra power, using smarter antennas, or accepting slower speeds during storms.**
+
+---
+
 ## Overview
 
 **Weather significantly impacts RF propagation**, especially at frequencies above 10 GHz. Rain, fog, snow, and clouds introduce **frequency-dependent attenuation** that must be accounted for in link budgets.
