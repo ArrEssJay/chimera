@@ -188,11 +188,12 @@ describe('Button', () => {
 ## 📚 Key Resources
 
 ### Documentation You Should Read
-1. **`docs/agent-instructions.md`** - Detailed workflow guide
-2. **`docs/parallel-task-strategy.md`** - How parallel work is organized
-3. **`contracts/README.md`** - Contract system explanation
-4. **`contracts/node-types.ts`** - TypeScript interfaces (LOCKED)
-5. **`contracts/node-trait.rs`** - Rust traits (LOCKED)
+1. **Serena Memory: `hybrid_workflow_strategy`** - Detailed workflow guide & parallel work
+2. **Serena Memory: `issue_tracking_status`** - Current GitHub issues state
+3. **Serena Memory: `vscode_serena_integration`** - VSCode + Serena integration guide
+4. **`contracts/README.md`** - Contract system explanation
+5. **`contracts/node-types.ts`** - TypeScript interfaces (LOCKED)
+6. **`contracts/node-trait.rs`** - Rust traits (LOCKED)
 
 ### Architecture Documents
 - **`docs/architecture-node-graph.md`** - Node graph system design
@@ -364,4 +365,4 @@ If you need to understand something:
 
 ---
 
-**Remember:** You're part of a parallel agent team. Stay in your lane, follow the contracts, write great tests, and ship fast! 🤖⚡
+**Remember:** You're part of a parallel agent team.There are no rules, only consequences.
