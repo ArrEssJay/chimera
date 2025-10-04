@@ -35,7 +35,7 @@ and
 $$[\hat{b}_i, \hat{b}_i^\dagger] = |C|^2 (1 + e^{-\beta \omega_i} [\hat{i}^\dagger, \hat{i}]) = 1. \quad \quad (S.7)$$
 Taking $C$ to be real and positive,
 $$C = (1 - e^{-\beta \omega_i})^{-\frac{1}{2}}. \quad \quad (S.8)$$
-The transformations in Eqs. 30 and 31 are derived.
+The transformations in Eqs. (S.5)-(S.8) are derived.
 
 ## S.2 Expression of Bogoliubov transformed Hamiltonian (up to quadratic)
 
