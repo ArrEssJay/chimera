@@ -38,10 +38,11 @@ jobs:
           if git diff --cached --quiet; then
             echo "✅ No changes to sync"
           else
-            git commit -m "Auto-sync from main repo
+            COMMIT_MSG="Auto-sync from main repo
 
 Synced at $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 Source commit: ${{ github.sha }}"
+            git commit -m "$COMMIT_MSG"
             git push origin master
             echo "✅ Wiki published successfully!"
           fi
