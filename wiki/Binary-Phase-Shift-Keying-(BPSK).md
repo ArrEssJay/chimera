@@ -256,7 +256,7 @@ Where:
 
 | Modulation | BER @ 10 dB $E_b/N_0$ |
 |------------|----------------------|
-| [[On-Off Keying (OOK)\|OOK]] (non-coherent) | 3.9 × 10⁻³ |
+| [[On-Off Keying (OOK)|OOK]] (non-coherent) | 3.9 × 10⁻³ |
 | **BPSK (coherent)** | **3.9 × 10⁻⁶** |
 
 **BPSK is ~1000× better** at 10 dB!
