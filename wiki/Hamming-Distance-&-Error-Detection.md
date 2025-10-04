@@ -4,6 +4,46 @@
 
 ---
 
+## 🔍 For Non-Technical Readers
+
+**Hamming distance is like counting spelling differences between words—the more letters that differ, the easier it is to detect typos!**
+
+**The idea - How different are two words?**
+
+Compare these:
+- `CAT` vs `CAR` → **1 letter different** → Hamming distance = 1
+- `CAT` vs `DOG` → **3 letters different** → Hamming distance = 3
+- `HELLO` vs `HELLO` → **0 letters different** → Hamming distance = 0
+
+**Why this matters for error detection**:
+
+**Problem**: Radio noise flips bits (0→1 or 1→0)
+
+**Solution**: Use codewords that are far apart!
+- Valid codewords: `00000`, `11111` (distance = 5)
+- Received: `00100` (1 bit flipped)
+- Decoder: "Closer to `00000` than `11111`? Must have been `00000`!" ✅
+
+**Rule of thumb**:
+- **Distance 2**: Can **detect** 1 error (knows something's wrong)
+- **Distance 3**: Can **correct** 1 error (fixes it automatically)
+- **Distance 5**: Can **correct** 2 errors OR **detect** 4 errors
+
+**Real-world example - ISBN numbers**:
+- Book ISBNs have built-in Hamming distance
+- Typo in one digit? System detects it!
+- Typo in two digits? Usually detected!
+- This is why Amazon catches typos when you enter an ISBN
+
+**Everyday examples**:
+- **Credit card numbers**: Luhn algorithm (distance-based error detection)
+- **QR codes**: Large Hamming distance = works even with damage
+- **Your WiFi**: Uses codes with distance 3-5 to auto-correct bit errors
+
+**Fun fact**: Hamming codes (invented in 1950) are why computer RAM can automatically detect/correct errors—cosmic rays flip bits, Hamming distance catches them!
+
+---
+
 ## Overview
 
 **Hamming distance** measures how many **bit positions differ** between two codewords.

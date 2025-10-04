@@ -4,6 +4,52 @@
 
 ---
 
+## 📡 For Non-Technical Readers
+
+**Radio waves can travel three different ways—think of it like: rolling on the ground, bouncing off the sky, or shooting straight like a laser!**
+
+**1. Ground Wave** (Surface Wave) 🌍
+- **What**: Radio wave hugs the Earth's surface and bends around the curve
+- **Frequency**: Low (AM radio, 500 kHz - 1.5 MHz)
+- **Range**: 100-1000+ km depending on frequency
+- **Analogy**: Rolling a ball on the ground—it follows the terrain
+
+**Real example**: 
+- **AM radio stations**: Travel hundreds of miles, even over the horizon
+- **Why AM works everywhere**: Ground wave bends around hills/buildings
+- **Maritime communications**: Ships use ground wave to communicate over the ocean
+
+**2. Sky Wave** (Ionospheric Bounce) ☁️
+- **What**: Radio wave shoots up, bounces off ionosphere (layer of charged particles 100-400 km up), comes back down
+- **Frequency**: Medium (shortwave radio, 3-30 MHz / HF)
+- **Range**: Global! Can bounce multiple times
+- **Analogy**: Skipping a stone on water—one throw, many bounces
+
+**Real example**:
+- **Shortwave radio**: Broadcast from London, heard in Australia!
+- **Amateur (ham) radio**: Talk to people on other continents
+- **Why it works at night**: Ionosphere gets stronger after sunset (no sun breaking it apart)
+
+**3. Line-of-Sight** (LOS) 👀
+- **What**: Radio wave travels straight like light—if you can't "see" the tower, signal is blocked
+- **Frequency**: High (FM radio, TV, cell phones, WiFi, 30 MHz+)
+- **Range**: Limited to visible horizon (~5-50 km depending on height)
+- **Analogy**: Laser pointer—must have clear path
+
+**Real example**:
+- **Cell phones**: Need tower in view (mostly)
+- **WiFi**: Walls/floors block it
+- **Satellite TV**: Dish must point directly at satellite (trees in the way = no signal!)
+- **5G mmWave**: Can't even go through your hand!
+
+**Why different modes?**
+- **Lower frequency** → bends around obstacles, long range, slow data
+- **Higher frequency** → straight-line only, shorter range, fast data
+
+**Fun fact**: During the Cold War, governments used sky wave propagation to broadcast radio into other countries—signals would bounce off the ionosphere and arrive "from above," impossible to block!
+
+---
+
 ## Overview
 
 **Electromagnetic waves propagate via different mechanisms** depending on frequency, distance, and environment. Understanding propagation modes is essential for predicting coverage and designing wireless systems.

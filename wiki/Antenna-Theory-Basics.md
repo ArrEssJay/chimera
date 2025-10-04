@@ -4,6 +4,22 @@
 
 ---
 
+## 📡 For Non-Technical Readers
+
+**An antenna is like a funnel for radio waves—it concentrates energy in one direction (transmit) or collects it from many directions (receive).**
+
+**Simple analogies**:
+- **Flashlight vs. bare bulb**: A flashlight (directional antenna) focuses light. A bare bulb (omnidirectional) lights up everything.
+- **Satellite dish**: Curved shape collects weak space signals and focuses them onto a tiny receiver
+- **Your cell phone**: Has multiple tiny antennas inside—cellular, WiFi, GPS, Bluetooth (each tuned to different frequencies)
+
+**Key insights**:
+- **Bigger = stronger**: 10-meter dish collects 100× more energy than 1-meter dish
+- **Shape matters**: Long wire for AM radio, small stub for WiFi, dish for satellites
+- **Trade-off**: Omnidirectional (WiFi router) covers whole area but weak. Directional (satellite dish) is strong but must point exactly right.
+
+---
+
 ## Overview
 
 An **antenna** is a transducer that converts **electrical signals into electromagnetic waves** (transmit) and vice versa (receive). Antennas are governed by **reciprocity**: their transmit and receive properties are identical.

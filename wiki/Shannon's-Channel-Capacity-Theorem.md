@@ -4,6 +4,48 @@
 
 ---
 
+## 🌟 For Non-Technical Readers
+
+Imagine you're trying to have a conversation in a noisy room. The noisier it gets, the harder it is to understand what the other person is saying. You might speak louder, or talk more slowly and clearly, but there's a limit to how much information you can reliably communicate.
+
+**Shannon's theorem tells us exactly what that limit is.**
+
+### The Big Ideas (In Plain English)
+
+**1. Every communication channel has a speed limit**
+
+Just like highways have speed limits, communication channels (WiFi, radio, fiber optics, etc.) have a maximum rate at which you can send information reliably. This limit depends on two things:
+- **How much "space" you have** (bandwidth - like having more lanes on a highway)
+- **How noisy it is** (signal-to-noise ratio - like trying to talk in a quiet library vs. a rock concert)
+
+**2. You can always send slower to be more reliable**
+
+If you're below the speed limit, you can add "error correction" (like repeating yourself or spelling things out) to make sure the message gets through perfectly. Shannon proved that with good enough error correction, you can get the error rate as close to zero as you want.
+
+**3. You can never go faster than the limit**
+
+No matter how clever your technology, you cannot exceed this fundamental limit without making mistakes. It's a law of nature, like the speed of light.
+
+### Real-World Example: Your WiFi
+
+Your WiFi router constantly adjusts its speed based on Shannon's theorem:
+- **Far from router (weak signal, noisy)**: Sends data slowly but reliably (maybe 10 Mbps)
+- **Close to router (strong signal, clean)**: Sends data fast (maybe 500 Mbps)
+- **Through thick walls (very noisy)**: Slows way down to maintain connection
+
+The router is always trying to send as fast as possible **without exceeding Shannon's limit**, because going faster would just cause errors and make things worse.
+
+### Why This Matters for Chimera
+
+In Chimera's space communication scenarios, we're often working in **extremely noisy** conditions (think: trying to hear a whisper from across a football field during a thunderstorm). Shannon's theorem tells us:
+- We **must** use very strong error correction (LDPC codes)
+- We **cannot** send data very fast (maybe 32 bits per second instead of millions)
+- But we **can** still communicate reliably if we respect the limits
+
+**The theorem is like a GPS for engineers**: it tells us where the cliff edge is, so we know how close we can safely get.
+
+---
+
 ## 🎯 The Main Result
 
 **Channel Capacity (C)**: Maximum rate at which information can be transmitted over a channel with **arbitrarily small error probability**.

@@ -4,6 +4,98 @@
 
 ---
 
+## 📋 For Non-Technical Readers
+
+**Link budget is like a financial budget for radio power—you start with transmit power, subtract losses, add gains, and see if there's enough "money" (signal) left at the receiver!**
+
+**The fundamental question**:
+> "If I transmit from HERE to THERE, will the receiver get enough signal?"
+
+**The accounting**:
+
+**START**: Transmit power
+- Your WiFi router: 100 mW (20 dBm)
+- Your phone: 200 mW (23 dBm)
+- Cell tower: 20 W (43 dBm)
+- Satellite: 100 W (50 dBm)
+
+**GAINS** (things that help):
+- **➕ Transmit antenna gain**: Directional antenna focuses power
+  - WiFi router: +2 dB (omnidirectional)
+  - Satellite dish: +40 dB (very focused!)
+- **➕ Receive antenna gain**: Bigger receiver antenna collects more
+  - Phone: +0 dB (tiny antenna)
+  - Satellite dish: +35 dB
+
+**LOSSES** (things that hurt):
+- **➖ Free space path loss**: Signal spreads out with distance
+  - WiFi (50m): -74 dB
+  - Cell tower (1 km): -100 dB  
+  - Satellite (36,000 km): -206 dB! 😱
+- **➖ Obstacles**: Walls, trees, rain
+  - One wall: -5 dB
+  - Heavy rain: -10 dB
+- **➖ Cable losses**: Connectors, imperfect cables
+  - Typical: -1 to -3 dB
+
+**END**: Received signal power
+- Must be stronger than noise floor!
+- Typical requirement: Signal > Noise + 10 to 20 dB
+
+**Example - WiFi Link Budget**:
+
+```
+Transmit power:          +20 dBm  (100 mW)
++ Transmit antenna:        +2 dB
+──────────────────────────────
+EIRP (total radiated):   +22 dBm
+
+- Free space loss (50m):  -74 dB
+- Wall loss (2 walls):    -10 dB
+──────────────────────────────
+Received power:          -62 dBm
+
+Noise floor:             -90 dBm
+SNR:                      28 dB  ✅ Good!
+```
+
+**Real-world example - Satellite TV**:
+
+```
+Satellite transmit:      +50 dBm  (100 W)
++ Satellite antenna:      +35 dB   (huge!)
+- Path loss (36,000 km): -206 dB   (ouch!)
++ Your dish:              +35 dB
+──────────────────────────────
+Received power:          -86 dBm  (tiny!)
+
+Noise floor:             -100 dBm
+SNR:                      14 dB   ✅ Just enough!
+```
+
+**Why link budget matters**:
+- **System design**: "Do I need a bigger antenna?"
+- **Troubleshooting**: "Why is my signal weak?"
+- **Standards**: "What's the maximum range?"
+- **Cost optimization**: "Can I use cheaper components?"
+
+**The critical moment**:
+- If received power > noise + margin → Link works! ✅
+- If received power < noise + margin → Link fails! ❌
+- **Margin**: Extra dB for safety (rain, interference, fading)
+  - Good design: 10-20 dB margin
+  - Marginal design: 3-5 dB margin (risky!)
+
+**When you see it**:
+- **WiFi extender ads**: "Extends range by 20 dB!" (link budget calc)
+- **Satellite dish size**: Bigger = more gain = closes link budget
+- **Cell tower placement**: Engineers run link budgets for coverage
+- **"Can you hear me now?"**: That's a link budget test!
+
+**Fun fact**: The Voyager 1 spacecraft (13+ billion miles away) transmits at 23 W, but by the time it reaches Earth, the signal is 10^-16 watts—that's 0.0000000000000001 watts! Only massive 70-meter dishes with careful link budgets can hear it!
+
+---
+
 ## Overview
 
 **Link budget** is a comprehensive accounting of **all gains and losses** from transmitter to receiver, determining if a communication link will work.

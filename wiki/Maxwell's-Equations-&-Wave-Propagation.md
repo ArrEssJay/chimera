@@ -4,6 +4,52 @@
 
 ---
 
+## 🌟 For Non-Technical Readers
+
+**What are Maxwell's Equations?**
+
+Imagine you're trying to understand how your phone communicates with a cell tower, how light travels from the sun to Earth, or how a radio picks up music from thin air. All of these phenomena are explained by four elegant mathematical rules discovered by James Clerk Maxwell in the 1860s.
+
+**The Big Picture (in plain English):**
+
+1. **Electric charges create invisible "force fields"** around them
+   - Think of static electricity making your hair stand up
+   - Positive and negative charges attract or repel each other through these fields
+
+2. **Magnetic fields always come in pairs** (north and south poles together)
+   - You can't have a magnet with just a north pole or just a south pole
+   - If you break a magnet in half, you get two smaller magnets, each with both poles
+
+3. **Changing magnetic fields create electric fields**
+   - This is how generators work: spin a magnet near a wire, and electricity flows
+   - It's also why transformers can change voltage levels
+
+4. **Moving electric charges (currents) and changing electric fields create magnetic fields**
+   - This is how electromagnets work
+   - It's also how antennas transmit radio waves
+
+**Why does this matter?**
+
+Maxwell discovered something profound: when you combine these four rules, they predict that electromagnetic "waves" can travel through empty space at a specific speed. When he calculated that speed, it turned out to be exactly the speed of light!
+
+This meant **light itself is an electromagnetic wave** - the same type of wave as radio, WiFi, X-rays, and microwaves, just at different frequencies.
+
+**Real-world impact:**
+- 📱 Every wireless device (phone, WiFi, Bluetooth, GPS)
+- 💡 All lighting and solar panels
+- 📡 Radio, TV, and satellite communication
+- 🏥 Medical imaging (MRI, X-rays)
+- 🌈 Why the sky is blue and sunsets are red
+- 👁️ How your eyes see color
+
+Without Maxwell's Equations, the modern wireless world wouldn't exist!
+
+**What you'll find below:**
+
+The rest of this page dives into the mathematical details. Don't worry if the equations look intimidating - the key concepts above are what matter for understanding how electromagnetic waves work in practice.
+
+---
+
 ## 📐 The Four Maxwell's Equations
 
 ### In Differential Form (Local)

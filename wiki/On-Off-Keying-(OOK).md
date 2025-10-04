@@ -1,5 +1,55 @@
 # On-Off Keying (OOK)
 
+## 🔦 For Non-Technical Readers
+
+**OOK is literally just turning a signal ON and OFF—it's the simplest possible way to send data, like morse code with a flashlight!**
+
+**The idea**:
+- **ON** (signal present) = binary **1**
+- **OFF** (no signal) = binary **0**
+- That's it! Simplest modulation possible.
+
+**Flashlight analogy**:
+- Shine flashlight = 1
+- Turn off flashlight = 0
+- Sequence: ON-ON-OFF-ON = "1101"
+- Morse code uses the same principle!
+
+**Why it's everywhere (despite being old)**:
+- **Dead simple**: Easiest to transmit and receive
+- **Lowest power**: No signal = no power consumption for 0s!
+- **Cheap hardware**: Basic transistor switch = complete transmitter
+- **Good enough**: For short-range, low-speed, it just works
+
+**Where you see OOK every day**:
+- **Car key fobs**: Unlock button uses OOK!
+- **Garage door openers**: Yep, OOK
+- **Wireless doorbells**: OOK at ~315/433 MHz
+- **Cheap weather sensors**: Temperature transmitter → receiver
+- **RC toys**: Simple remote controls
+- **Old telegraph**: On/off keying of electrical circuit!
+
+**Why it's not used for high-speed**:
+- **Bandwidth inefficient**: Need wide frequency band for sharp on/off transitions
+- **Noise sensitive**: Hard to tell weak signal from noise
+- **No error detection**: Unlike PSK/QAM, can't detect phase errors
+- **Synchronization issues**: Receiver must guess when bits start/end
+
+**Modern variant - ASK**:
+- OOK is binary ASK (Amplitude-Shift Keying)
+- Instead of on/off, use multiple power levels
+- Still simple, slightly more efficient
+
+**The ultimate simplicity**:
+- **Transmitter**: Microcontroller + transistor + antenna
+- **Receiver**: Antenna + diode + microcontroller
+- Total cost: <$2 for both sides!
+- This is why every wireless doorbell uses OOK
+
+**Fun fact**: The first wireless telegraph (Marconi, 1895) used OOK—literally just turning a spark-gap transmitter on and off to send morse code. 130 years later, your car keys still use the same basic principle!
+
+---
+
 **On-Off Keying (OOK)** is the simplest form of digital modulation, where the presence or absence of a carrier wave represents binary data.
 
 ---

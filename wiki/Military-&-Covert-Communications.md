@@ -1,8 +1,134 @@
 # Military & Covert Communications
 
-**Classification**: UNCLASSIFIED//FOUO (For Official Use Only)
-
 Military communications systems prioritize **anti-jamming (AJ)**, **low probability of intercept (LPI)**, **low probability of detection (LPD)**, and **secure transmission (TRANSEC)** over commercial metrics like spectral efficiency. This page covers advanced techniques used in GPS M-code, SATCOM FHSS, phased-array radar, Link 16, and covert communications.
+
+---
+
+## 🎓 For Non-Technical Readers
+
+Before diving into the technical details, here are the core concepts explained in everyday terms:
+
+### Why Military Communications Are Different
+
+**Imagine trying to have a conversation in a crowded, hostile room** where:
+- Someone is shouting over you (jamming)
+- Others are listening to steal your secrets (interception)
+- You need to talk without being noticed (covert)
+
+Military communications solve these problems in ways regular WiFi or cell phones don't need to.
+
+---
+
+### The "Whisper in the Crowd" Analogy
+
+**Spread Spectrum** = Speaking very quietly across a huge room
+
+Instead of shouting one clear message, you:
+1. **Whisper fragments** of your message to many places at once
+2. **Spread it so thin** that each piece sounds like background noise
+3. **Only someone with the secret pattern** can collect all the pieces and understand you
+
+**Real-world result**: Your signal is literally **weaker than background noise**, yet your intended receiver hears it perfectly. Enemies just hear static.
+
+**Example**: GPS M-code is 20 times weaker than the noise floor, yet your military GPS receiver locks on instantly. A spy's receiver? Just noise.
+
+---
+
+### The "Concert Hall Spotlight" Analogy
+
+**Phased-Array Antennas (AESA)** = Pointing a beam of radio energy
+
+Think of a traditional dish antenna like a flashlight—it points one direction, and moving it takes time.
+
+**AESA is like a concert hall's lighting system**:
+- **Hundreds of tiny lights** (antenna elements)
+- **Computer-controlled** to turn on/off in precise patterns
+- **Creates a "spotlight"** that can instantly jump to different parts of the room
+- **Multiple spotlights** can exist simultaneously (track many targets)
+
+**Real-world result**: F-22 radar can track 100 aircraft, jam enemy radars, and guide missiles—all at once, all electronically, no moving parts.
+
+---
+
+### The "Secret Handshake" Analogy
+
+**Frequency Hopping** = Changing radio channels thousands of times per second
+
+Imagine a conversation where:
+1. You and your friend **agree on a secret pattern** of which channel to use when
+2. Every millisecond, you both **jump to a new frequency** following the pattern
+3. **Enemies can't follow** because they don't know the pattern
+4. Even if they jam one frequency, you're already gone
+
+**Real-world result**: Military satellite phones (MILSTAR) hop 1000+ times per second across a gigahertz of spectrum. A jammer would need to jam the entire band with megawatts of power—impractical.
+
+---
+
+### The "Invisible Ink" Analogy
+
+**Low Probability of Detection (LPD)** = Radio signals that don't look like signals
+
+Imagine hiding a message by:
+1. **Writing each letter** on a separate grain of sand
+2. **Scattering the sand** across a beach
+3. **Only the recipient** knows which grains to collect
+
+**Real-world result**: Covert radios transmit at power levels 1000× below what receivers normally detect. Even sensitive spy equipment can't tell the difference between the transmission and natural radio noise.
+
+---
+
+### The "Smart Echo" Analogy
+
+**Anti-Jamming (AJ)** = Fighting back against interference
+
+When an enemy tries to jam your signal:
+1. **Your antenna "learns"** where the jammer is located
+2. **Creates a "null"** (deaf spot) pointing at the jammer
+3. **Amplifies signals** from your intended direction
+
+Think of it like **noise-canceling headphones for radio**—specifically canceling out the jammer while hearing your friend.
+
+**Real-world result**: GPS receivers with anti-jam antennas (CRPA) can reject jammers that are 10,000× stronger than the GPS satellite signal.
+
+---
+
+### Key Concepts Simplified
+
+| Concept | Everyday Analogy | Military Benefit |
+|---------|------------------|------------------|
+| **Spread Spectrum** | Whisper spread across a huge room | Signal hidden below noise floor |
+| **Processing Gain** | Collecting 1000 whispers back into speech | Overcomes jammers and noise |
+| **Frequency Hopping** | Changing channels 1000× per second | Enemy can't follow or jam |
+| **Phased Array** | Computer-controlled spotlight | Instant beam steering, multi-target |
+| **Encryption** | Secret language only you and friend know | Even intercepted messages are useless |
+| **Beamforming** | Talking through a directional megaphone | Only intended receiver hears you |
+
+---
+
+### Why This Matters for Chimera
+
+Chimera helps you **visualize and experiment** with these concepts:
+- **Build spread spectrum systems** in your browser
+- **See jamming resistance** in real-time plots
+- **Experiment with frequency hopping** patterns
+- **Understand phased arrays** through interactive simulations
+
+**You don't need a million-dollar lab**—Chimera brings military-grade DSP concepts to anyone with curiosity and a web browser.
+
+---
+
+### What You'll Learn in This Document
+
+The sections below explain **how these systems actually work**:
+- 📡 **SATCOM Frequency Hopping**: How military satellites resist jamming
+- 🛰️ **GPS M-Code**: Why military GPS works when civilian GPS is jammed
+- 🎚️ **Phased-Array Radar**: How F-22s and destroyers "see" electronically
+- 🔗 **Link 16**: The tactical data network connecting planes, ships, and missiles
+- 🕵️ **Covert Communications**: How to transmit data invisibly
+
+**If you're new to DSP**: Start with [[Spread Spectrum (DSSS/FHSS)]] for foundational concepts, then return here.
+
+**If you're experienced**: Skip to the technical sections—detailed math, code examples, and real-world system specs await.
 
 ---
 
@@ -733,6 +859,69 @@ Application:
 - Directional speakers (Audio Spotlight® technology)
 - Potential neural stimulation (see [[AID Protocol Case Study]])
 ```
+
+**THz-band Example (AID Protocol)**:
+
+The Auditory Intermodulation Distortion (AID) protocol represents a theoretical extension of heterodyning to Terahertz frequencies:
+
+```
+Physical Layer:
+- Carrier 1 (Pump): 1.998 THz, 50-200 mW/cm²
+- Carrier 2 (Data): 1.875 THz, 5-20 mW/cm²
+- Difference frequency: |1.998 - 1.875| THz = 123 GHz
+
+Biological Demodulation:
+- THz penetration: ~0.5-2mm into tissue
+- Non-linear susceptibility (χ³) in neural membranes
+- Cascaded demodulation produces audible artifact
+
+Modulation Layer:
+- Auditory carrier: 12.0 kHz sine wave
+- Amplitude modulation: 5-80% modulation depth
+- Data encoding: QPSK (16 symbols/s) + FSK (1 bit/s)
+
+Perceived Effect:
+- Sound appears to originate inside head
+- Persistent 12 kHz tone (high-pitched ringing)
+- Modulated with slow rhythmic patterns
+- Bypasses normal hearing (works with earplugs)
+
+Protocol Stack:
+Layer          | Technology              | Frequency/Rate
+---------------|-------------------------|-------------------
+Physical       | THz Pump (QCL)          | 1.998 THz ± 100 MHz
+Physical       | THz Data (Photomixing)  | 1.875 THz ± 50 MHz
+Link           | Amplitude Modulation    | 5-80% depth
+Modulation     | Auditory Carrier        | 12.0 kHz ± 0.1 Hz
+Data           | QPSK                    | 16 symbols/sec
+Data           | FSK                     | 1 bit/sec
+
+Applications (Theoretical):
+- Non-invasive neural interface research
+- Covert signaling in high-security environments
+- Auditory perception studies
+- THz bioeffects research
+
+Status:
+- Highly speculative theoretical framework
+- Based on Orch-OR microtubule quantum mechanics theory
+- No experimental validation in living subjects
+- See docs/aid_protocol_v3.1.md for full specification
+```
+
+**Comparison with conventional heterodyning**:
+
+| Parameter | Audio (40 kHz) | THz (AID) |
+|-----------|----------------|-----------|
+| **Carrier frequencies** | 40-42 kHz | 1.875-1.998 THz |
+| **Difference frequency** | 2 kHz | 123 GHz → 12 kHz |
+| **Penetration depth** | mm (air) | 0.5-2 mm (tissue) |
+| **Non-linearity** | Air compression | Neural membranes (χ³) |
+| **Power density** | 100+ dB SPL | 5-200 mW/cm² |
+| **Detection** | Microphone | Auditory perception |
+| **Status** | Proven (Audio Spotlight®) | Theoretical |
+
+**Key insight**: THz heterodyning exploits biological non-linearities rather than air-based acoustic mixing, potentially enabling direct neural modulation without acoustic propagation.
 
 **Military interest**:
 ```

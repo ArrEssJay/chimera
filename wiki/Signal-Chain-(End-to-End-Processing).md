@@ -1,5 +1,119 @@
 # Signal Chain (End-to-End Processing)
 
+## ⛓️ For Non-Technical Readers
+
+**The signal chain is like a postal system for data—messages get packaged (encoded), addressed (modulated), mailed (transmitted), delivered (received), sorted (demodulated), and unpacked (decoded)!**
+
+**The complete journey**:
+
+**Transmitter Side** (📤 Sending):
+
+**1. Raw Data**:
+- Your message: "Hello!" (text, voice, video)
+- Binary: 01001000 01100101 01101100...
+
+**2. FEC Encoder** (🛡️ Add error protection):
+- Like: Adding packing material to fragile package
+- Adds redundancy so receiver can fix errors
+- Input: 100 data bits → Output: 150 coded bits
+
+**3. Modulator** (🎵 Convert to symbols):
+- Like: Converting letter to semaphore flags
+- Maps bits to radio signal patterns
+- QPSK: Every 2 bits → 1 symbol (4 positions)
+
+**4. Upconverter** (🚀 Shift to radio frequency):
+- Like: Loading package onto airplane
+- Shifts signal from baseband (near 0 Hz) to RF (GHz)
+- Baseband 10 MHz → RF 2.4 GHz
+
+**5. Transmit Antenna** (📡 Launch!):
+- Converts electrical signal to electromagnetic waves
+- Radiates into space
+- Power: mW to kW depending on application
+
+**Channel** (🌍 The dangerous journey):
+
+**Link Loss** (📉 Signal weakens):
+- Distance: Signal spreads out, gets weaker
+- 2× distance = 1/4 power (inverse square law)
+
+**Noise** (⚡ Random interference):
+- Thermal noise (electronics are warm)
+- Interference (other transmitters)
+- Cosmic background radiation
+- Like: Static on old radio
+
+**Fading** (🌊 Signal fluctuates):
+- Multipath: Echoes interfere
+- Obstacles: Buildings, trees block signal
+- Movement: Doppler shift
+- Like: Sound echoing in canyon
+
+**Receiver Side** (📥 Receiving):
+
+**6. Receive Antenna** (📡 Catch!):
+- Collects weak electromagnetic waves
+- Converts to electrical signal
+- Received power: Often 10^-12 watts (pW)!
+
+**7. Downconverter** (📦 Unload from airplane):
+- Shifts RF signal back to baseband
+- RF 2.4 GHz → Baseband 10 MHz
+- Now can process with DSP
+
+**8. Synchronizer** (⏰ Align timing/frequency):
+- Like: Aligning decoder ring
+- Matches receiver clock to transmitter
+- Corrects frequency/phase/timing offsets
+
+**9. Equalizer** (🎸 Undo channel distortion):
+- Like: Uncrumpling package
+- Reverses distortion from multipath/fading
+- Makes constellation clean again
+
+**10. Demodulator** (📊 Read symbols):
+- Like: Reading semaphore flags
+- Converts received symbols back to bits
+- Makes "soft decisions" (probabilities)
+
+**11. FEC Decoder** (🤓 Fix errors):
+- Like: Piecing together damaged package
+- Uses redundancy to detect and correct errors
+- Output: Clean data bits (hopefully!)
+
+**12. Recovered Data** (✅ Success!):
+- Your message: "Hello!" 
+- Delivered successfully (if BER low enough)
+
+**Real-world example - Sending emoji via WiFi**:
+
+1. You type 😀 (1 byte = 8 bits)
+2. **FEC**: Encoded to 12 bits (50% overhead)
+3. **Modulator**: 12 bits → 6 QPSK symbols
+4. **Upconverter**: Shifted to 2.4 GHz
+5. **TX antenna**: Radiated at 100 mW
+6. **Channel**: Signal travels 10 meters, weakened to 10 µW
+7. **RX antenna**: Laptop antenna collects 1 µW
+8. **Downconverter**: Back to baseband
+9. **Synchronize**: Align timing (4 µs correction)
+10. **Equalize**: Undo multipath from walls
+11. **Demodulate**: Recover 12 bits (2 errors!)
+12. **FEC decode**: Fix 2 errors → perfect 8 bits
+13. You see: 😀
+
+All in 0.00024 seconds! ⚡
+
+**Why understanding the chain matters**:
+- **Weak signal?** Check: Antenna, link budget, path loss
+- **Lots of errors?** Check: Noise, FEC, modulation
+- **Intermittent?** Check: Fading, synchronization
+- **Each block** can be optimized independently!
+
+**Fun fact**: A typical WiFi packet goes through this entire signal chain (11+ processing blocks) in under 1 millisecond. Your laptop's WiFi chip performs billions of calculations per second to execute these steps in real-time!
+
+---
+
 The **signal chain** is the complete path data takes from transmitter to receiver in Chimera's DSP simulation.
 
 ## Overview

@@ -1,5 +1,36 @@
 # OFDM & Multicarrier Modulation
 
+## 🛣️ For Non-Technical Readers
+
+**OFDM is like splitting a highway into many lanes—if one lane has an accident (interference), the other lanes keep traffic flowing!**
+
+**The problem OFDM solves**: 
+- Sending data fast on one channel = short pulses = easily disrupted by echoes/reflections
+- It's like trying to drive 100 mph on a narrow road—one pothole ruins everything!
+
+**The OFDM solution**:
+- Split data across **hundreds or thousands** of narrow "lanes" (subcarriers)
+- Each lane moves slowly (easier to handle)
+- If one lane fades or gets interference, you still have 999 others working!
+
+**Real-world example - WiFi**:
+- **WiFi 5 (802.11ac)**: Uses 52-468 subcarriers
+- **WiFi 6 (802.11ax)**: Uses up to 1960 subcarriers!
+- Each subcarrier is only 78 kHz wide (vs 20-160 MHz total channel)
+- It's like delivering packages: 1 huge truck (risky!) vs 100 small vans (resilient!)
+
+**Why it's everywhere**:
+- **WiFi**: All modern WiFi uses OFDM
+- **4G/5G**: LTE and 5G NR are OFDM-based
+- **Digital TV**: DVB-T uses OFDM for broadcast
+- **DSL**: Even wired broadband uses OFDM (DMT variant)!
+
+**How you experience it**: WiFi works in your house even with walls/furniture blocking some frequencies—OFDM automatically uses the clear subcarriers and avoids the blocked ones.
+
+**Fun fact**: OFDM uses a clever math trick (FFT) to pack subcarriers so tightly they overlap without interfering—it's called "orthogonality" (like fingers interlaced).
+
+---
+
 **Orthogonal Frequency-Division Multiplexing (OFDM)** is a multicarrier modulation technique that divides a wideband channel into many narrow, orthogonal subcarriers. It has become the foundation of modern wireless standards including WiFi (802.11a/g/n/ac/ax), LTE, 5G NR, and DVB-T.
 
 ---

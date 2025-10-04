@@ -1,5 +1,24 @@
 # Bit Error Rate (BER)
 
+## 📊 For Non-Technical Readers
+
+**BER measures how many mistakes happen when transmitting digital data—like counting typos in a text message.**
+
+When you send data wirelessly, noise can flip bits (0↔1 or 1↔0). BER counts how often this happens.
+
+**Real examples**:
+- **Pixelated video**: High BER → corrupted data → artifacts
+- **Dropped calls**: BER > 10⁻³ (1 error per 1000 bits) → bad quality
+- **Corrupted downloads**: Even 1 flipped bit can break a file!
+
+**Acceptable levels**: Voice = 10⁻³ OK, Data = need < 10⁻⁶, Banking = < 10⁻¹²
+
+**Improve BER**: Move closer to WiFi, use error correction, slow down transmission rate.
+
+**Fun fact**: WiFi automatically adjusts speed based on BER—closer = faster (low errors), farther = slower (keep errors acceptable).
+
+---
+
 **Bit Error Rate (BER)** is the ratio of incorrectly decoded bits to total transmitted bits.
 
 ## Definition

@@ -1,5 +1,46 @@
 # Constellation Diagrams
 
+## 🌟 For Non-Technical Readers
+
+**A constellation diagram is like a visual map showing all the "hand signals" your WiFi/phone can use to send data—each dot is a unique signal position!**
+
+**The analogy - Lighthouse signals**:
+- Imagine you're communicating with lighthouse beams
+- You can vary: **brightness** (amplitude) and **color** (phase)
+- Each unique combination = one symbol (represents some bits)
+- Constellation diagram = map showing all possible combinations!
+
+**Real example - QPSK (4 dots)**:
+```
+     Q
+     ↑
+  •  |  •   ← 4 positions = 2 bits per symbol
+─────┼─────→ I
+  •  |  •
+```
+- Top-right • = "00"
+- Top-left • = "01"
+- Bottom-left • = "10"
+- Bottom-right • = "11"
+
+**Why dots matter**:
+- **More dots** = more data per symbol = faster!
+  - QPSK: 4 dots (2 bits/symbol)
+  - 16-QAM: 16 dots (4 bits/symbol) = 2× faster
+  - 256-QAM: 256 dots (8 bits/symbol) = 4× faster!
+- **Dots closer together** = harder to distinguish when noisy
+  - Your phone uses fewer dots when signal is weak (reliable)
+  - Uses more dots when signal is strong (fast!)
+
+**When you see it**:
+- **WiFi speed negotiation**: "Constellation: 64-QAM" = using 64-dot map
+- **Spectrum analyzer**: Shows received dots scattered around ideal positions (noise!)
+- **Signal quality**: Dots tight = good signal, dots spread out = noisy channel
+
+**Fun fact**: Your WiFi constantly monitors how scattered the received dots are and automatically switches between constellations (4/16/64/256/1024-QAM) to optimize speed vs reliability!
+
+---
+
 A **constellation diagram** is a visual representation of a digital modulation scheme. It shows all possible symbol positions in the I/Q plane.
 
 ## Reading a Constellation Diagram

@@ -4,6 +4,38 @@
 
 ---
 
+## 🎓 For Non-Technical Readers
+
+**Think of radio communication like having a conversation in a crowded restaurant:**
+
+- **Signal** = Your friend's voice trying to reach you
+- **Noise** = All the background chatter, kitchen sounds, and air conditioning
+- **Noise Figure** = How much your hearing aids (or bad acoustics) make it harder to understand
+
+**Why noise matters:**
+If the background noise is too loud, you can't hear your friend—even if they're shouting. Same with radio: if noise is too high, the receiver can't "hear" the signal, no matter how powerful the transmitter.
+
+**Key insights in plain English:**
+
+1. **Thermal noise is everywhere**: Just like atoms vibrating creates heat, electrons vibrating creates random electrical "static" in every wire, antenna, and amplifier. This sets a fundamental limit—you can't eliminate it, only work around it.
+
+2. **The -174 dBm magic number**: This is the "noise floor" at room temperature for a 1 Hz bandwidth. Think of it as the quietest possible "background hum" in radio. Everything adds noise on top of this baseline.
+
+3. **Amplifiers make noise worse**: Every amplifier adds its own noise (like a hearing aid with poor quality that adds hiss). The **noise figure** tells you how much worse the amplifier makes the signal-to-noise ratio.
+
+4. **First stage is critical**: Just like you want your hearing aid right at your ear (not connected by a long cable), you want the first amplifier (Low-Noise Amplifier, or LNA) as close to the antenna as possible. Once noise is added early, you can't remove it later.
+
+5. **Wider bandwidth = more noise**: Like opening more windows lets in more outside noise, using a wider radio bandwidth lets in more thermal noise. This is why high-speed data links (wide bandwidth) need stronger signals than voice links (narrow bandwidth).
+
+**Real-world impact:**
+- **Satellite TV**: Premium receivers have better (lower) noise figures, letting them work with smaller dishes
+- **GPS**: Your phone's GPS can detect signals 1,000× weaker than WiFi because it fights noise cleverly (spread spectrum)
+- **Deep space missions**: NASA uses cryogenically-cooled amplifiers (like refrigerating your hearing aid!) to reduce noise and hear probes billions of miles away
+
+**Bottom line**: If you want to receive weak signals (long range, small antenna, low power), you must minimize noise. That's why the first few inches of cable and the first amplifier matter more than anything else in the receiver chain.
+
+---
+
 ## Overview
 
 **Noise** is unwanted random signal that degrades communication system performance.

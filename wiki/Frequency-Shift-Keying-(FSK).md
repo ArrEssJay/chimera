@@ -1,5 +1,53 @@
 # Frequency-Shift Keying (FSK)
 
+## 🎵 For Non-Technical Readers
+
+**FSK is like morse code with two different musical notes—high note = 1, low note = 0. Simple, robust, and still used everywhere!**
+
+**The idea**:
+- Want to send a **1**? Transmit at **high frequency** (e.g., 1200 Hz)
+- Want to send a **0**? Transmit at **low frequency** (e.g., 1000 Hz)
+- Receiver listens for which tone is present
+
+**Musical analogy**:
+- Playing piano: **C note** = 0, **E note** = 1
+- Song: "C C E C E E C" = data: "0 0 1 0 1 1 0"
+- Your ear (receiver) easily distinguishes C from E!
+- FSK receiver does the same with radio frequencies
+
+**Why it's great**:
+- **Super robust**: Noise changes amplitude, but frequency stays clear!
+- **Simple**: Just detect which frequency is present
+- **Immune to fading**: Signal can get weaker, but frequency doesn't change
+- **Works in harsh environments**: Industrial, underwater, long-range
+
+**Where you encounter FSK**:
+- **Caller ID**: Your phone uses FSK to send caller info between rings!
+- **Old dial-up modems**: 1980s modems used FSK (remember the screeching sound?)
+- **Bluetooth Low Energy**: Uses GFSK (Gaussian FSK) for low power
+- **RFID tags**: Many use FSK for simplicity
+- **Weather balloons**: FSK survives atmospheric interference
+- **Pagers**: Remember pagers? FSK!
+
+**Real-world sounds**:
+- **Fax machine**: That squawking noise is FSK! Listen carefully—you can hear the two tones alternating
+- **Dial-up internet**: BEEEE-doo-BEEEE-doo = FSK handshake
+- **Emergency broadcast tones**: Two-tone alert = FSK
+
+**Variants**:
+- **BFSK**: Binary (2 frequencies) = 1 bit/symbol
+- **MFSK**: Multiple frequencies (4, 8, 16, etc.) = more bits/symbol
+- **GFSK**: Gaussian FSK (smooth transitions) = used in Bluetooth
+
+**Trade-off**:
+- **Advantage**: Extremely robust, immune to amplitude variations
+- **Disadvantage**: Slow compared to QAM (lower spectral efficiency)
+- Best for: Low-power, long-range, harsh environments
+
+**Fun fact**: Old telegraph operators could "read" morse code by EAR at 40+ words/minute. FSK is the same idea—humans can literally hear binary data if you slow it down!
+
+---
+
 **Frequency-Shift Keying (FSK)** is a digital modulation scheme where binary data is represented by discrete changes in carrier frequency.
 
 ---

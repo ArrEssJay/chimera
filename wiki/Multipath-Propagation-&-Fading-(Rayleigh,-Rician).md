@@ -1,6 +1,44 @@
-# Multipath Propagation & Fading: Rayleigh & Rician
+# Multipath Propagation & Fading (Rayleigh & Rician)
 
-[[Home]] | **RF Propagation** | [[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]] | [[Atmospheric Effects (Ionospheric, Tropospheric)]]
+[[Home]] | **RF Propagation** | [[Channel Models (Rayleigh & Rician)]] | [[Atmospheric Effects (Ionospheric, Tropospheric)]]
+
+---
+
+## 🌊 For Non-Technical Readers
+
+**Multipath is like hearing echoes in a canyon—radio signals bounce off buildings/walls and arrive at your phone from multiple directions at slightly different times.**
+
+**The problem**:
+1. Signal travels **direct path** from tower to phone (fast)
+2. Same signal bounces off buildings (slower paths)
+3. All copies arrive at different times and **interfere** with each other
+4. Sometimes they add up (strong signal), sometimes they cancel out (weak signal)
+5. This causes **fading**: signal strength fluctuates wildly as you move!
+
+**Real-world experience**:
+- **Driving through city**: Cell signal goes from 5 bars to 2 bars back to 5 bars—that's multipath fading
+- **WiFi dead spots**: Walk 1 meter and signal drops—destructive interference from multipath
+- **Crackling old TV**: Picture would fade in/out—multipath from distant transmitter
+
+**Two types**:
+
+**1. Rayleigh fading** (no direct path):
+- All paths are bounced/scattered
+- Signal strength varies randomly (can drop 30+ dB!)
+- Common in dense urban areas, indoors
+
+**2. Rician fading** (strong direct path + echoes):
+- One dominant path (line-of-sight) + weaker echoes
+- Less severe fading
+- Common in open areas, suburban
+
+**How engineers fix it**:
+- **MIMO**: Multiple antennas sample different fade patterns
+- **OFDM**: Spread data across many frequencies—some fade, others don't
+- **Adaptive coding**: Slow down when fading is bad
+- **Interleaving**: Spread bits over time so fades don't wipe out whole packets
+
+**Fun fact**: Multipath is why 5G uses higher frequencies—shorter waves = less bouncing = more predictable (but shorter range!).
 
 ---
 

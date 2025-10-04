@@ -2,6 +2,61 @@
 
 **Terahertz (THz) radiation** occupies the electromagnetic spectrum between microwaves and infrared light, roughly 0.1 to 10 THz (100 GHz to 10,000 GHz).
 
+## 📊 For Non-Technical Readers
+
+### What is THz? (Plain English)
+
+**Think of THz waves as invisible light** that sits between:
+- **Microwaves** (what heats your food)
+- **Infrared** (what you feel as heat from a fire)
+
+### Everyday Analogy
+
+Imagine the electromagnetic spectrum as a piano keyboard:
+- **Radio waves** = Low bass notes (long, slow waves)
+- **Microwaves** = Middle notes (WiFi, cell phones)
+- **→ THz waves** = High notes near the top (very fast vibrations)
+- **Visible light** = The highest notes you can "see"
+
+**THz is the gap between** what electronics can make (microwaves) and what we can see (light).
+
+### Why Should Non-Experts Care?
+
+**THz waves have superpowers**:
+
+1. **See through stuff** (like X-rays, but safer)
+   - Can see through clothing, plastic, paper
+   - Airport body scanners use THz
+   - Can't see through metal or water
+
+2. **Non-harmful** (unlike X-rays)
+   - Doesn't have enough energy to damage cells
+   - Safe for repeated use
+   - Mostly just causes gentle warming
+
+3. **Identify materials** (like a chemical fingerprint)
+   - Explosives have unique THz signatures
+   - Can spot fake medicines
+   - Can tell if food is contaminated
+
+### Real-World Examples
+
+- **Airport security**: Those cylinder scanners that see under clothes without X-rays
+- **Quality control**: Pharmaceutical companies checking pills without opening packages
+- **Art restoration**: Seeing hidden layers in paintings without touching them
+- **Future 6G networks**: Ultra-fast wireless (we're not there yet)
+
+### The Catch
+
+**Water blocks THz completely** (like a brick wall):
+- Can't work well in rain/fog
+- Can't penetrate deep into your body (we're mostly water)
+- Limited range outdoors
+
+**This is actually good for safety** - it means THz mostly stays on the surface of your skin.
+
+---
+
 ## The THz Gap
 
 Historically called the "terahertz gap," this frequency range was difficult to generate and detect:

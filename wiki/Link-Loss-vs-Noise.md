@@ -1,5 +1,44 @@
 # Link Loss vs Noise
 
+## 📉 For Non-Technical Readers
+
+**Link loss vs noise is like the difference between someone whispering (weak signal) vs shouting in a loud room (noise interference)—two different problems!**
+
+**Link Loss** - Signal gets weaker:
+- **What it is**: Your WiFi router is far away, so signal is weak by the time it reaches you
+- **Analogy**: Shouting across a football field—your voice spreads out and gets quieter
+- **Predictable**: Same distance = same loss every time
+- **Solution**: Move closer, use bigger antenna, increase transmit power
+
+**Examples of link loss**:
+- **WiFi**: 50 meters away = 10,000× weaker signal
+- **Cell phone**: Far from tower = fewer bars
+- **Satellite**: Space is far! Signal arrives incredibly weak
+
+**Noise** - Random interference added:
+- **What it is**: Random electrical static from electronics, thermal energy, cosmic rays
+- **Analogy**: Trying to hear someone whisper in a noisy restaurant—extra sound covers the signal
+- **Random**: Unpredictable, changes moment-to-moment
+- **Solution**: Can't remove it! Must send stronger signal or use error correction
+
+**Examples of noise**:
+- **Bluetooth stuttering near microwave**: Microwave adds noise
+- **AM radio crackle**: Thunderstorms add noise
+- **TV static**: No signal? You're seeing pure noise!
+
+**Key difference**:
+- **Link loss**: Makes signal weaker (deterministic, predictable)
+- **Noise**: Adds random garbage on top (random, unpredictable)
+- **Both hurt you**: Weak signal (loss) covered by noise = errors!
+
+**The engineering ratio: SNR (Signal-to-Noise Ratio)**
+- Strong signal + low noise = high SNR = perfect communication
+- Weak signal (loss) + high noise = low SNR = errors everywhere
+
+**When you see it**: Your phone shows "5 bars" (link loss is low) but internet is slow (noise is high from interference).
+
+---
+
 In a real communication system, the received signal is degraded by **two distinct mechanisms**: link loss and additive noise.
 
 ## Link Loss (Path Loss)

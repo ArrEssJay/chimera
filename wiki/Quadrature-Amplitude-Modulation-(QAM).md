@@ -4,6 +4,49 @@
 
 ---
 
+## 🚀 For Non-Technical Readers
+
+**QAM is like having a grid of mailboxes—the more boxes, the more messages you can send at once. Your WiFi/phone picks bigger grids when signal is strong!**
+
+**The idea - Vary BOTH brightness and angle**:
+- **PSK** (like QPSK): Only varies angle (4 or 8 positions)
+- **QAM**: Varies **both** angle AND distance from center!
+- Result: Many more possible positions = much faster data!
+
+**Real QAM sizes**:
+- **16-QAM**: 4×4 grid = 16 positions = 4 bits/symbol
+- **64-QAM**: 8×8 grid = 64 positions = 6 bits/symbol
+- **256-QAM**: 16×16 grid = 256 positions = 8 bits/symbol
+- **1024-QAM** (WiFi 6): 32×32 grid = 1024 positions = 10 bits/symbol!
+
+**Why you care - Speed differences**:
+- **QPSK**: 2 bits/symbol (baseline)
+- **16-QAM**: 4 bits/symbol = **2× faster**
+- **64-QAM**: 6 bits/symbol = **3× faster**  
+- **256-QAM**: 8 bits/symbol = **4× faster**
+- **1024-QAM**: 10 bits/symbol = **5× faster**!
+
+**The trade-off**:
+- **More positions** = faster BUT positions are closer together
+- **Closer positions** = easier to confuse when signal is noisy
+- Strong signal (close to router): Use 1024-QAM = blazing fast!
+- Weak signal (far from router): Use QPSK = slower but reliable
+
+**Where you see it**:
+- **Your WiFi stats**: "MCS 9, 256-QAM" = using 256-position grid
+- **4G/5G**: "Modulation: 64-QAM" = using 64-position grid
+- **Cable modem**: DOCSIS 3.1 uses 4096-QAM (12 bits/symbol!)
+- **Phone signal bars**: Full bars = can use high QAM, low bars = must use simple modulation
+
+**Real experience**:
+- Walk toward router: Speed increases as phone switches QPSK → 16-QAM → 64-QAM → 256-QAM
+- Walk away: Speed decreases as phone steps back down
+- This happens automatically hundreds of times per second!
+
+**Fun fact**: Modern WiFi 6E can use 1024-QAM, but ONLY at close range with zero interference—it's like threading a needle with radio waves!
+
+---
+
 ## Overview
 
 **Quadrature Amplitude Modulation (QAM)** encodes data by modulating **both amplitude and phase** of a carrier wave.

@@ -4,6 +4,80 @@
 
 ---
 
+## 🚀 For Non-Technical Readers
+
+**Turbo codes are like having two spell-checkers that help each other—when one is unsure, the other provides hints, and they iterate back and forth until they agree. Revolutionary in 1993!**
+
+**The breakthrough**:
+- **Before 1993**: Best codes were ~3 dB from theoretical limit
+- **Turbo codes (1993)**: Got within 0.5 dB of Shannon limit!
+- **Impact**: "Impossible" performance, shocked the world
+- **Today**: In 3G/4G phones, deep space, satellites
+
+**How they work - Two encoders help each other**:
+
+**Step 1**: Encode data with TWO different convolutional encoders
+- Encoder 1: Sees data in original order
+- Encoder 2: Sees data scrambled (interleaved)
+- Send both encoded versions
+
+**Step 2**: Receiver iteratively decodes
+- Decoder 1: "I think bit 5 is probably a 1... 80% sure"
+- Decoder 2: "I think bit 5 is definitely a 1... 95% sure!"
+- Decoder 1: "Oh! With that info, I'm now 98% sure!"
+- They ping-pong back and forth ~5-10 iterations
+- Final result: Near-perfect decoding!
+
+**The magic - "Turbo" analogy**:
+- Like a turbo charger: Output feeds back to improve input
+- Each decoder's output improves the other's input
+- After several iterations, converges to correct answer
+- Hence: "Turbo" codes!
+
+**Real-world use**:
+- **3G (UMTS)**: Turbo codes for data channels
+- **4G (LTE)**: Turbo codes (before LDPC in 5G)
+- **Deep space**: Mars rovers use turbo codes
+- **Satellite phones**: Iridium, Globalstar
+- **Military**: Tactical communications
+
+**Why "revolutionary" in 1993**:
+- Shannon's limit (1948): Theoretical best = 0 dB Eb/N0
+- Best codes before 1993: ~3 dB from limit
+- Turbo codes: 0.5-1 dB from limit!
+- Engineers thought this was impossible!
+
+**The famous 1993 paper**:
+- Presented at ICC '93 conference
+- Audience: Stunned silence, then standing ovation
+- "We must have made a mistake" - initial reaction
+- Verified by others: IT'S REAL!
+- Changed communication systems forever
+
+**Comparison with other codes**:
+- **Convolutional + Viterbi**: Simple, but ~5 dB from limit
+- **Turbo codes**: 0.5-1 dB from limit, complex
+- **LDPC codes**: 0.5 dB from limit, easier to implement
+- **Polar codes**: Proven optimal, simpler structure
+
+**Trade-offs**:
+- **Advantage**: Amazing performance, near-Shannon limit
+- **Disadvantage**: Complex decoder, high latency (iterations)
+- **Why 5G switched to LDPC/Polar**: Simpler, lower latency
+
+**The iterative decoding process**:
+```
+Iteration 1: 60% confidence
+Iteration 2: 80% confidence
+Iteration 3: 95% confidence  
+Iteration 4: 99% confidence
+Iteration 5: 99.9% confidence → DONE!
+```
+
+**Fun fact**: The inventors (Berrou, Glavieux, Thitimajshima) almost didn't publish because they thought they'd made a mistake—the performance seemed too good to be true. When they finally presented in 1993, it sparked a revolution in error correction!
+
+---
+
 ## Overview
 
 **Turbo codes** achieve **near-Shannon-limit** performance (within 0.5-1 dB of capacity).
