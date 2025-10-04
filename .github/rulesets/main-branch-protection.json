@@ -35,10 +35,10 @@
       "parameters": {
         "required_status_checks": [
           {
-            "context": "detect-conflicts"
+            "context": "Contract Enforcement & Parallel Work Orchestration / Detect File Conflicts"
           },
           {
-            "context": "verify-contracts-locked"
+            "context": "Contract Enforcement & Parallel Work Orchestration / Verify Contracts Unchanged"
           }
         ],
         "strict_required_status_checks_policy": true
