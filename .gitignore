@@ -11,7 +11,6 @@ chimera-web/coverage/**
 
 # Node.js and npm
 chimera-web/node_modules/
-chimera-web/package-lock.json
 
 # Environment variables (local only)
 chimera-web/.env
