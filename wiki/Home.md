@@ -147,15 +147,6 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 ⚠️ **Note**: This section explores speculative applications grounded in cutting-edge research. Content clearly distinguishes established science from theoretical extrapolation.
 
 ### A. Theoretical Framework
-
-### B. THz Technology & Biology
-
-### C. Quantum Biology & Consciousness
-
-### D. Non-Linear Biological Demodulation
-
-### E. Applied Case Study: HRP-Based THz Neuromodulation
-### A. Theoretical Framework
  - [[Hyper-Rotational Physics (HRP) Framework]] - M-theory extension: consciousness-matter coupling via quantum coherence
 
 ### B. THz Technology & Biology
@@ -170,6 +161,7 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
  - [[THz-Resonances-in-Microtubules]] - THz frequency resonances in microtubules
 
 ### D. Non-Linear Biological Demodulation
+ - [[Non-Linear Biological Demodulation]] - Non-linear biological IMD and signal processing
  - [[Intermodulation-Distortion-in-Biology]] - Non-linear biological IMD
  - [[Acoustic-Heterodyning]] - Acoustic heterodyning in tissue
  - [[Frey-Microwave-Auditory-Effect]] - Frey effect: microwave auditory phenomenon
@@ -195,8 +187,6 @@ Chimera is a browser-based DSP simulator implementing:
 
 ### Chimera-Specific Pages
 - [[Signal Chain (End-to-End Processing)]] - Chimera's TX/RX pipeline
-- [Chimera Technical Overview](../docs/chimera_technical_overview.md) - Architecture details
-- [UI Controls Specification](../docs/ui_controls_specification.md) - Interface guide
 
 ---
 
