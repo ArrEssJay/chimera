@@ -994,11 +994,13 @@ Military sweet spot: Spread to go below noise floor while maintaining data rate.
 - **Peterson, Ziemer, Borth**, *Introduction to Spread Spectrum Communications* - Accessible introduction
 - **Viterbi**, *CDMA: Principles of Spread Spectrum Communication* - From inventor of CDMA
 
-### Standards
+### Standards & External Resources
 - **IS-95**: CDMA cellular (Qualcomm standard)
-- **GPS ICD-200**: GPS signal specifications (C/A, P(Y), M codes)
+- **[IS-GPS-200M](https://www.gps.gov/technical/icwg/IS-GPS-200M.pdf)**: GPS signal specifications (C/A, P(Y), M codes) - Official U.S. specification
+- **[Navipedia GPS Signals](https://gssc.esa.int/navipedia/index.php?title=GPS_Signal_Plan)**: ESA technical reference for GPS/GNSS
 - **MIL-STD-188-181**: US military FHSS standard
 - **IEEE 802.15.1**: Bluetooth FHSS specifications
+- **[sigidwiki Spread Spectrum](https://www.sigidwiki.com/wiki/Category:Spread_Spectrum)**: Real-world spread spectrum signal examples
 
 ### Military Resources
 - **Poisel**, *Introduction to Communication Electronic Warfare Systems* - EW perspective
