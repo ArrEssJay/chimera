@@ -149,8 +149,7 @@ jobs:
       - name: Extract agent assignment from PR
         id: agent_info
         run: |
-          # Try to extract agent assignment from PR description or title
-          PR_BODY="${{ github.event.pull_request.body }}"
+          # Try to extract agent assignment from PR title
           PR_TITLE="${{ github.event.pull_request.title }}"
           
           # Look for patterns like "Agent: button-component" or "Task: Button Component"
