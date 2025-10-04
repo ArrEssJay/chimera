@@ -6,6 +6,8 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 > 💡 **Note for All Readers**: Most wiki pages include a "Plain English Explainer" section that breaks down complex concepts using everyday analogies—no engineering background required!
 
+> 📄 **Download Full Wiki**: Available as [PDF (chimera-wiki.pdf)](https://github.com/ArrEssJay/chimera/raw/main/chimera-wiki.pdf) for offline reading
+
 ---
 
 ## 🎓 Learning Path
