@@ -79,4 +79,4 @@ Chimera's implementation:
 - [[What-Are-Symbols]] - Understanding the fundamental unit
 - [[IQ-Representation]] - In-phase and Quadrature components
 - [[Constellation-Diagrams]] - Visualizing QPSK
-- [[Modulation Protocol v4.2]] - Chimera's QPSK implementation details
+- <!-- Modulation Protocol v4.2 (Internal specification) --> - Chimera's QPSK implementation details

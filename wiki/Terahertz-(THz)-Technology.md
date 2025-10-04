@@ -352,9 +352,9 @@ Thickness: ~10 μm
 
 - [[Electromagnetic-Spectrum]] - THz position in EM spectrum
 - [[THz-Propagation-in-Biological-Tissue]] - Detailed biological interaction
-- [[Free-Space Path Loss]] - Link budget considerations
-- [[Quantum Cascade Lasers (Advanced)]] - In-depth physics
-- [[THz Bioeffects]] - Thermal and non-thermal effects
+- [[Free-Space-Path-Loss-(FSPL)|Free-Space Path Loss]] - Link budget considerations
+- <!-- Quantum Cascade Lasers (Advanced - Coming Soon) --> - In-depth physics
+- [[THz-Bioeffects-Thermal-and-Non-Thermal|THz Bioeffects]] - Thermal and non-thermal effects
 
 ---
 

@@ -492,7 +492,7 @@ $$
 **Even at VHF+, signals can reach beyond LOS via**:
 
 1. **Diffraction**: Bending around obstacles (buildings, hills)
-2. **Reflection**: Bounce off surfaces (see [[Multipath Propagation & Fading]])
+2. **Reflection**: Bounce off surfaces (see [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)|Multipath Propagation & Fading]])
 3. **Scattering**: Random scatter from rough surfaces, rain, foliage
 4. **Troposcatter**: Forward scatter from tropospheric turbulence (beyond-horizon, 100-500 km)
 
@@ -547,7 +547,7 @@ $$
 ## Related Topics
 
 - **[[Free-Space-Path-Loss-(FSPL)]]**: Baseline loss for all propagation modes
-- **[[Multipath Propagation & Fading]]**: Rayleigh/Rician fading in NLOS
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)|Multipath Propagation & Fading]]**: Rayleigh/Rician fading in NLOS
 - **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Ionospheric refraction, atmospheric absorption
 - **[[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]**: Rain fade at high frequencies
 - **[[Electromagnetic-Spectrum]]**: Frequency-dependent propagation behavior

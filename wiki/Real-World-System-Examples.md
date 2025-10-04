@@ -891,7 +891,7 @@ $$
 - **[[Signal-Chain-(End-to-End-Processing)]]**: System block diagrams
 - **[[Complete-Link-Budget-Analysis]]**: Detailed link calculations
 - **[[OFDM-&-Multicarrier-Modulation]]**: WiFi/LTE PHY layer
-- **[[Spread Spectrum (DSSS, FHSS)]]**: GPS, Bluetooth AFH
+- **[[Spread-Spectrum-(DSSS-FHSS)|Spread Spectrum]]**: GPS, Bluetooth AFH
 - **[[Adaptive-Modulation-&-Coding-(AMC)|Adaptive Coding & Modulation]]**: LTE, DVB-S2X, LoRaWAN ADR
 
 ---

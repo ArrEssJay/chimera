@@ -265,7 +265,7 @@ The [[Orchestrated-Objective-Reduction-(Orch-OR)]] theory posits:
 - [[Hyper-Rotational-Physics-(HRP)-Framework]] — Theoretical framework extending M-theory to consciousness
 - [[Orchestrated-Objective-Reduction-(Orch-OR)]] — Penrose-Hameroff consciousness theory requiring quantum coherence
 - [[THz-Resonances-in-Microtubules]] — Specific vibrational modes that could protect coherence
-- [[Microtubule Structure & Function]] — Structural basis for quantum effects
+- [[Microtubule-Structure-and-Function|Microtubule Structure & Function]] — Structural basis for quantum effects
 - [[Terahertz-(THz)-Technology]] — Experimental tools for probing vibronic coupling
 
 ---

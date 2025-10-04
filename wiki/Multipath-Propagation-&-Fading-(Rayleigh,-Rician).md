@@ -522,7 +522,7 @@ $$
 
 **Frequency diversity**: Different frequency components fade independently
 
-**See**: [[Spread Spectrum (DSSS, FHSS)]]
+**See**: [[Spread-Spectrum-(DSSS-FHSS)|Spread Spectrum]]
 
 ---
 
@@ -676,7 +676,7 @@ $$
 - **[[Bit-Error-Rate-(BER)]]**: Fading degrades BER significantly
 - **[[QPSK-Modulation]]** / **[[LDPC-Codes]]**: Require fade mitigation
 - **[[OFDM-&-Multicarrier-Modulation]]**: Combats frequency-selective fading
-- **[[Spread Spectrum (DSSS, FHSS)]]**: Provides frequency diversity
+- **[[Spread-Spectrum-(DSSS-FHSS)|Spread Spectrum]]**: Provides frequency diversity
 
 ---
 

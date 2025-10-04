@@ -189,7 +189,7 @@ Examples:
 | GSM | ~10 | 0.5 | ~30% |
 | WiFi 802.11n | ~20 | 3-4 | ~60% |
 | LTE Advanced | ~25 | 5-6 | ~75% |
-| [[LDPC Codes\|LDPC]] (DVB-S2) | Variable | Adaptive | ~90% |
+| [[LDPC-Codes|LDPC]] (DVB-S2) | Variable | Adaptive | ~90% |
 
 **Modern codes** ([[LDPC-Codes]], Turbo, Polar) achieve **> 95% of Shannon limit**!
 

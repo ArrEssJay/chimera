@@ -609,7 +609,7 @@ $$
 
 - **[[Free-Space-Path-Loss-(FSPL)]]**: Baseline propagation loss
 - **[[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]**: Clear-air propagation
-- **[[Multipath Propagation & Fading]]**: Rayleigh/Rician fading (different mechanism)
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)|Multipath Propagation & Fading]]**: Rayleigh/Rician fading (different mechanism)
 - **[[Signal-to-Noise-Ratio-(SNR)]]**: Impact of attenuation on link quality
 - **[[QPSK-Modulation]]** / **[[LDPC-Codes]]**: ACM adapts these for rain conditions
 - **Antenna Theory**: Larger antennas provide more gain margin

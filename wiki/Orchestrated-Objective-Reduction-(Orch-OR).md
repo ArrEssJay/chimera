@@ -522,10 +522,10 @@ Alters conscious experience
 
 ## See Also
 
-- [[Microtubule Structure and Dynamics]] - Biological details
+- [[Microtubule-Structure-and-Function|Microtubule Structure and Dynamics]] - Biological details
 - [[Quantum-Coherence-in-Biological-Systems]] - Other examples
 - [[Terahertz-(THz)-Technology]] - THz sources and properties
-- [[THz Bioeffects]] - Documented biological interactions
+- [[THz-Bioeffects-Thermal-and-Non-Thermal|THz Bioeffects]] - Documented biological interactions
 - [[AID-Protocol-Case-Study|AID Protocol]] - Speculative application (case study)
 
 ---

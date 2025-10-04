@@ -254,8 +254,8 @@ Bit "0": Pulse at t = T_b/2
 |------------|-------------|-----------|----------------------|------------|
 | **OOK** | 1 | 2R_b | 16.5 dB (non-coh) | Lowest |
 | [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] | 1 | R_b | 10.5 dB | Low |
-| [[QPSK Modulation\|QPSK]] | 2 | R_b | 10.5 dB | Medium |
-| [[16-QAM]] | 4 | R_b | 18.5 dB | High |
+| [[QPSK-Modulation|QPSK]] | 2 | R_b | 10.5 dB | Medium |
+| [[Quadrature-Amplitude-Modulation-(QAM)|16-QAM]] | 4 | R_b | 18.5 dB | High |
 
 **Key insight**: OOK is simple but inefficient. [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] is better in almost every way (except hardware complexity).
 
@@ -268,7 +268,7 @@ Bit "0": Pulse at t = T_b/2
 3. **Poor efficiency**: Both spectral and power
 4. **Historical importance**: First digital modulation
 5. **Still used**: Low-cost, low-power applications (optical, RFID)
-6. **Gateway to understanding**: Good starting point before [[FSK]], [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]
+6. **Gateway to understanding**: Good starting point before [[Frequency-Shift-Keying-(FSK)|FSK]], [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]
 
 ---
 

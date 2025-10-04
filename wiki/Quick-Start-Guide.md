@@ -236,7 +236,7 @@ Keep these bookmarked:
 
 1. **Math-heavy pages**: Read once for concepts, twice for derivations
 2. **Use examples**: Every page has numerical examples - work through them
-3. **Cross-reference**: Follow `[[wiki links]]` to build connections
+3. **Cross-reference**: Follow `wiki links (double brackets)` to build connections
 4. **Experiment**: Use Chimera to validate theoretical concepts
 
 ---

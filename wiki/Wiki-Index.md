@@ -382,7 +382,7 @@ All external references are consolidated in: [Bibliography](../docs/Bibliography
 ## Wiki Link Conventions
 
 ### Internal Wiki Links
-Use double brackets: `[[Page-Name-With-Hyphens]]`
+Use double brackets with the actual filename (without .md extension)
 
 The wiki uses **filename-based linking**. Filenames use:
 - Hyphens for spaces: `Additive-White-Gaussian-Noise-(AWGN).md`
@@ -390,13 +390,14 @@ The wiki uses **filename-based linking**. Filenames use:
 - Parentheses for disambiguation: `Energy-Ratios-(Es-N0-and-Eb-N0).md`
 
 ### External Docs Links
-Use relative paths for docs: `[Display Text](../docs/filename.md)`
+Use relative paths for docs appendices:
 
 Example: `[HRP Framework Paper](../docs/hrp_framework_paper.md)` → [HRP Framework Paper](../docs/hrp_framework_paper.md)
 
 ### Common Mistakes
-❌ `[[AWGN]]` → File is `Additive-White-Gaussian-Noise-(AWGN).md`
-✅ `[[Additive-White-Gaussian-Noise-(AWGN)]]` or `[[Additive-White-Gaussian-Noise-(AWGN)|AWGN]]`
+❌ Using abbreviations: `AWGN` → File is `Additive-White-Gaussian-Noise-(AWGN).md`
+✅ Full filename: `[[Additive-White-Gaussian-Noise-(AWGN)]]`
+✅ With display text: `[[Additive-White-Gaussian-Noise-(AWGN)|AWGN]]`
 
 ❌ `[[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]]` → File is `Synchronization-(Carrier,-Timing,-Frame).md`
 ✅ `[[Synchronization-(Carrier,-Timing,-Frame)]]` or `[[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]]`

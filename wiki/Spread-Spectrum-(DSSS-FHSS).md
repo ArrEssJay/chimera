@@ -1008,7 +1008,7 @@ Military sweet spot: Spread to go below noise floor while maintaining data rate.
 ### Related Topics
 - [[Shannon's-Channel-Capacity-Theorem]] - Theoretical foundation
 - [[Military-&-Covert-Communications]] - LPI/LPD systems, GPS M-code
-- [[CDMA (coming soon)]] - Code Division Multiple Access
+- <!-- CDMA (Coming Soon) --> - Code Division Multiple Access
 - [[Synchronization-(Carrier,-Timing,-Frame)]] - Code acquisition and tracking
 - [[Real-World-System-Examples]] - GPS, Bluetooth, WiFi, military systems
 
