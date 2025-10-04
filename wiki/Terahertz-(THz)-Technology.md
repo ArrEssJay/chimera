@@ -2,7 +2,9 @@
 
 **Terahertz (THz) radiation** occupies the electromagnetic spectrum between microwaves and infrared light, roughly 0.1 to 10 THz (100 GHz to 10,000 GHz).
 
-## What is THz? (Plain English)
+## 📊 For Non-Technical Readers
+
+### What is THz? (Plain English)
 
 **Think of THz waves as invisible light** that sits between:
 - **Microwaves** (what heats your food)

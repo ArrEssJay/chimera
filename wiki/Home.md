@@ -4,6 +4,8 @@ Welcome to the **Chimera Digital Signal Processing Documentation Wiki**!
 
 This wiki provides a **comprehensive, first-principles approach** to understanding wireless communications—from electromagnetic theory through practical system design to cutting-edge research. Whether you're learning DSP fundamentals or exploring quantum neuromodulation, this resource builds knowledge systematically.
 
+> 💡 **Note for All Readers**: Most wiki pages include a "Plain English Explainer" section that breaks down complex concepts using everyday analogies—no engineering background required!
+
 ---
 
 ## 🎓 Learning Path
@@ -245,17 +247,3 @@ Chimera is a browser-based DSP simulator implementing:
 **Visual learners**: Look for pages with diagrams: [[Constellation Diagrams]], [[IQ Representation]], [[QPSK Modulation]]
 
 **Theory enthusiasts**: Jump to Parts V (Coding Theory) or VIII (Quantum Biology)
-
----
-
-**Wiki Status**: ✅ **COMPLETE** | **52/52 pages (100%)**
-- **Part I**: 5/5 pages (Maxwell ✓, EM Spectrum ✓, Antenna ✓, Wave Polarization ✓, Power Density ✓)
-- **Part II**: 5/5 pages (FSPL ✓, Propagation Modes ✓, Multipath/Fading ✓, Atmospheric ✓, Weather ✓)
-- **Part III**: 7/7 pages (Link Loss ✓, SNR ✓, Energy Ratios ✓, Link Budget ✓, Noise ✓, AWGN ✓, Channel Models ✓)
-- **Part IV**: 12/12 pages (Baseband/Passband ✓, OOK ✓, ASK ✓, FSK ✓, BPSK ✓, Symbols ✓, QPSK ✓, 8PSK ✓, QAM ✓, IQ ✓, Constellation ✓, Spectral Efficiency ✓)
-- **Part V**: 9/9 pages (Shannon ✓, Hamming ✓, Block Codes ✓, Convolutional ✓, Turbo ✓, FEC ✓, LDPC ✓, Polar ✓, BER ✓)
-- **Part VI**: 4/4 pages (Signal Chain ✓, Sync ✓, Equalization ✓, Real-World ✓)
-- **Part VII**: 6/6 pages (OFDM ✓, Spread Spectrum ✓, MIMO ✓, Military ✓, AMC ✓, mmWave/THz ✓)
-- **Part VIII**: 4/13 pages (HRP ✓, THz Technology ✓, Orch-OR ✓, AID ✓)
-- **Comprehensive coverage**: Maxwell's equations → 5G/6G → military systems → quantum biology
-- **All foundational content complete**: Perfect for learning DSP from first principles

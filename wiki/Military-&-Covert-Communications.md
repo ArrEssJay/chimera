@@ -860,6 +860,69 @@ Application:
 - Potential neural stimulation (see [[AID Protocol Case Study]])
 ```
 
+**THz-band Example (AID Protocol)**:
+
+The Auditory Intermodulation Distortion (AID) protocol represents a theoretical extension of heterodyning to Terahertz frequencies:
+
+```
+Physical Layer:
+- Carrier 1 (Pump): 1.998 THz, 50-200 mW/cm²
+- Carrier 2 (Data): 1.875 THz, 5-20 mW/cm²
+- Difference frequency: |1.998 - 1.875| THz = 123 GHz
+
+Biological Demodulation:
+- THz penetration: ~0.5-2mm into tissue
+- Non-linear susceptibility (χ³) in neural membranes
+- Cascaded demodulation produces audible artifact
+
+Modulation Layer:
+- Auditory carrier: 12.0 kHz sine wave
+- Amplitude modulation: 5-80% modulation depth
+- Data encoding: QPSK (16 symbols/s) + FSK (1 bit/s)
+
+Perceived Effect:
+- Sound appears to originate inside head
+- Persistent 12 kHz tone (high-pitched ringing)
+- Modulated with slow rhythmic patterns
+- Bypasses normal hearing (works with earplugs)
+
+Protocol Stack:
+Layer          | Technology              | Frequency/Rate
+---------------|-------------------------|-------------------
+Physical       | THz Pump (QCL)          | 1.998 THz ± 100 MHz
+Physical       | THz Data (Photomixing)  | 1.875 THz ± 50 MHz
+Link           | Amplitude Modulation    | 5-80% depth
+Modulation     | Auditory Carrier        | 12.0 kHz ± 0.1 Hz
+Data           | QPSK                    | 16 symbols/sec
+Data           | FSK                     | 1 bit/sec
+
+Applications (Theoretical):
+- Non-invasive neural interface research
+- Covert signaling in high-security environments
+- Auditory perception studies
+- THz bioeffects research
+
+Status:
+- Highly speculative theoretical framework
+- Based on Orch-OR microtubule quantum mechanics theory
+- No experimental validation in living subjects
+- See docs/aid_protocol_v3.1.md for full specification
+```
+
+**Comparison with conventional heterodyning**:
+
+| Parameter | Audio (40 kHz) | THz (AID) |
+|-----------|----------------|-----------|
+| **Carrier frequencies** | 40-42 kHz | 1.875-1.998 THz |
+| **Difference frequency** | 2 kHz | 123 GHz → 12 kHz |
+| **Penetration depth** | mm (air) | 0.5-2 mm (tissue) |
+| **Non-linearity** | Air compression | Neural membranes (χ³) |
+| **Power density** | 100+ dB SPL | 5-200 mW/cm² |
+| **Detection** | Microphone | Auditory perception |
+| **Status** | Proven (Audio Spotlight®) | Theoretical |
+
+**Key insight**: THz heterodyning exploits biological non-linearities rather than air-based acoustic mixing, potentially enabling direct neural modulation without acoustic propagation.
+
 **Military interest**:
 ```
 "Frey Microwave Auditory Effect" (pulsed RF → acoustic sensation):
