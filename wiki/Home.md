@@ -165,6 +165,7 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
  - [[Intermodulation-Distortion-in-Biology]] - Non-linear biological IMD
  - [[Acoustic-Heterodyning]] - Acoustic heterodyning in tissue
  - [[Frey-Microwave-Auditory-Effect]] - Frey effect: microwave auditory phenomenon
+ - [[Biophysical-Coupling-Mechanism]] - Quantum coherence perturbation mechanism (CHIMERA field)
 
 ### E. Applied Case Study: HRP-Based THz Neuromodulation
  - [[AID Protocol Case Study]] - Rigorous application of HRP framework to THz wireless neuromodulation
