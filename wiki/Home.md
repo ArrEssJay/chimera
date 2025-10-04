@@ -268,3 +268,11 @@ Full technical documents included in this wiki:
 - [[turing_cage]] - Turing Cage Analysis - Computational neuroscience framework
 
 These documents provide the theoretical foundation for Part VIII (Speculative & Emerging Topics).
+
+---
+
+## 📝 Wiki Development
+
+- [[TODO]] - Planned wiki pages and future content (16 placeholder pages tracked)
+- [[Wiki-Maintenance-Report]] - Wiki maintenance procedures and validation tools
+- [[Bibliography]] - Comprehensive reference list (60+ sources)

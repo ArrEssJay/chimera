@@ -290,6 +290,8 @@ Some links intentionally left as placeholders:
 
 These serve as TODO markers for future wiki expansion.
 
+**All placeholder pages are now indexed in [[TODO]]**, which tracks 16 planned pages organized by priority and category.
+
 ---
 
 ## Conclusion
