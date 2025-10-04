@@ -50,14 +50,14 @@ impl ValidationResult {
             errors: Vec::new(),
         }
     }
-    
+
     pub fn invalid(errors: Vec<ValidationError>) -> Self {
         Self {
             valid: false,
             errors,
         }
     }
-    
+
     pub fn add_error(&mut self, error: ValidationError) {
         self.valid = false;
         self.errors.push(error);
@@ -73,52 +73,52 @@ impl GraphValidator {
     pub fn new(node_definitions: HashMap<String, NodeDefinition>) -> Self {
         Self { node_definitions }
     }
-    
+
     /// Validate the entire graph
     pub fn validate(&self, graph: &Graph) -> ValidationResult {
         let mut result = ValidationResult::valid();
-        
+
         // Check for cycles
         if let Err(cycle_errors) = self.check_cycles(graph) {
             for error in cycle_errors {
                 result.add_error(error);
             }
         }
-        
+
         // Check type compatibility
         let type_errors = self.check_type_compatibility(graph);
         for error in type_errors {
             result.add_error(error);
         }
-        
+
         // Check for disconnected required inputs
         let disconnected_errors = self.check_disconnected_inputs(graph);
         for error in disconnected_errors {
             result.add_error(error);
         }
-        
+
         result
     }
-    
+
     /// Check for cycles using DFS
     fn check_cycles(&self, graph: &Graph) -> Result<(), Vec<ValidationError>> {
         let mut errors = Vec::new();
         let mut visited = HashSet::new();
         let mut rec_stack = HashSet::new();
-        
+
         // Build adjacency list
         let mut adj_list: HashMap<String, Vec<String>> = HashMap::new();
         for node in &graph.nodes {
             adj_list.insert(node.id.clone(), Vec::new());
         }
-        
+
         for edge in &graph.edges {
             adj_list
                 .entry(edge.from_node.clone())
                 .or_default()
                 .push(edge.to_node.clone());
         }
-        
+
         // DFS from each node
         for node in &graph.nodes {
             if !visited.contains(&node.id)
@@ -133,14 +133,14 @@ impl GraphValidator {
                 // Found a cycle, continue checking other components
             }
         }
-        
+
         if errors.is_empty() {
             Ok(())
         } else {
             Err(errors)
         }
     }
-    
+
     fn dfs_cycle_check(
         node: &str,
         adj_list: &HashMap<String, Vec<String>>,
@@ -150,7 +150,7 @@ impl GraphValidator {
     ) -> bool {
         visited.insert(node.to_string());
         rec_stack.insert(node.to_string());
-        
+
         if let Some(neighbors) = adj_list.get(node) {
             for neighbor in neighbors {
                 if !visited.contains(neighbor) {
@@ -168,15 +168,15 @@ impl GraphValidator {
                 }
             }
         }
-        
+
         rec_stack.remove(node);
         false
     }
-    
+
     /// Check type compatibility between connected ports
     fn check_type_compatibility(&self, graph: &Graph) -> Vec<ValidationError> {
         let mut errors = Vec::new();
-        
+
         for edge in &graph.edges {
             // Get source node definition
             let from_node = match graph.get_node(&edge.from_node) {
@@ -190,12 +190,12 @@ impl GraphValidator {
                     continue;
                 }
             };
-            
+
             let from_def = match self.node_definitions.get(&from_node.node_type) {
                 Some(d) => d,
                 None => continue,
             };
-            
+
             // Get target node definition
             let to_node = match graph.get_node(&edge.to_node) {
                 Some(n) => n,
@@ -208,12 +208,12 @@ impl GraphValidator {
                     continue;
                 }
             };
-            
+
             let to_def = match self.node_definitions.get(&to_node.node_type) {
                 Some(d) => d,
                 None => continue,
             };
-            
+
             // Check port indices
             if edge.from_port >= from_def.outputs.len() {
                 errors.push(ValidationError::new(
@@ -226,7 +226,7 @@ impl GraphValidator {
                 ));
                 continue;
             }
-            
+
             if edge.to_port >= to_def.inputs.len() {
                 errors.push(ValidationError::new(
                     ValidationErrorType::TypeMismatch,
@@ -238,11 +238,11 @@ impl GraphValidator {
                 ));
                 continue;
             }
-            
+
             // Check type compatibility
             let from_type = &from_def.outputs[edge.from_port].data_type;
             let to_type = &to_def.inputs[edge.to_port].data_type;
-            
+
             if !from_type.is_compatible_with(to_type) {
                 errors.push(ValidationError::new(
                     ValidationErrorType::TypeMismatch,
@@ -254,20 +254,20 @@ impl GraphValidator {
                 ));
             }
         }
-        
+
         errors
     }
-    
+
     /// Check for disconnected required inputs
     fn check_disconnected_inputs(&self, graph: &Graph) -> Vec<ValidationError> {
         let mut errors = Vec::new();
-        
+
         // Build map of which input ports are connected
         let mut connected_inputs: HashMap<(String, usize), bool> = HashMap::new();
         for edge in &graph.edges {
             connected_inputs.insert((edge.to_node.clone(), edge.to_port), true);
         }
-        
+
         // Check each node's required inputs
         for node in &graph.nodes {
             if let Some(def) = self.node_definitions.get(&node.node_type) {
@@ -286,7 +286,7 @@ impl GraphValidator {
                 }
             }
         }
-        
+
         errors
     }
 }
@@ -298,15 +298,27 @@ mod tests {
 
     fn create_test_node_def(id: &str, inputs: usize, outputs: usize) -> NodeDefinition {
         let mut def = NodeDefinition::new(id, id, NodeCategory::Processing, "Test node");
-        
+
         let input_ports: Vec<_> = (0..inputs)
-            .map(|i| PortDefinition::new(format!("in{}", i), format!("Input {}", i), DataType::BitStream))
+            .map(|i| {
+                PortDefinition::new(
+                    format!("in{}", i),
+                    format!("Input {}", i),
+                    DataType::BitStream,
+                )
+            })
             .collect();
-        
+
         let output_ports: Vec<_> = (0..outputs)
-            .map(|i| PortDefinition::new(format!("out{}", i), format!("Output {}", i), DataType::BitStream))
+            .map(|i| {
+                PortDefinition::new(
+                    format!("out{}", i),
+                    format!("Output {}", i),
+                    DataType::BitStream,
+                )
+            })
             .collect();
-        
+
         def.inputs = input_ports;
         def.outputs = output_ports;
         def
@@ -324,43 +336,65 @@ mod tests {
     fn test_validate_simple_chain() {
         let mut graph = Graph::new();
         let mut defs = HashMap::new();
-        
+
         let def = create_test_node_def("test_node", 1, 1);
         defs.insert("test_node".to_string(), def);
-        
-        graph.add_node(NodeInstance::new("n1", "test_node", Position::new(0.0, 0.0)));
-        graph.add_node(NodeInstance::new("n2", "test_node", Position::new(100.0, 0.0)));
+
+        graph.add_node(NodeInstance::new(
+            "n1",
+            "test_node",
+            Position::new(0.0, 0.0),
+        ));
+        graph.add_node(NodeInstance::new(
+            "n2",
+            "test_node",
+            Position::new(100.0, 0.0),
+        ));
         graph.add_edge(Edge::new("e1", "n1", 0, "n2", 0));
-        
+
         let validator = GraphValidator::new(defs);
         let result = validator.validate(&graph);
-        
+
         // Should be valid except for n1's disconnected input
         assert!(!result.valid);
         assert_eq!(result.errors.len(), 1);
-        assert_eq!(result.errors[0].error_type, ValidationErrorType::Disconnected);
+        assert_eq!(
+            result.errors[0].error_type,
+            ValidationErrorType::Disconnected
+        );
     }
 
     #[test]
     fn test_detect_cycle() {
         let mut graph = Graph::new();
         let mut defs = HashMap::new();
-        
+
         let def = create_test_node_def("test_node", 1, 1);
         defs.insert("test_node".to_string(), def);
-        
-        graph.add_node(NodeInstance::new("n1", "test_node", Position::new(0.0, 0.0)));
-        graph.add_node(NodeInstance::new("n2", "test_node", Position::new(100.0, 0.0)));
-        
+
+        graph.add_node(NodeInstance::new(
+            "n1",
+            "test_node",
+            Position::new(0.0, 0.0),
+        ));
+        graph.add_node(NodeInstance::new(
+            "n2",
+            "test_node",
+            Position::new(100.0, 0.0),
+        ));
+
         // Create a cycle: n1 -> n2 -> n1
         graph.add_edge(Edge::new("e1", "n1", 0, "n2", 0));
         graph.add_edge(Edge::new("e2", "n2", 0, "n1", 0));
-        
+
         let validator = GraphValidator::new(defs);
         let result = validator.validate(&graph);
-        
+
         assert!(!result.valid);
-        let has_cycle_error = result.errors.iter().any(|e| e.error_type == ValidationErrorType::Cycle);
+        let has_cycle_error = result
+            .errors
+            .iter()
+            .any(|e| e.error_type == ValidationErrorType::Cycle);
         assert!(has_cycle_error);
     }
 
@@ -368,24 +402,27 @@ mod tests {
     fn test_type_mismatch() {
         let mut graph = Graph::new();
         let mut defs = HashMap::new();
-        
+
         let mut def1 = NodeDefinition::new("source", "Source", NodeCategory::Source, "Test");
         def1.outputs = vec![PortDefinition::new("out", "Output", DataType::BitStream)];
         defs.insert("source".to_string(), def1);
-        
+
         let mut def2 = NodeDefinition::new("sink", "Sink", NodeCategory::Sink, "Test");
         def2.inputs = vec![PortDefinition::new("in", "Input", DataType::IQData)];
         defs.insert("sink".to_string(), def2);
-        
+
         graph.add_node(NodeInstance::new("n1", "source", Position::new(0.0, 0.0)));
         graph.add_node(NodeInstance::new("n2", "sink", Position::new(100.0, 0.0)));
         graph.add_edge(Edge::new("e1", "n1", 0, "n2", 0));
-        
+
         let validator = GraphValidator::new(defs);
         let result = validator.validate(&graph);
-        
+
         assert!(!result.valid);
-        let has_type_error = result.errors.iter().any(|e| e.error_type == ValidationErrorType::TypeMismatch);
+        let has_type_error = result
+            .errors
+            .iter()
+            .any(|e| e.error_type == ValidationErrorType::TypeMismatch);
         assert!(has_type_error);
     }
 
@@ -393,20 +430,31 @@ mod tests {
     fn test_invalid_port_index() {
         let mut graph = Graph::new();
         let mut defs = HashMap::new();
-        
+
         let def = create_test_node_def("test_node", 1, 1);
         defs.insert("test_node".to_string(), def);
-        
-        graph.add_node(NodeInstance::new("n1", "test_node", Position::new(0.0, 0.0)));
-        graph.add_node(NodeInstance::new("n2", "test_node", Position::new(100.0, 0.0)));
-        
+
+        graph.add_node(NodeInstance::new(
+            "n1",
+            "test_node",
+            Position::new(0.0, 0.0),
+        ));
+        graph.add_node(NodeInstance::new(
+            "n2",
+            "test_node",
+            Position::new(100.0, 0.0),
+        ));
+
         // Try to connect to non-existent port
         graph.add_edge(Edge::new("e1", "n1", 5, "n2", 0));
-        
+
         let validator = GraphValidator::new(defs);
         let result = validator.validate(&graph);
-        
+
         assert!(!result.valid);
-        assert!(result.errors.iter().any(|e| e.error_type == ValidationErrorType::TypeMismatch));
+        assert!(result
+            .errors
+            .iter()
+            .any(|e| e.error_type == ValidationErrorType::TypeMismatch));
     }
 }

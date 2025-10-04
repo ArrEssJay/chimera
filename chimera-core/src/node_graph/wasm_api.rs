@@ -2,9 +2,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use super::{
-    GraphExecutorImpl, NodeRegistryImpl,
-};
+use super::{GraphExecutorImpl, NodeRegistryImpl};
 
 /// WASM-exposed node registry
 #[wasm_bindgen]
@@ -26,7 +24,7 @@ impl WasmNodeRegistry {
             inner: NodeRegistryImpl::new(),
         }
     }
-    
+
     /// Get all available node types as JSON
     #[wasm_bindgen(js_name = availableNodes)]
     pub fn available_nodes(&self) -> Result<JsValue, JsValue> {
@@ -34,14 +32,17 @@ impl WasmNodeRegistry {
         serde_wasm_bindgen::to_value(&nodes)
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e)))
     }
-    
+
     /// Get definition for a specific node type
     #[wasm_bindgen(js_name = getDefinition)]
     pub fn get_definition(&self, node_type: &str) -> Result<JsValue, JsValue> {
         match self.inner.get_definition(node_type) {
             Some(def) => serde_wasm_bindgen::to_value(&def)
                 .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e))),
-            None => Err(JsValue::from_str(&format!("Node type '{}' not found", node_type))),
+            None => Err(JsValue::from_str(&format!(
+                "Node type '{}' not found",
+                node_type
+            ))),
         }
     }
 }
@@ -60,27 +61,29 @@ impl WasmGraphExecutor {
             inner: GraphExecutorImpl::new(registry.inner.clone()),
         }
     }
-    
+
     /// Validate a graph
     #[wasm_bindgen(js_name = validateGraph)]
     pub fn validate_graph(&self, graph_json: JsValue) -> Result<JsValue, JsValue> {
         let graph: crate::node_graph::Graph = serde_wasm_bindgen::from_value(graph_json)
             .map_err(|e| JsValue::from_str(&format!("Deserialization error: {:?}", e)))?;
-        
+
         let result = self.inner.validate(&graph);
         serde_wasm_bindgen::to_value(&result)
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e)))
     }
-    
+
     /// Execute a graph
     #[wasm_bindgen(js_name = executeGraph)]
     pub fn execute_graph(&self, graph_json: JsValue) -> Result<JsValue, JsValue> {
         let graph: crate::node_graph::Graph = serde_wasm_bindgen::from_value(graph_json)
             .map_err(|e| JsValue::from_str(&format!("Deserialization error: {:?}", e)))?;
-        
-        let result = self.inner.execute(&graph)
+
+        let result = self
+            .inner
+            .execute(&graph)
             .map_err(|e| JsValue::from_str(&e))?;
-        
+
         serde_wasm_bindgen::to_value(&result)
             .map_err(|e| JsValue::from_str(&format!("Serialization error: {:?}", e)))
     }

@@ -22,40 +22,46 @@ impl NodeRegistryImpl {
             factories: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     /// Register a node type
     pub fn register(&self, node_type: String, factory: Box<dyn NodeFactory>) {
-        let mut factories = self.factories.write()
+        let mut factories = self
+            .factories
+            .write()
             .expect("Failed to acquire write lock on registry");
         factories.insert(node_type, factory);
     }
-    
+
     /// Create a node instance by type
     pub fn create_node(&self, node_type: &str, id: String) -> Result<Box<dyn Node>, String> {
-        let factories = self.factories.read()
+        let factories = self
+            .factories
+            .read()
             .expect("Failed to acquire read lock on registry");
-        
+
         match factories.get(node_type) {
             Some(factory) => Ok(factory.create(id)),
             None => Err(format!("Unknown node type: {}", node_type)),
         }
     }
-    
+
     /// Get all registered node types
     pub fn available_nodes(&self) -> Vec<NodeDefinition> {
-        let factories = self.factories.read()
+        let factories = self
+            .factories
+            .read()
             .expect("Failed to acquire read lock on registry");
-        
-        factories.values()
-            .map(|f| f.definition())
-            .collect()
+
+        factories.values().map(|f| f.definition()).collect()
     }
-    
+
     /// Get definition for a specific node type
     pub fn get_definition(&self, node_type: &str) -> Option<NodeDefinition> {
-        let factories = self.factories.read()
+        let factories = self
+            .factories
+            .read()
             .expect("Failed to acquire read lock on registry");
-        
+
         factories.get(node_type).map(|f| f.definition())
     }
 }
@@ -77,7 +83,7 @@ impl Clone for NodeRegistryImpl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::node_graph::{DataBuffer, NodeCategory, PortDefinition, DataType};
+    use crate::node_graph::{DataBuffer, DataType, NodeCategory, PortDefinition};
     use wasm_bindgen::JsValue;
 
     // Mock node for testing
@@ -95,10 +101,18 @@ mod tests {
                 "test_node",
                 "Test Node",
                 NodeCategory::Processing,
-                "A test node"
+                "A test node",
             )
-            .with_inputs(vec![PortDefinition::new("in", "Input", DataType::BitStream)])
-            .with_outputs(vec![PortDefinition::new("out", "Output", DataType::BitStream)])
+            .with_inputs(vec![PortDefinition::new(
+                "in",
+                "Input",
+                DataType::BitStream,
+            )])
+            .with_outputs(vec![PortDefinition::new(
+                "out",
+                "Output",
+                DataType::BitStream,
+            )])
         }
 
         fn execute(
@@ -122,7 +136,7 @@ mod tests {
                 "test_node",
                 "Test Node",
                 NodeCategory::Processing,
-                "A test node"
+                "A test node",
             )
         }
     }
@@ -130,12 +144,12 @@ mod tests {
     #[test]
     fn test_register_and_create() {
         let registry = NodeRegistryImpl::new();
-        
+
         registry.register("test_node".to_string(), Box::new(TestNodeFactory));
-        
+
         let node = registry.create_node("test_node", "n1".to_string());
         assert!(node.is_ok());
-        
+
         let node = node.unwrap();
         assert_eq!(node.id(), "n1");
     }
@@ -143,7 +157,7 @@ mod tests {
     #[test]
     fn test_create_unknown_node() {
         let registry = NodeRegistryImpl::new();
-        
+
         let result = registry.create_node("unknown", "n1".to_string());
         assert!(result.is_err());
         let err_msg = result.err().unwrap();
@@ -153,9 +167,9 @@ mod tests {
     #[test]
     fn test_available_nodes() {
         let registry = NodeRegistryImpl::new();
-        
+
         registry.register("test_node".to_string(), Box::new(TestNodeFactory));
-        
+
         let nodes = registry.available_nodes();
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].id, "test_node");
@@ -164,13 +178,13 @@ mod tests {
     #[test]
     fn test_get_definition() {
         let registry = NodeRegistryImpl::new();
-        
+
         registry.register("test_node".to_string(), Box::new(TestNodeFactory));
-        
+
         let def = registry.get_definition("test_node");
         assert!(def.is_some());
         assert_eq!(def.unwrap().id, "test_node");
-        
+
         let def = registry.get_definition("unknown");
         assert!(def.is_none());
     }
@@ -179,9 +193,9 @@ mod tests {
     fn test_registry_clone() {
         let registry1 = NodeRegistryImpl::new();
         registry1.register("test_node".to_string(), Box::new(TestNodeFactory));
-        
+
         let registry2 = registry1.clone();
-        
+
         // Both should have access to the same factories
         assert_eq!(registry2.available_nodes().len(), 1);
     }

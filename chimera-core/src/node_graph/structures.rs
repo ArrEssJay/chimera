@@ -33,7 +33,7 @@ impl PortDefinition {
             description: None,
         }
     }
-    
+
     pub fn with_description(mut self, desc: impl Into<String>) -> Self {
         self.description = Some(desc.into());
         self
@@ -114,17 +114,17 @@ impl NodeDefinition {
             parameters: Vec::new(),
         }
     }
-    
+
     pub fn with_inputs(mut self, inputs: Vec<PortDefinition>) -> Self {
         self.inputs = inputs;
         self
     }
-    
+
     pub fn with_outputs(mut self, outputs: Vec<PortDefinition>) -> Self {
         self.outputs = outputs;
         self
     }
-    
+
     pub fn with_parameters(mut self, parameters: Vec<ParameterDefinition>) -> Self {
         self.parameters = parameters;
         self
@@ -135,16 +135,13 @@ impl NodeDefinition {
 pub trait Node: Send + Sync {
     /// Returns the unique identifier for this node instance
     fn id(&self) -> &str;
-    
+
     /// Returns the node's metadata and interface definition
     fn definition(&self) -> NodeDefinition;
-    
+
     /// Execute the node's processing logic
-    fn execute(
-        &self,
-        inputs: Vec<DataBuffer>,
-        params: JsValue,
-    ) -> Result<Vec<DataBuffer>, JsValue>;
+    fn execute(&self, inputs: Vec<DataBuffer>, params: JsValue)
+        -> Result<Vec<DataBuffer>, JsValue>;
 }
 
 /// A node instance in the graph
@@ -165,7 +162,7 @@ impl NodeInstance {
             parameters: HashMap::new(),
         }
     }
-    
+
     pub fn with_parameter(mut self, key: impl Into<String>, value: ParameterValue) -> Self {
         self.parameters.insert(key.into(), value);
         self
@@ -227,19 +224,19 @@ impl Graph {
             edges: Vec::new(),
         }
     }
-    
+
     pub fn add_node(&mut self, node: NodeInstance) {
         self.nodes.push(node);
     }
-    
+
     pub fn add_edge(&mut self, edge: Edge) {
         self.edges.push(edge);
     }
-    
+
     pub fn get_node(&self, id: &str) -> Option<&NodeInstance> {
         self.nodes.iter().find(|n| n.id == id)
     }
-    
+
     pub fn get_node_mut(&mut self, id: &str) -> Option<&mut NodeInstance> {
         self.nodes.iter_mut().find(|n| n.id == id)
     }
@@ -280,9 +277,17 @@ mod tests {
             NodeCategory::Processing,
             "A test node",
         )
-        .with_inputs(vec![PortDefinition::new("in0", "Input", DataType::BitStream)])
-        .with_outputs(vec![PortDefinition::new("out0", "Output", DataType::IQData)]);
-        
+        .with_inputs(vec![PortDefinition::new(
+            "in0",
+            "Input",
+            DataType::BitStream,
+        )])
+        .with_outputs(vec![PortDefinition::new(
+            "out0",
+            "Output",
+            DataType::IQData,
+        )]);
+
         assert_eq!(def.id, "test_node");
         assert_eq!(def.inputs.len(), 1);
         assert_eq!(def.outputs.len(), 1);
@@ -292,7 +297,7 @@ mod tests {
     fn test_node_instance() {
         let node = NodeInstance::new("node1", "bit_generator", Position::new(0.0, 0.0))
             .with_parameter("count", ParameterValue::Number(100.0));
-        
+
         assert_eq!(node.id, "node1");
         assert_eq!(node.node_type, "bit_generator");
         assert_eq!(node.parameters.len(), 1);
@@ -311,13 +316,13 @@ mod tests {
     #[test]
     fn test_graph() {
         let mut graph = Graph::new();
-        
+
         let node1 = NodeInstance::new("n1", "test", Position::new(0.0, 0.0));
         let node2 = NodeInstance::new("n2", "test", Position::new(100.0, 0.0));
-        
+
         graph.add_node(node1);
         graph.add_node(node2);
-        
+
         assert_eq!(graph.nodes.len(), 2);
         assert!(graph.get_node("n1").is_some());
         assert!(graph.get_node("n3").is_none());
@@ -326,10 +331,10 @@ mod tests {
     #[test]
     fn test_graph_edges() {
         let mut graph = Graph::new();
-        
+
         graph.add_edge(Edge::new("e1", "n1", 0, "n2", 0));
         graph.add_edge(Edge::new("e2", "n2", 0, "n3", 0));
-        
+
         assert_eq!(graph.edges.len(), 2);
     }
 
@@ -338,17 +343,23 @@ mod tests {
         let num_param = ParameterDefinition::new(
             "count",
             "Count",
-            ParameterType::Number { min: Some(0.0), max: Some(100.0) },
+            ParameterType::Number {
+                min: Some(0.0),
+                max: Some(100.0),
+            },
             ParameterValue::Number(50.0),
         );
         assert_eq!(num_param.id, "count");
-        
+
         let bool_param = ParameterDefinition::new(
             "enabled",
             "Enabled",
             ParameterType::Boolean,
             ParameterValue::Boolean(true),
         );
-        assert!(matches!(bool_param.default_value, ParameterValue::Boolean(true)));
+        assert!(matches!(
+            bool_param.default_value,
+            ParameterValue::Boolean(true)
+        ));
     }
 }

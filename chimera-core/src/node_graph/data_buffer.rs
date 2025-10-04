@@ -14,31 +14,31 @@ impl IQSample {
     pub fn new(i: f32, q: f32) -> Self {
         Self { i, q }
     }
-    
+
     pub fn magnitude(&self) -> f32 {
         (self.i * self.i + self.q * self.q).sqrt()
     }
-    
+
     pub fn phase(&self) -> f32 {
         self.q.atan2(self.i)
     }
 }
 
 /// Data buffer enum for passing data between nodes
-/// 
+///
 /// This is the core data structure for node graph execution.
 /// All data flowing through the graph must be one of these types.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DataBuffer {
     /// Sequence of bits (true = 1, false = 0)
     BitStream(Vec<bool>),
-    
+
     /// Complex IQ samples for RF signals
     IQData(Vec<IQSample>),
-    
+
     /// Audio samples (mono, normalized -1.0 to 1.0)
     AudioSamples(Vec<f32>),
-    
+
     /// Metadata key-value pairs
     Metadata(HashMap<String, String>),
 }
@@ -53,7 +53,7 @@ impl DataBuffer {
             DataBuffer::Metadata(_) => DataType::Metadata,
         }
     }
-    
+
     /// Get the size/length of the buffer
     pub fn len(&self) -> usize {
         match self {
@@ -63,7 +63,7 @@ impl DataBuffer {
             DataBuffer::Metadata(m) => m.len(),
         }
     }
-    
+
     /// Check if buffer is empty
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -134,10 +134,7 @@ mod tests {
 
     #[test]
     fn test_iq_data_buffer() {
-        let samples = vec![
-            IQSample::new(1.0, 0.0),
-            IQSample::new(0.0, 1.0),
-        ];
+        let samples = vec![IQSample::new(1.0, 0.0), IQSample::new(0.0, 1.0)];
         let buf = DataBuffer::IQData(samples);
         assert_eq!(buf.data_type(), DataType::IQData);
         assert_eq!(buf.len(), 2);
