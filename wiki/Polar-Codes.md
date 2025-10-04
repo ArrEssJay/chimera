@@ -1,6 +1,6 @@
 # Polar Codes
 
-[[Home]] | **Coding Theory** | [[Turbo Codes]] | [[LDPC Codes]]
+[[Home]] | **Coding Theory** | [[Turbo-Codes]] | [[LDPC-Codes]]
 
 ---
 
@@ -703,11 +703,11 @@ print(f"Code rate:         {K}/{N} = {K/N}")
 
 ## Related Topics
 
-- **[[Turbo Codes]]**: Iterative near-capacity codes
-- **[[LDPC Codes]]**: Modern capacity-approaching codes
-- **[[Convolutional Codes & Viterbi Decoding]]**: Classical FEC
-- **[[Forward Error Correction (FEC)]]**: General FEC overview
-- **[[Shannon's Channel Capacity Theorem]]**: Theoretical limit
+- **[[Turbo-Codes]]**: Iterative near-capacity codes
+- **[[LDPC-Codes]]**: Modern capacity-approaching codes
+- **[[Convolutional-Codes-&-Viterbi-Decoding]]**: Classical FEC
+- **[[Forward-Error-Correction-(FEC)]]**: General FEC overview
+- **[[Shannon's-Channel-Capacity-Theorem]]**: Theoretical limit
 
 ---
 

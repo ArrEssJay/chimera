@@ -1,6 +1,6 @@
 # Complete Link Budget Analysis
 
-[[Home]] | **Link Budget & System Performance** | [[Free-Space Path Loss (FSPL)]] | [[Signal-to-Noise Ratio (SNR)]]
+[[Home]] | **Link Budget & System Performance** | [[Free-Space-Path-Loss-(FSPL)]] | [[Signal-to-Noise-Ratio-(SNR)]]
 
 ---
 
@@ -186,7 +186,7 @@ $$
 = 32.45 - 20 + 67.6 = 80\ \text{dB}
 $$
 
-**See**: [[Free-Space Path Loss (FSPL)]]
+**See**: [[Free-Space-Path-Loss-(FSPL)]]
 
 ---
 
@@ -207,7 +207,7 @@ $$
 **Example**: Ka-band satellite @ 20 GHz, 5° elevation (path length ~ 11 km through atmosphere)
 - Attenuation: ~0.05 dB/km × 11 km = **0.55 dB**
 
-**See**: [[Atmospheric Effects (Ionospheric, Tropospheric)]]
+**See**: [[Atmospheric-Effects-(Ionospheric,-Tropospheric)]]
 
 ---
 
@@ -224,7 +224,7 @@ $$
 
 **At 99% availability**: Design for rain rate exceeded 1% of time (temperate: 12 mm/hr, tropical: 42 mm/hr)
 
-**See**: [[Weather Effects (Rain Fade, Fog Attenuation)]]
+**See**: [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]
 
 ---
 
@@ -239,7 +239,7 @@ $$
 | **Foliage loss** | 0.3-1 dB/m | Trees, vegetation (VHF/UHF) |
 | **Building penetration** | 5-20 dB | Indoor (depends on freq, materials) |
 
-**See**: [[Multipath Propagation & Fading (Rayleigh, Rician)]], [[Wave Polarization]]
+**See**: [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]], [[Wave-Polarization]]
 
 ---
 
@@ -297,7 +297,7 @@ Where:
 - L_impl: 2 dB
 - $P_{\text{min}} = -174 + 73 + 6 + 5 + 2 = -88$ dBm
 
-**See**: [[Noise Sources & Noise Figure]]
+**See**: [[Noise-Sources-&-Noise-Figure]]
 
 ---
 
@@ -624,13 +624,13 @@ $$
 
 ## Related Topics
 
-- **[[Free-Space Path Loss (FSPL)]]**: Dominant loss mechanism
-- **[[Signal-to-Noise Ratio (SNR)]]**: Determines required C/N
-- **[[Noise Sources & Noise Figure]]**: RX sensitivity calculation
-- **[[Energy Ratios (Es N0 and Eb N0)]]**: Alternative SNR metrics
-- **[[Weather Effects (Rain Fade, Fog Attenuation)]]**: Rain margin design
-- **[[Multipath Propagation & Fading (Rayleigh, Rician)]]**: Fade margin for mobile
-- **[[Bit Error Rate (BER)]]**: Performance metric vs SNR
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Dominant loss mechanism
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Determines required C/N
+- **[[Noise-Sources-&-Noise-Figure]]**: RX sensitivity calculation
+- **[[Energy-Ratios-(Es-N0-and-Eb-N0)]]**: Alternative SNR metrics
+- **[[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]**: Rain margin design
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]**: Fade margin for mobile
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric vs SNR
 
 ---
 

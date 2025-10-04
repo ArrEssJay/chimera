@@ -1,6 +1,6 @@
 # Amplitude-Shift Keying (ASK)
 
-[[Home]] | **Digital Modulation** | [[On-Off Keying (OOK)]] | [[QPSK Modulation]]
+[[Home]] | **Digital Modulation** | [[On-Off-Keying-(OOK)]] | [[QPSK-Modulation]]
 
 ---
 
@@ -73,7 +73,7 @@ $$
 
 **This is On-Off Keying (OOK)**
 
-**See**: [[On-Off Keying (OOK)]]
+**See**: [[On-Off-Keying-(OOK)]]
 
 ---
 
@@ -473,7 +473,7 @@ $$
 - **Costas loop**: Feedback loop with I/Q arms
 - **Pilot tone**: Transmit unmodulated carrier (reduces efficiency)
 
-**See**: [[Synchronization]]
+**See**: [[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]]
 
 ---
 
@@ -515,7 +515,7 @@ $$
 **Problem**: Fading gain $|h(t)|$ multiplies signal amplitude → ASK especially vulnerable
 
 **Mitigation**:
-- **Equalization**: Compensate for channel (see [[Channel Equalization]])
+- **Equalization**: Compensate for channel (see [[Channel-Equalization]])
 - **OFDM**: Flat fading per subcarrier
 - **Consider PSK**: Less sensitive to amplitude fading (phase-based)
 
@@ -555,12 +555,12 @@ $$
 
 ## Related Topics
 
-- **[[On-Off Keying (OOK)]]**: Binary ASK (M=2)
-- **[[QPSK Modulation]]**: 2D alternative (better than 4-ASK)
-- **[[Frequency-Shift Keying (FSK)]]**: Frequency-based modulation
-- **[[Constellation Diagrams]]**: Visualizing signal space
-- **[[Bit Error Rate (BER)]]**: Performance metric
-- **[[Synchronization]]**: Carrier recovery for coherent detection
+- **[[On-Off-Keying-(OOK)]]**: Binary ASK (M=2)
+- **[[QPSK-Modulation]]**: 2D alternative (better than 4-ASK)
+- **[[Frequency-Shift-Keying-(FSK)]]**: Frequency-based modulation
+- **[[Constellation-Diagrams]]**: Visualizing signal space
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
+- **[[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]]**: Carrier recovery for coherent detection
 
 ---
 

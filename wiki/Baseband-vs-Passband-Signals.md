@@ -1,6 +1,6 @@
 # Baseband vs Passband Signals
 
-[[Home]] | **Digital Modulation** | [[QPSK Modulation]] | [[IQ Representation]]
+[[Home]] | **Digital Modulation** | [[QPSK-Modulation]] | [[IQ-Representation]]
 
 ---
 
@@ -123,7 +123,7 @@ Where:
 - Natural representation for IQ modulation
 - Halves sampling rate requirement (no negative frequencies)
 
-**See**: [[IQ Representation]]
+**See**: [[IQ-Representation]]
 
 ---
 
@@ -463,7 +463,7 @@ $$
 - @ 2.4 GHz: ±24 kHz offset
 - @ 28 GHz (5G mmWave): ±280 kHz offset
 
-**Mitigation**: Frequency synchronization (see [[Synchronization]])
+**Mitigation**: Frequency synchronization (see [[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]])
 
 ---
 
@@ -547,12 +547,12 @@ $$
 
 ## Related Topics
 
-- **[[IQ Representation]]**: Complex baseband I/Q signals
-- **[[QPSK Modulation]]**: Example of IQ modulation
-- **[[Constellation Diagrams]]**: Visualizing baseband IQ symbols
-- **[[Synchronization]]**: Carrier frequency/phase recovery
-- **[[OFDM & Multicarrier Modulation]]**: Uses IQ modulation per subcarrier
-- **[[Free-Space Path Loss (FSPL)]]**: Why we need RF (antenna efficiency)
+- **[[IQ-Representation]]**: Complex baseband I/Q signals
+- **[[QPSK-Modulation]]**: Example of IQ modulation
+- **[[Constellation-Diagrams]]**: Visualizing baseband IQ symbols
+- **[[Synchronization-(Carrier,-Timing,-Frame)|Synchronization]]**: Carrier frequency/phase recovery
+- **[[OFDM-&-Multicarrier-Modulation]]**: Uses IQ modulation per subcarrier
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Why we need RF (antenna efficiency)
 
 ---
 

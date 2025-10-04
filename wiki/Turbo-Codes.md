@@ -1,6 +1,6 @@
 # Turbo Codes
 
-[[Home]] | **Coding Theory** | [[Convolutional Codes & Viterbi Decoding]] | [[LDPC Codes]]
+[[Home]] | **Coding Theory** | [[Convolutional-Codes-&-Viterbi-Decoding]] | [[LDPC-Codes]]
 
 ---
 
@@ -680,11 +680,11 @@ print(f"Code rate:  {len(data)}/{len(sys)+len(par1)+len(par2)} = 1/3")
 
 ## Related Topics
 
-- **[[Convolutional Codes & Viterbi Decoding]]**: Building block for Turbo
-- **[[LDPC Codes]]**: Modern alternative (5G, WiFi 6)
-- **[[Polar Codes]]**: Another near-capacity code (5G control)
-- **[[Forward Error Correction (FEC)]]**: General FEC overview
-- **[[Bit Error Rate (BER)]]**: Performance metric
+- **[[Convolutional-Codes-&-Viterbi-Decoding]]**: Building block for Turbo
+- **[[LDPC-Codes]]**: Modern alternative (5G, WiFi 6)
+- **[[Polar-Codes]]**: Another near-capacity code (5G control)
+- **[[Forward-Error-Correction-(FEC)]]**: General FEC overview
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
 
 ---
 

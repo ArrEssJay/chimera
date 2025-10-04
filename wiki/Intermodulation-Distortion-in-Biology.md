@@ -1,6 +1,6 @@
 # Intermodulation Distortion (IMD) in Biology
 
-[[Home]] | [[Non-Linear Biological Demodulation]] | [[Acoustic Heterodyning]] | [[Frey Microwave Auditory Effect]]
+[[Home]] | [[Non-Linear-Biological-Demodulation]] | [[Acoustic-Heterodyning]] | [[Frey-Microwave-Auditory-Effect]]
 
 ---
 
@@ -171,7 +171,7 @@ where $m$, $h$ are voltage-dependent gating variables.
 - Could ultrasound IMD occur *inside tissue* to stimulate mechanoreceptors?
 - Requires high intensity ($>1$ W/cm²) → safety concerns
 
-**See**: [[Acoustic Heterodyning]]
+**See**: [[Acoustic-Heterodyning]]
 
 ### 3.2 Frey Microwave Auditory Effect
 
@@ -182,7 +182,7 @@ where $m$, $h$ are voltage-dependent gating variables.
 **IMD hypothesis** ⚠️: Could two CW microwave beams at slightly different frequencies produce pulsed heating at difference frequency → mimic Frey effect?
 - Theoretical models suggest yes, but not demonstrated
 
-**See**: [[Frey Microwave Auditory Effect]]
+**See**: [[Frey-Microwave-Auditory-Effect]]
 
 ### 3.3 Deep Brain Stimulation via THz IMD
 
@@ -197,7 +197,7 @@ where $m$, $h$ are voltage-dependent gating variables.
 - Tunable frequency (adjust $f_2$)
 
 **Challenges**:
-1. **Penetration**: THz doesn't penetrate skull (see [[THz Propagation in Biological Tissue]])
+1. **Penetration**: THz doesn't penetrate skull (see [[THz-Propagation-in-Biological-Tissue]])
 2. **Nonlinearity**: Tissue nonlinearity at THz weak; IMD products likely undetectable
 3. **Intensity**: High power needed → thermal damage
 
@@ -290,7 +290,7 @@ where $\beta$ is nonlinear parameter (~5 for tissue).
 
 **High field strength**: Near electroporation threshold (>10 kV/cm) → membrane nonlinearity strong
 **Acoustic domain**: Ultrasound IMD works (tissue is more nonlinear acoustically)
-**Quantum regime**: If vibronic coupling creates nonlinear response (speculative; see [[THz Resonances in Microtubules]])
+**Quantum regime**: If vibronic coupling creates nonlinear response (speculative; see [[THz-Resonances-in-Microtubules]])
 
 ---
 
@@ -319,11 +319,11 @@ where $\beta$ is nonlinear parameter (~5 for tissue).
 
 ## 8. Connections to Other Wiki Pages
 
-- [[Non-Linear Biological Demodulation]] — Overview of nonlinear EM effects in biology
-- [[Acoustic Heterodyning]] — Ultrasound IMD (established phenomenon)
-- [[Frey Microwave Auditory Effect]] — Nonlinear microwave-acoustic transduction
-- [[THz Bioeffects Thermal and Non-Thermal]] — Thermal vs. nonlinear effects
-- [[THz Resonances in Microtubules]] — Speculative quantum nonlinearity
+- [[Non-Linear-Biological-Demodulation]] — Overview of nonlinear EM effects in biology
+- [[Acoustic-Heterodyning]] — Ultrasound IMD (established phenomenon)
+- [[Frey-Microwave-Auditory-Effect]] — Nonlinear microwave-acoustic transduction
+- [[THz-Bioeffects-Thermal-and-Non-Thermal]] — Thermal vs. nonlinear effects
+- [[THz-Resonances-in-Microtubules]] — Speculative quantum nonlinearity
 
 ---
 

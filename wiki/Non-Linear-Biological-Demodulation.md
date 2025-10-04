@@ -1,6 +1,6 @@
 # Non-Linear Biological Demodulation
 
-[[Home]] | [[AID Protocol Case Study]] | [[Hyper-Rotational Physics (HRP) Framework]]
+[[Home]] | [[AID-Protocol-Case-Study]] | [[Hyper-Rotational-Physics-(HRP)-Framework]]
 
 ---
 
@@ -28,7 +28,7 @@ That's essentially what "nonlinear demodulation" means: when two signals (like s
 
 **Non-linear biological demodulation** refers to phenomena where biological tissues act as nonlinear systems, producing new frequencies from input electromagnetic or acoustic signals. This page provides an overview of three key mechanisms explored in Part VIII.
 
-**⚠️ IMPORTANT**: While this page discusses classical non-linear effects, the [[AID Protocol Case Study]] operates via a **different mechanism**: **quantum coherence perturbation** in microtubules (see `docs/biophysical_coupling_mechanism.md`). The AID Protocol is **NOT** classical demodulation/intermodulation.
+**⚠️ IMPORTANT**: While this page discusses classical non-linear effects, the [[AID-Protocol-Case-Study]] operates via a **different mechanism**: **quantum coherence perturbation** in microtubules (see `docs/biophysical_coupling_mechanism.md`). The AID Protocol is **NOT** classical demodulation/intermodulation.
 
 **Scientific status**:
 - **Acoustic heterodyning** ✅: Well-established in tissue (medical harmonic imaging)
@@ -62,7 +62,7 @@ For input $x(t) = A_1 \cos\omega_1 t + A_2 \cos\omega_2 t$, nonlinear terms prod
 - **Harmonic imaging**: Transmit $f_0$, receive $2f_0$ (medical ultrasound standard)
 - **Parametric arrays**: Two ultrasound beams → audible difference frequency
 
-**See**: [[Acoustic Heterodyning]]
+**See**: [[Acoustic-Heterodyning]]
 
 ### 2.2 Thermoelastic Transduction ✅ (EM → Acoustic)
 
@@ -72,7 +72,7 @@ For input $x(t) = A_1 \cos\omega_1 t + A_2 \cos\omega_2 t$, nonlinear terms prod
 **Threshold**: ~1-10 µJ/cm² per pulse  
 **Key insight**: EM energy converted to acoustic (not true EM nonlinearity)
 
-**See**: [[Frey Microwave Auditory Effect]]
+**See**: [[Frey-Microwave-Auditory-Effect]]
 
 ### 2.3 Membrane Nonlinearity ⚠️ (Neural)
 
@@ -92,7 +92,7 @@ For input $x(t) = A_1 \cos\omega_1 t + A_2 \cos\omega_2 t$, nonlinear terms prod
 
 **Conclusion**: EM intermodulation negligible at sub-ablation intensities (<1 MW/cm²)
 
-**See**: [[Intermodulation Distortion in Biology]]
+**See**: [[Intermodulation-Distortion-in-Biology]]
 
 ---
 
@@ -110,7 +110,7 @@ For input $x(t) = A_1 \cos\omega_1 t + A_2 \cos\omega_2 t$, nonlinear terms prod
 
 **Challenge**: THz penetration <1 mm (skull absorption)
 
-**Details**: [[Intermodulation Distortion in Biology]]
+**Details**: [[Intermodulation-Distortion-in-Biology]]
 
 ### 3.2 Acoustic Heterodyning
 
@@ -123,7 +123,7 @@ For input $x(t) = A_1 \cos\omega_1 t + A_2 \cos\omega_2 t$, nonlinear terms prod
 **Key equation** (Westervelt):
 $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 
-**Details**: [[Acoustic Heterodyning]]
+**Details**: [[Acoustic-Heterodyning]]
 
 ### 3.3 Frey Microwave Auditory Effect
 
@@ -135,7 +135,7 @@ $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 
 **Applications ⚠️**: Non-lethal weapons, covert communication (speculative)
 
-**Details**: [[Frey Microwave Auditory Effect]]
+**Details**: [[Frey-Microwave-Auditory-Effect]]
 
 ---
 
@@ -153,7 +153,7 @@ $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 
 ## 5. Relation to AID Protocol (Important Distinction)
 
-**⚠️ CRITICAL CLARIFICATION**: The [[AID Protocol Case Study]] does **NOT** rely on classical non-linear demodulation mechanisms described on this page.
+**⚠️ CRITICAL CLARIFICATION**: The [[AID-Protocol-Case-Study]] does **NOT** rely on classical non-linear demodulation mechanisms described on this page.
 
 **AID Protocol actual mechanism** (from `docs/biophysical_coupling_mechanism.md`):
 - **Primary target**: Microtubule lattice in cortical neurons
@@ -175,7 +175,7 @@ $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 
 **Classical non-linear effects on this page**: Provide context and comparison, but are **NOT** the AID mechanism.
 
-**See**: [[AID Protocol Case Study]] for full mechanism description
+**See**: [[AID-Protocol-Case-Study]] for full mechanism description
 
 ---
 
@@ -209,24 +209,24 @@ $$p_\Delta \propto \beta k_1 k_2 A_1 A_2 L$$
 1. Coupling efficiency ~$10^{-6}$ (six orders below direct excitation)  
 2. Decoherence time likely <1 ps (IMD modulation period >> decoherence time)
 
-**See**: [[THz Resonances in Microtubules]], [[Quantum Coherence in Biological Systems]]
+**See**: [[THz-Resonances-in-Microtubules]], [[Quantum-Coherence-in-Biological-Systems]]
 
 ---
 
 ## 8. Detailed Topic Pages
 
 ### Established Phenomena ✅
-- [[Acoustic Heterodyning]] — Parametric arrays, harmonic imaging  
-- [[Frey Microwave Auditory Effect]] — Thermoelastic transduction
+- [[Acoustic-Heterodyning]] — Parametric arrays, harmonic imaging  
+- [[Frey-Microwave-Auditory-Effect]] — Thermoelastic transduction
 
 ### Speculative Mechanisms ⚠️
-- [[Intermodulation Distortion in Biology]] — EM frequency mixing  
-- [[THz Resonances in Microtubules]] — Quantum nonlinearity  
-- [[THz Bioeffects Thermal and Non-Thermal]] — Non-thermal mechanisms
+- [[Intermodulation-Distortion-in-Biology]] — EM frequency mixing  
+- [[THz-Resonances-in-Microtubules]] — Quantum nonlinearity  
+- [[THz-Bioeffects-Thermal-and-Non-Thermal]] — Non-thermal mechanisms
 
 ### Framework Context
-- [[AID Protocol Case Study]] — Speculative neuromodulation applications  
-- [[Hyper-Rotational Physics (HRP) Framework]] — Theoretical extensions
+- [[AID-Protocol-Case-Study]] — Speculative neuromodulation applications  
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] — Theoretical extensions
 
 ---
 

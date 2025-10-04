@@ -122,7 +122,7 @@ FSPL = 20 log₁₀(3.6×10⁷) + 20 log₁₀(12×10⁹) + 92.45
 
 ---
 
-### Example 4: THz Link (1 THz, 10 m) - For [[AID Protocol Case Study]]
+### Example 4: THz Link (1 THz, 10 m) - For [[AID-Protocol-Case-Study]]
 
 ```
 f = 1 THz = 1×10¹² Hz
@@ -133,7 +133,7 @@ FSPL = 20 log₁₀(10) + 20 log₁₀(1×10¹²) + 92.45
      = 352.5 dB
 ```
 
-**Extreme loss!** This is why [[Terahertz (THz) Technology|THz communications]] are short-range only.
+**Extreme loss!** This is why [[Terahertz-(THz)-Technology]] are short-range only.
 
 ---
 
@@ -324,12 +324,12 @@ Indoor: n = 4-6
 
 ## 🔗 See Also
 
-- [[Maxwell's Equations & Wave Propagation]] - Theoretical foundation
-- [[Antenna Theory Basics]] - Antenna gain (G_T, G_R)
-- [[Link Loss vs Noise]] - FSPL vs additive noise
-- [[Atmospheric Effects]] - Additional losses beyond FSPL *(coming soon)*
-- [[Multipath Propagation & Fading]] - Deviations from FSPL *(coming soon)*
-- [[Terahertz (THz) Technology]] - Extreme FSPL regime
+- [[Maxwell's-Equations-&-Wave-Propagation]] - Theoretical foundation
+- [[Antenna-Theory-Basics]] - Antenna gain (G_T, G_R)
+- [[Link-Loss-vs-Noise]] - FSPL vs additive noise
+- [[Atmospheric-Effects-(Ionospheric,-Tropospheric)|Atmospheric Effects]] - Additional losses beyond FSPL *(coming soon)*
+- [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)|Multipath Propagation & Fading]] - Deviations from FSPL
+- [[Terahertz-(THz)-Technology]] - Extreme FSPL regime
 
 ---
 

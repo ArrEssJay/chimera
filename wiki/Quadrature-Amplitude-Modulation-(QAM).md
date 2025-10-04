@@ -1,6 +1,6 @@
 # Quadrature Amplitude Modulation (QAM)
 
-[[Home]] | **Digital Modulation** | [[QPSK Modulation]] | [[8PSK & Higher-Order PSK]]
+[[Home]] | **Digital Modulation** | [[QPSK-Modulation]] | [[8PSK-&-Higher-Order-PSK]]
 
 ---
 
@@ -665,12 +665,12 @@ Where:
 
 ## Related Topics
 
-- **[[QPSK Modulation]]**: Simplest QAM (4-QAM)
-- **[[8PSK & Higher-Order PSK]]**: Phase-only modulation
-- **[[Amplitude-Shift Keying (ASK)]]**: Amplitude-only modulation
-- **[[Constellation Diagrams]]**: Visualizing QAM
-- **[[Bit Error Rate (BER)]]**: Performance analysis
-- **[[OFDM & Multicarrier Modulation]]**: Uses QAM per subcarrier
+- **[[QPSK-Modulation]]**: Simplest QAM (4-QAM)
+- **[[8PSK-&-Higher-Order-PSK]]**: Phase-only modulation
+- **[[Amplitude-Shift-Keying-(ASK)]]**: Amplitude-only modulation
+- **[[Constellation-Diagrams]]**: Visualizing QAM
+- **[[Bit-Error-Rate-(BER)]]**: Performance analysis
+- **[[OFDM-&-Multicarrier-Modulation]]**: Uses QAM per subcarrier
 
 ---
 

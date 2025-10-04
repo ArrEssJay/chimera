@@ -1,6 +1,6 @@
 # Channel Equalization
 
-[[Home]] | **System Implementation** | [[Synchronization (Carrier, Timing, Frame)]] | [[Multipath Propagation & Fading (Rayleigh, Rician)]]
+[[Home]] | **System Implementation** | [[Synchronization-(Carrier,-Timing,-Frame)]] | [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]
 
 ---
 
@@ -688,11 +688,11 @@ Received --> [SISO      <---> [Deinterleaver] <---> [SISO
 
 ## Related Topics
 
-- **[[Multipath Propagation & Fading (Rayleigh, Rician)]]**: Cause of ISI
-- **[[Channel Models (Rayleigh & Rician)]]**: Simulation models
-- **[[OFDM & Multicarrier Modulation]]**: Frequency-domain approach
-- **[[Synchronization (Carrier, Timing, Frame)]]**: Complements equalization
-- **[[MIMO & Spatial Multiplexing]]**: Multi-antenna equalization
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]**: Cause of ISI
+- **[[Channel-Models-(Rayleigh-&-Rician)]]**: Simulation models
+- **[[OFDM-&-Multicarrier-Modulation]]**: Frequency-domain approach
+- **[[Synchronization-(Carrier,-Timing,-Frame)]]**: Complements equalization
+- **[[MIMO-&-Spatial-Multiplexing]]**: Multi-antenna equalization
 
 ---
 

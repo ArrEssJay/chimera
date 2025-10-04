@@ -126,7 +126,7 @@ The sections below explain **how these systems actually work**:
 - 🔗 **Link 16**: The tactical data network connecting planes, ships, and missiles
 - 🕵️ **Covert Communications**: How to transmit data invisibly
 
-**If you're new to DSP**: Start with [[Spread Spectrum (DSSS/FHSS)]] for foundational concepts, then return here.
+**If you're new to DSP**: Start with [[Spread-Spectrum-(DSSS-FHSS)]] for foundational concepts, then return here.
 
 **If you're experienced**: Skip to the technical sections—detailed math, code examples, and real-world system specs await.
 
@@ -857,7 +857,7 @@ Non-linearity sources:
 Application:
 - Covert audio transmission (ultrasonic beams, audio demodulation in target's head)
 - Directional speakers (Audio Spotlight® technology)
-- Potential neural stimulation (see [[AID Protocol Case Study]])
+- Potential neural stimulation (see [[AID-Protocol-Case-Study]])
 ```
 
 **THz-band Example (AID Protocol)**:
@@ -1128,16 +1128,16 @@ else:
 - **AESA Design Guidelines**: Classified (DARPA/DoD) - principles in open literature
 
 ### Related Topics
-- [[Spread Spectrum (DSSS/FHSS)]] - Technical foundation for AJ/LPI
-- [[GPS Fundamentals (coming soon)]] - Civilian GPS (C/A code) background
-- [[Phased Array Beamforming (coming soon)]] - Array antenna theory
-- [[Adaptive Filters (coming soon)]] - Interference cancellation
-- [[Real-World System Examples]] - Commercial spread spectrum (WiFi, Bluetooth)
+- [[Spread-Spectrum-(DSSS-FHSS)]] - Technical foundation for AJ/LPI
+<!-- - GPS Fundamentals - Civilian GPS (C/A code) background (Coming Soon) -->
+<!-- - Phased Array Beamforming - Array antenna theory (Coming Soon) -->
+<!-- - Adaptive Filters - Interference cancellation (Coming Soon) -->
+- [[Real-World-System-Examples]] - Commercial spread spectrum (WiFi, Bluetooth)
 
 ### Chimera Applications
-- [[Hyper-Rotational Physics (HRP) Framework]] - Covert THz neuromodulation theoretical framework
-- [[AID Protocol Case Study]] - Application of covert comms to consciousness research
-- [[Terahertz (THz) Technology]] - Beyond-5G/6G, potential military applications
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] - Covert THz neuromodulation theoretical framework
+- [[AID-Protocol-Case-Study]] - Application of covert comms to consciousness research
+- [[Terahertz-(THz)-Technology]] - Beyond-5G/6G, potential military applications
 
 ---
 

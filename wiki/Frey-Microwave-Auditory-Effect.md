@@ -1,6 +1,6 @@
 # Frey Microwave Auditory Effect
 
-[[Home]] | [[Non-Linear Biological Demodulation]] | [[Acoustic Heterodyning]] | [[Intermodulation Distortion in Biology]]
+[[Home]] | [[Non-Linear-Biological-Demodulation]] | [[Acoustic-Heterodyning]] | [[Intermodulation-Distortion-in-Biology]]
 
 ---
 
@@ -314,7 +314,7 @@ where:
 
 **Similarity**: Both create sound "from nothing" (no external source).
 
-**See**: [[Acoustic Heterodyning]]
+**See**: [[Acoustic-Heterodyning]]
 
 ### 7.2 THz Bioeffects
 
@@ -324,7 +324,7 @@ where:
 - **No**: THz absorbed at skin (<1 mm penetration), never reaches cochlea.
 - Frey effect requires **volumetric heating in brain tissue** near cochlea.
 
-**See**: [[THz Bioeffects Thermal and Non-Thermal]]
+**See**: [[THz-Bioeffects-Thermal-and-Non-Thermal]]
 
 ---
 
@@ -360,11 +360,11 @@ where:
 
 ## 9. Connections to Other Wiki Pages
 
-- [[Non-Linear Biological Demodulation]] — Overview of nonlinear EM-biology interactions
-- [[Acoustic Heterodyning]] — Parametric acoustic arrays (different mechanism)
-- [[Intermodulation Distortion in Biology]] — Nonlinear mixing (Frey is not IMD, but related)
-- [[THz Bioeffects Thermal and Non-Thermal]] — Comparison to THz interactions
-- [[mmWave & THz Communications]] — Frequency context
+- [[Non-Linear-Biological-Demodulation]] — Overview of nonlinear EM-biology interactions
+- [[Acoustic-Heterodyning]] — Parametric acoustic arrays (different mechanism)
+- [[Intermodulation-Distortion-in-Biology]] — Nonlinear mixing (Frey is not IMD, but related)
+- [[THz-Bioeffects-Thermal-and-Non-Thermal]] — Comparison to THz interactions
+- [[mmWave-&-THz-Communications]] — Frequency context
 
 ---
 

@@ -1,6 +1,6 @@
 # Atmospheric Effects: Ionospheric & Tropospheric
 
-[[Home]] | **RF Propagation** | [[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]] | [[Weather Effects (Rain Fade, Fog Attenuation)]]
+[[Home]] | **RF Propagation** | [[Propagation-Modes-(Ground-Wave,-Sky-Wave,-Line-of-Sight)]] | [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]
 
 ---
 
@@ -444,9 +444,9 @@ L_{\text{total}} = L_{\text{FS}} + L_{\text{atm}} + L_{\text{rain}} + L_{\text{s
 $$
 
 Where:
-- $L_{\text{FS}}$ = Free-space path loss (see [[Free-Space Path Loss (FSPL)]])
+- $L_{\text{FS}}$ = Free-space path loss (see [[Free-Space-Path-Loss-(FSPL)]])
 - $L_{\text{atm}}$ = Clear-air atmospheric absorption (O₂, H₂O)
-- $L_{\text{rain}}$ = Rain attenuation (see [[Weather Effects (Rain Fade, Fog Attenuation)]])
+- $L_{\text{rain}}$ = Rain attenuation (see [[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]])
 - $L_{\text{scint}}$ = Tropospheric scintillation (margin for fading)
 
 ---
@@ -639,11 +639,11 @@ $$
 
 ## Related Topics
 
-- **[[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]]**: How ionosphere enables HF skywave
-- **[[Weather Effects (Rain Fade, Fog Attenuation)]]**: Rain dominates at high frequencies
-- **[[Free-Space Path Loss (FSPL)]]**: Baseline loss before atmospheric effects
-- **[[Signal-to-Noise Ratio (SNR)]]**: Atmospheric loss reduces SNR
-- **[[Electromagnetic Spectrum]]**: Frequency-dependent atmospheric behavior
+- **[[Propagation-Modes-(Ground-Wave,-Sky-Wave,-Line-of-Sight)]]**: How ionosphere enables HF skywave
+- **[[Weather-Effects-(Rain-Fade,-Fog-Attenuation)]]**: Rain dominates at high frequencies
+- **[[Free-Space-Path-Loss-(FSPL)]]**: Baseline loss before atmospheric effects
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: Atmospheric loss reduces SNR
+- **[[Electromagnetic-Spectrum]]**: Frequency-dependent atmospheric behavior
 
 ---
 

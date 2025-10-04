@@ -99,7 +99,7 @@ When you see a dot at position (I=0.707, Q=0.707), that represents the QPSK symb
 
 ## Adding Noise
 
-When [[Additive White Gaussian Noise (AWGN)]] is added:
+When [[Additive-White-Gaussian-Noise-(AWGN)]] is added:
 
 ```
 I_received = I_transmitted + N_I
@@ -110,6 +110,6 @@ Where `N_I` and `N_Q` are independent Gaussian random variables. This is why you
 
 ## See Also
 
-- [[QPSK Modulation]] - How bits map to I/Q values
-- [[Constellation Diagrams]] - Visualizing I/Q space
-- [[Additive White Gaussian Noise (AWGN)]] - How noise affects I/Q
+- [[QPSK-Modulation]] - How bits map to I/Q values
+- [[Constellation-Diagrams]] - Visualizing I/Q space
+- [[Additive-White-Gaussian-Noise-(AWGN)]] - How noise affects I/Q

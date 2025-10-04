@@ -1,6 +1,6 @@
 # The AID Protocol: HRP Framework Application
 
-**⚠️ ADVANCED THEORETICAL PHYSICS**: This page analyzes the AID Protocol as a rigorous application of the [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]] (Jones, 2025). While speculative, it is grounded in first-principles M-theory derivations and provides a worked example of consciousness-physics coupling.
+**⚠️ ADVANCED THEORETICAL PHYSICS**: This page analyzes the AID Protocol as a rigorous application of the [[Hyper-Rotational-Physics-(HRP)-Framework]] (Jones, 2025). While speculative, it is grounded in first-principles M-theory derivations and provides a worked example of consciousness-physics coupling.
 
 ---
 
@@ -62,7 +62,7 @@ This document shows how cutting-edge physics (string theory, quantum mechanics, 
 
 ## Overview
 
-The **Auditory Intermodulation Distortion (AID) Protocol** is a system design that applies the [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]] to THz neuromodulation. It demonstrates how biological quantum coherence (the **CHIMERA field**) couples to higher-dimensional bulk geometry via [[Terahertz (THz) Technology|THz]] holographic beamforming.
+The **Auditory Intermodulation Distortion (AID) Protocol** is a system design that applies the [[Hyper-Rotational-Physics-(HRP)-Framework]] to THz neuromodulation. It demonstrates how biological quantum coherence (the **CHIMERA field**) couples to higher-dimensional bulk geometry via [[Terahertz-(THz)-Technology]] holographic beamforming.
 
 **Primary mechanism document**: See `docs/biophysical_coupling_mechanism.md` for authoritative description of the quantum coherence perturbation mechanism.
 
@@ -78,12 +78,12 @@ The mechanism is **non-thermal and non-thermoelastic**, targeting the Orchestrat
 1. Apply HRP mathematical formalism to practical system design
 2. Show how link budgets close with quantum enhancement mechanisms
 3. Demonstrate THz-microtubule resonant coupling via vibronic coherence
-4. Bridge [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR theory]] and wireless engineering
+4. Bridge [[Orchestrated-Objective-Reduction-(Orch-OR)]] and wireless engineering
 5. Provide falsifiable predictions for experimental validation
 
 **Theoretical foundations**: 
-- [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]] - mathematical formalism
-- [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR]] - quantum consciousness substrate
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] - mathematical formalism
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] - quantum consciousness substrate
 - `docs/biophysical_coupling_mechanism.md` - detailed mechanism description
 
 ---
@@ -92,7 +92,7 @@ The mechanism is **non-thermal and non-thermoelastic**, targeting the Orchestrat
 
 ### Dual-Carrier THz System
 
-The AID protocol proposes two distinct [[Terahertz (THz) Technology|THz]] carriers:
+The AID protocol proposes two distinct [[Terahertz-(THz)-Technology]] carriers:
 
 ```
 Carrier 1: "Pump Beam"        Carrier 2: "Data Carrier"
@@ -232,7 +232,7 @@ Received Power: +30 - 348 - 50 = -368 dBm
 
 **⚠️ CRITICAL**: The AID Protocol mechanism is **quantum coherence perturbation**, NOT classical demodulation, thermoelastic transduction, or acoustic heterodyning. See `docs/biophysical_coupling_mechanism.md` for complete mechanism description.
 
-**From [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]]**:
+**From [[Hyper-Rotational-Physics-(HRP)-Framework]]**:
 
 The AID Protocol implements the **CHIMERA field coupling** to bulk geometry:
 

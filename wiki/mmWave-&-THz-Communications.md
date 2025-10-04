@@ -796,12 +796,12 @@ print(f"  Shannon capacity: {capacity_gbps:.2f} Gbps")
 - **IEEE 802.15.3d**: 100 Gbps WPAN (THz band)
 
 ### Related Topics
-- [[MIMO & Spatial Multiplexing]] - Beamforming foundations
-- [[OFDM & Multicarrier Modulation]] - mmWave uses OFDM
-- [[Adaptive Modulation & Coding (AMC)]] - Critical for variable mmWave channels
-- [[Atmospheric Effects (Ionospheric, Tropospheric)]] - Propagation background
-- [[Terahertz (THz) Technology]] - THz-specific content (quantum cascade lasers, imaging)
-- [[Real-World System Examples]] - 5G NR deployments
+- [[MIMO-&-Spatial-Multiplexing]] - Beamforming foundations
+- [[OFDM-&-Multicarrier-Modulation]] - mmWave uses OFDM
+- [[Adaptive-Modulation-&-Coding-(AMC)]] - Critical for variable mmWave channels
+- [[Atmospheric-Effects-(Ionospheric,-Tropospheric)]] - Propagation background
+- [[Terahertz-(THz)-Technology]] - THz-specific content (quantum cascade lasers, imaging)
+- [[Real-World-System-Examples]] - 5G NR deployments
 
 ---
 

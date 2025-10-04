@@ -220,7 +220,7 @@ Minimum: Δf = 1/(2T_b)  → h = 1 (Sunde's FSK)
 
 ### Disadvantages
 ❌ **Poor spectral efficiency** - wider bandwidth than PSK
-❌ **Moderate power efficiency** - 1-2 dB worse than [[BPSK]]
+❌ **Moderate power efficiency** - 1-2 dB worse than [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]
 ❌ **Frequency stability** - requires accurate oscillators
 ❌ **Doppler sensitivity** - frequency shifts problematic
 
@@ -239,7 +239,7 @@ Minimum: Δf = 1/(2T_b)  → h = 1 (Sunde's FSK)
 - **Bluetooth Low Energy** (GFSK - Gaussian FSK)
 - **Wireless sensor networks** - low power, simple receivers
 - **Optical fiber** (frequency-shifted laser)
-- **[[AID Protocol Case Study]]** - 12 kHz FSK sub-carrier (11,999/12,001 Hz)
+- **[[AID-Protocol-Case-Study]]** - 12 kHz FSK sub-carrier (11,999/12,001 Hz)
 
 ---
 
@@ -345,13 +345,13 @@ f₀ |     • Symbol "0"
 
 | Modulation | Bits/Symbol | Bandwidth | E_b/N₀ @ BER=10⁻⁶ | Envelope | Detection |
 |------------|-------------|-----------|-------------------|----------|-----------|
-| [[On-Off Keying (OOK)\|OOK]] | 1 | 2R_b | 13.5 dB | Variable | Non-coherent |
+| [[On-Off-Keying-(OOK)|OOK]] | 1 | 2R_b | 13.5 dB | Variable | Non-coherent |
 | **FSK** | 1 | 2R_b | 12.5 dB | Constant | Non-coherent |
 | **MSK** | 1 | 1.5R_b | 10.5 dB | Constant | Coherent |
-| [[BPSK]] | 1 | R_b | 10.5 dB | Constant | Coherent |
-| [[QPSK Modulation\|QPSK]] | 2 | R_b | 10.5 dB | Constant | Coherent |
+| [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]] | 1 | R_b | 10.5 dB | Constant | Coherent |
+| [[QPSK-Modulation|QPSK]] | 2 | R_b | 10.5 dB | Constant | Coherent |
 
-**Key insight**: FSK trades bandwidth for simplicity. [[BPSK]]/[[QPSK Modulation|QPSK]] are more efficient but require phase synchronization.
+**Key insight**: FSK trades bandwidth for simplicity. [[Binary-Phase-Shift-Keying-(BPSK)|BPSK]]/[[QPSK-Modulation]] are more efficient but require phase synchronization.
 
 ---
 
@@ -369,11 +369,11 @@ f₀ |     • Symbol "0"
 
 ## 🔗 See Also
 
-- [[On-Off Keying (OOK)]] - Simpler (amplitude modulation)
-- [[Binary Phase-Shift Keying (BPSK)]] - Alternative (phase modulation)
-- [[QPSK Modulation]] - More bits per symbol (phase)
-- [[Constellation Diagrams]] - Visualizing modulation schemes
-- [[AID Protocol Case Study]] - Uses 1 bps FSK sub-carrier (11,999/12,001 Hz)
+- [[On-Off-Keying-(OOK)]] - Simpler (amplitude modulation)
+- [[Binary-Phase-Shift-Keying-(BPSK)]] - Alternative (phase modulation)
+- [[QPSK-Modulation]] - More bits per symbol (phase)
+- [[Constellation-Diagrams]] - Visualizing modulation schemes
+- [[AID-Protocol-Case-Study]] - Uses 1 bps FSK sub-carrier (11,999/12,001 Hz)
 
 ---
 

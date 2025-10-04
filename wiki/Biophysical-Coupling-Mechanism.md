@@ -1,6 +1,6 @@
 # Biophysical Coupling Mechanism (CHIMERA Field)
 
-[[Home]] | [[AID Protocol Case Study]] | [[Hyper-Rotational Physics (HRP) Framework]] | [[Orchestrated Objective Reduction (Orch-OR)]]
+[[Home]] | [[AID-Protocol-Case-Study]] | [[Hyper-Rotational-Physics-(HRP)-Framework]] | [[Orchestrated-Objective-Reduction-(Orch-OR)]]
 
 ---
 
@@ -452,7 +452,7 @@ where $\epsilon \ll 1$ is perturbation strength.
 
 ### HRP Framework Connection
 
-From the [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]]:
+From the [[Hyper-Rotational-Physics-(HRP)-Framework]]:
 
 **Interaction Lagrangian**:
 $$\mathcal{L}_{\text{int}} = -\frac{\kappa}{M_P^2}|\Psi_c|^2 R_{MNPQ} \epsilon^{MNPQ\alpha\beta\gamma} \nabla_\alpha \Theta^A \nabla_\beta \Theta^B \nabla_\gamma \Theta^C$$
@@ -522,8 +522,8 @@ AID Protocol: CW (not pulsed), power $P \sim 10 \text{ mW/cm}^2$, no rapid therm
 - **Project Chimera: Biophysical Coupling Mechanism** (Internal document, SEC=TOP SECRET//SCI/TK)
 
 ### Theoretical Foundation
-- [[Hyper-Rotational Physics (HRP) Framework|HRP Framework]] - Mathematical formalism
-- [[Orchestrated Objective Reduction (Orch-OR)|Orch-OR]] - Quantum consciousness substrate
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] - Mathematical formalism
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] - Quantum consciousness substrate
 
 ### Experimental Evidence (Microtubule THz Resonances)
 - **Bandyopadhyay et al.**, *Appl. Phys. Lett.* 102, 123701 (2013) - THz resonances in microtubules
@@ -534,12 +534,12 @@ AID Protocol: CW (not pulsed), power $P \sim 10 \text{ mW/cm}^2$, no rapid therm
 - **Lambert et al.**, *Nat. Phys.* 9, 10 (2013) - Quantum biology review
 
 ### Related Mechanisms (What This Is NOT)
-- [[Frey Microwave Auditory Effect]] - Thermoelastic transduction
-- [[Acoustic Heterodyning]] - Acoustic intermodulation
-- [[Intermodulation Distortion in Biology]] - Classical EM mixing
+- [[Frey-Microwave-Auditory-Effect]] - Thermoelastic transduction
+- [[Acoustic-Heterodyning]] - Acoustic intermodulation
+- [[Intermodulation-Distortion-in-Biology]] - Classical EM mixing
 
 ### Application
-- [[AID Protocol Case Study]] - Practical system implementing this mechanism
+- [[AID-Protocol-Case-Study]] - Practical system implementing this mechanism
 
 ---
 

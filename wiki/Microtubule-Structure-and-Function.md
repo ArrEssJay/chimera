@@ -1,6 +1,6 @@
 # Microtubule Structure & Function
 
-[[Home]] | [[Quantum Coherence in Biological Systems]] | [[THz Resonances in Microtubules]] | [[Orchestrated Objective Reduction (Orch-OR)]]
+[[Home]] | [[Quantum-Coherence-in-Biological-Systems]] | [[THz-Resonances-in-Microtubules]] | [[Orchestrated-Objective-Reduction-(Orch-OR)]]
 
 ---
 
@@ -218,7 +218,7 @@ Some scientists propose a wild idea: that microtubules in brain cells might use 
 **Encoding schemes** (speculative):
 - **Conformational qubits**: Tubulin dimer in superposition of two conformations
 - **Electronic qubits**: Aromatic amino acids in superposed $\pi$-electron states
-- **Phononic qubits**: THz vibrational modes (see [[THz Resonances in Microtubules]])
+- **Phononic qubits**: THz vibrational modes (see [[THz-Resonances-in-Microtubules]])
 
 **Entanglement propagation**:
 - Nearest-neighbor dipole coupling: $V_{ij} \sim 10^{-3}$ eV (weak but non-zero)
@@ -310,11 +310,11 @@ Requires demonstrating:
 
 ## 7. Connections to Other Wiki Pages
 
-- [[Orchestrated Objective Reduction (Orch-OR)]] — Consciousness theory requiring microtubule quantum effects
-- [[Quantum Coherence in Biological Systems]] — General framework
-- [[THz Resonances in Microtubules]] — Vibrational modes that could sustain coherence
-- [[Terahertz (THz) Technology]] — Experimental probes
-- [[Hyper-Rotational Physics (HRP) Framework]] — Theoretical extension to consciousness
+- [[Orchestrated-Objective-Reduction-(Orch-OR)]] — Consciousness theory requiring microtubule quantum effects
+- [[Quantum-Coherence-in-Biological-Systems]] — General framework
+- [[THz-Resonances-in-Microtubules]] — Vibrational modes that could sustain coherence
+- [[Terahertz-(THz)-Technology]] — Experimental probes
+- [[Hyper-Rotational-Physics-(HRP)-Framework]] — Theoretical extension to consciousness
 
 ---
 

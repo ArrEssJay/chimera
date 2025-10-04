@@ -1,6 +1,6 @@
 # Channel Models: Rayleigh & Rician Implementation
 
-[[Home]] | **Link Budget & System Performance** | [[Multipath Propagation & Fading (Rayleigh, Rician)]] | [[Signal-to-Noise Ratio (SNR)]]
+[[Home]] | **Link Budget & System Performance** | [[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]] | [[Signal-to-Noise-Ratio-(SNR)]]
 
 ---
 
@@ -753,12 +753,12 @@ print(f"Channel estimation MSE: {10*np.log10(mse):.1f} dB")
 
 ## Related Topics
 
-- **[[Multipath Propagation & Fading (Rayleigh, Rician)]]**: Theory behind channel models
-- **[[Signal-to-Noise Ratio (SNR)]]**: SNR definition for fading channels
-- **[[Bit Error Rate (BER)]]**: Performance metric vs fading
-- **[[Complete Link Budget Analysis]]**: Using fading margin in link budget
-- **[[OFDM & Multicarrier Modulation]]**: Combats frequency-selective fading
-- **[[Channel Equalization]]**: Compensates for ISI in frequency-selective channels
+- **[[Multipath-Propagation-&-Fading-(Rayleigh,-Rician)]]**: Theory behind channel models
+- **[[Signal-to-Noise-Ratio-(SNR)]]**: SNR definition for fading channels
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric vs fading
+- **[[Complete-Link-Budget-Analysis]]**: Using fading margin in link budget
+- **[[OFDM-&-Multicarrier-Modulation]]**: Combats frequency-selective fading
+- **[[Channel-Equalization]]**: Compensates for ISI in frequency-selective channels
 
 ---
 

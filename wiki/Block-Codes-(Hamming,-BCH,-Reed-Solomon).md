@@ -1,6 +1,6 @@
 # Block Codes (Hamming, BCH, Reed-Solomon)
 
-[[Home]] | **Coding Theory** | [[Hamming Distance & Error Detection]] | [[Convolutional Codes & Viterbi Decoding]]
+[[Home]] | **Coding Theory** | [[Hamming-Distance-&-Error-Detection]] | [[Convolutional-Codes-&-Viterbi-Decoding]]
 
 ---
 
@@ -646,11 +646,11 @@ print(f"Received (2 errors): {received}")
 
 ## Related Topics
 
-- **[[Hamming Distance & Error Detection]]**: Foundation for block codes
-- **[[Convolutional Codes & Viterbi Decoding]]**: Sequential codes
-- **[[LDPC Codes]]**: Modern capacity-approaching codes
-- **[[Forward Error Correction (FEC)]]**: General FEC principles
-- **[[Bit Error Rate (BER)]]**: Performance metric
+- **[[Hamming-Distance-&-Error-Detection]]**: Foundation for block codes
+- **[[Convolutional-Codes-&-Viterbi-Decoding]]**: Sequential codes
+- **[[LDPC-Codes]]**: Modern capacity-approaching codes
+- **[[Forward-Error-Correction-(FEC)]]**: General FEC principles
+- **[[Bit-Error-Rate-(BER)]]**: Performance metric
 
 ---
 

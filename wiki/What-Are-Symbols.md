@@ -125,6 +125,6 @@ This grouping allows us to transmit more efficiently and makes the signal more r
 
 ## See Also
 
-- [[QPSK Modulation]] - How symbols are mapped to phase states
-- [[Constellation Diagrams]] - Visual representation of symbols
-- [[IQ Representation]] - Mathematical representation of symbols
+- [[QPSK-Modulation]] - How symbols are mapped to phase states
+- [[Constellation-Diagrams]] - Visual representation of symbols
+- [[IQ-Representation]] - Mathematical representation of symbols
