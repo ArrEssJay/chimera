@@ -1,0 +1,194 @@
+name: CI - React App
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'chimera-web/src-react/**'
+      - 'chimera-web/vite.config*.ts'
+      - 'chimera-web/vitest.config.ts'
+      - 'chimera-web/package.json'
+      - 'chimera-web/tsconfig*.json'
+      - '.github/workflows/ci-react.yml'
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'chimera-web/src-react/**'
+      - 'chimera-web/vite.config*.ts'
+      - 'chimera-web/vitest.config.ts'
+      - 'chimera-web/package.json'
+      - 'chimera-web/tsconfig*.json'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Run TypeScript compiler
+        working-directory: ./chimera-web
+        run: npx tsc --noEmit
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./chimera-web
+        run: npm run lint
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: ./chimera-web
+        run: npm run test:coverage
+
+      - name: Check coverage threshold
+        working-directory: ./chimera-web
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Current coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below 80% threshold"
+            exit 1
+          fi
+          echo "✅ Coverage $COVERAGE% meets 80% threshold"
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./chimera-web/coverage
+          flags: react-app
+          fail_ci_if_error: false
+
+  build-dev:
+    name: Build Development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Build development
+        working-directory: ./chimera-web
+        run: npm run build
+
+      - name: Verify build output
+        working-directory: ./chimera-web
+        run: |
+          if [ ! -d "dist-react" ] || [ ! -f "dist-react/index.html" ]; then
+            echo "❌ Build verification failed"
+            exit 1
+          fi
+          echo "✅ Development build successful"
+
+  build-prod:
+    name: Build Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Build production
+        working-directory: ./chimera-web
+        run: npm run build -- --config vite.config.prod.ts
+
+      - name: Verify build output
+        working-directory: ./chimera-web
+        run: |
+          if [ ! -d "dist-react" ] || [ ! -f "dist-react/index.html" ]; then
+            echo "❌ Build verification failed"
+            exit 1
+          fi
+          echo "✅ Production build successful"
+
+      - name: Analyze bundle size
+        working-directory: ./chimera-web
+        run: |
+          echo "## 📦 Production Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Total bundle size:"
+          du -sh dist-react/ >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "JavaScript files:"
+          find dist-react/assets -name "*.js" -exec du -h {} \; | sort -rh | head -10 >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "CSS files:"
+          find dist-react/assets -name "*.css" -exec du -h {} \; | sort -rh >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-production-build
+          path: chimera-web/dist-react
+          retention-days: 7

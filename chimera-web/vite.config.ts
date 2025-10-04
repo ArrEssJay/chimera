@@ -12,6 +12,9 @@ export default defineConfig({
   build: {
     outDir: 'dist-react',
     emptyOutDir: true,
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
+    },
   },
   resolve: {
     alias: {
