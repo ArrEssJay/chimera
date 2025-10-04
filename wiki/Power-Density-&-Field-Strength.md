@@ -4,6 +4,64 @@
 
 ---
 
+## ☀️ For Non-Technical Readers
+
+**Power density is like measuring sunlight intensity—how much energy hits each square meter. Field strength is like measuring the "force" of the electromagnetic wave at a point.**
+
+**Power Density (W/m²)**:
+- How much power passes through 1 square meter?
+- Like sunlight: ~1000 W/m² at noon (hot!)
+- Radio waves: 0.000001 W/m² = 1 µW/m² (typical WiFi)
+
+**Field Strength (V/m)**:
+- How strong is the electric field at this point?
+- Higher V/m = stronger "electromagnetic force"
+- Think of it like wind speed vs wind power
+
+**Real-world examples**:
+
+**Sunlight** (for comparison):
+- **Power density**: 1000 W/m² at Earth's surface
+- This is why solar panels work!
+
+**WiFi router** (1 meter away):
+- **Power density**: ~10 µW/m² (0.00001 W/m²)
+- **Field strength**: ~2 V/m
+- 100 million times weaker than sunlight!
+
+**Cell tower** (100 meters away):
+- **Power density**: ~0.1 µW/m²
+- **Field strength**: ~0.6 V/m
+- Regulations limit max exposure to ~10 W/m²
+
+**Why they're related**:
+- **Power density** ∝ (Field strength)²
+- Double the field strength → 4× the power density!
+- This is why moving closer to WiFi helps so much
+
+**Inverse square law**:
+- Double the distance → ¼ the power density
+- This is why:
+  - WiFi works at 50m but not 200m
+  - Cell towers need to be closer in cities
+  - Satellites need huge power (they're 36,000 km away!)
+
+**Safety limits**:
+- **Sunlight**: 1000 W/m² (safe for limited time)
+- **FCC RF limit**: 10 W/m² (safe for general public)
+- **Typical WiFi**: 0.00001 W/m² (100,000× below limit!)
+- **Your phone**: 0.001 W/m² at 1cm (10,000× below limit)
+
+**When you encounter it**:
+- **RF safety assessments**: "Max power density: 5 W/m²"
+- **Antenna specifications**: "Field strength: 50 V/m at 1 meter"
+- **EMC testing**: Measuring field strength for interference
+- **Link budget**: Converting transmit power to received power
+
+**Fun fact**: The power density from the sun is so high (1000 W/m²) that if WiFi routers were as powerful, a 100W router at 1 meter would deliver the same power density—but would violate FCC limits by 1000× and cook you like a microwave oven!
+
+---
+
 ## Overview
 
 **Power density** and **field strength** quantify the **intensity of electromagnetic radiation** at a given point in space.

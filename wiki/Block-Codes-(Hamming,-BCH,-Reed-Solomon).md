@@ -4,6 +4,71 @@
 
 ---
 
+## 🧩 For Non-Technical Readers
+
+**Block codes are like adding sudoku-style clues to your message—if some numbers get corrupted, you can solve for the missing ones using the patterns!**
+
+**The idea - Add smart redundancy**:
+1. Take a block of data (e.g., 4 bits: `1011`)
+2. Add parity bits using math (e.g., 3 extra bits: `010`)
+3. Send the whole thing: `1011010` (7 bits total)
+4. Receiver checks if the math works out
+5. If errors detected, use the math to FIX them!
+
+**Three famous block codes**:
+
+**1. Hamming Code** (invented 1950):
+- **Use case**: Computer RAM error correction
+- **Example**: (7,4) Hamming code
+  - 4 data bits + 3 parity bits = 7 total
+  - Can fix any single bit error automatically!
+- **Your computer**: Uses Hamming codes in ECC RAM
+
+**2. BCH Code** (Bose-Chaudhuri-Hocquenghem):
+- **Use case**: QR codes, flash memory, DVDs
+- **Power**: Can fix multiple errors in a block
+- **Example**: QR code can work with 30% damaged!
+- **Your phone**: Flash storage uses BCH to survive wear
+
+**3. Reed-Solomon Code** (most powerful!):
+- **Use case**: CDs, DVDs, Blu-ray, satellite TV, QR codes
+- **Power**: Can fix burst errors (many consecutive bits)
+- **Example**: CD can have 2.5mm scratch and still play!
+- **Your life**: Every CD/DVD/QR code you've used!
+
+**How Reed-Solomon saves your music**:
+- **CD without Reed-Solomon**: Tiny scratch = music skips
+- **CD with Reed-Solomon**: Can fix 4000 consecutive bad bits!
+- This is why CDs still play with scratches
+
+**Real-world magic**:
+
+**QR Code** (Reed-Solomon):
+- Generate QR code
+- Cover 30% with sticker
+- Scan → STILL WORKS! ✨
+- Reed-Solomon fills in the missing parts!
+
+**DVD scratch** (Reed-Solomon):
+- Scratch covers 2mm
+- That's ~6000 bits corrupted
+- Reed-Solomon: "I got this" ✓
+- Movie plays perfectly
+
+**The trade-off**:
+- **More redundancy** = fix more errors BUT slower/less efficient
+- Hamming (7,4): 43% overhead, fixes 1 error
+- Reed-Solomon (255,223): 14% overhead, fixes 16 errors!
+
+**Block sizes**:
+- **Small blocks** (7 bits): Simple, fast, low latency
+- **Large blocks** (255 bytes): Powerful, efficient, but complex
+- **Huge blocks** (8192 bytes): Maximum power, used in deep space!
+
+**Fun fact**: The Voyager space probes (launched 1977) use Reed-Solomon codes to transmit photos from interstellar space. With signal so weak it's barely detectable, Reed-Solomon error correction is the ONLY reason we can still see those stunning images!
+
+---
+
 ## Overview
 
 **Block codes** encode fixed-length blocks of $k$ data symbols into $n$ code symbols.

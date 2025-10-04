@@ -1,5 +1,55 @@
 # LDPC Codes
 
+## 🚀 For Non-Technical Readers
+
+**LDPC codes are like a super-smart spell-checker that can fix corruption even when 40% of letters are garbled—and they're so good, they're in your WiFi, 5G phone, and satellite TV!**
+
+**The magic - Near-perfect error correction**:
+- **Regular error correction**: Can fix maybe 10-20% errors
+- **LDPC**: Can fix 40%+ errors and get to near-theoretical limit!
+- **How**: Uses "belief propagation" — bits check each other iteratively
+
+**Real-world analogy - Sudoku**:
+- Each bit is connected to multiple parity checks
+- Like sudoku: each number constrains others
+- Even if some numbers missing, you can solve for them!
+- LDPC does this with thousands of interconnected checks
+
+**Why they're everywhere**:
+- **WiFi 5/6**: Uses LDPC for reliability
+- **5G phones**: LDPC for data channels (not control)
+- **Satellite TV (DVB-S2)**: LDPC enables HD from space
+- **Deep space**: NASA uses LDPC for Mars rovers
+- **SSDs**: Flash storage uses LDPC to survive wear
+
+**The history - Forgotten and rediscovered**:
+- **1962**: Robert Gallager invents LDPC at MIT
+- **1960s-1990s**: Forgotten (computers too slow to decode)
+- **1996**: Rediscovered! Now computers are fast enough
+- **2000s**: Adopted in WiFi, satellites, 5G
+- **Today**: One of the best error correction codes!
+
+**How good are they?**
+- **Shannon limit**: Theoretical best possible (1948)
+- **LDPC performance**: Within 0.5 dB of Shannon limit!
+- Translation: 99.9% of theoretical maximum efficiency
+- No other practical code comes this close!
+
+**Why "Low-Density Parity-Check"?**
+- **Parity-check**: Error detection using math
+- **Low-density**: Each bit only checks a few others (sparse)
+- **Benefit**: Efficient decoding (not checking everything against everything)
+
+**When you see it**:
+- **WiFi router**: "802.11ac" uses LDPC codes
+- **5G phone specs**: "LDPC encoding for eMBB"
+- **Satellite receiver**: "DVB-S2 with LDPC"
+- **SSD specs**: "LDPC ECC engine"
+
+**Fun fact**: LDPC codes were forgotten for 30 years because computers in the 1960s couldn't run the decoder in real-time. Today, your WiFi chip decodes LDPC billions of times per second without breaking a sweat!
+
+---
+
 **Low-Density Parity-Check (LDPC)** codes are a class of [[Forward Error Correction (FEC)|FEC]] codes used in Chimera and many modern communication systems.
 
 ## What Makes LDPC Special?
