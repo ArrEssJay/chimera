@@ -1,0 +1,33 @@
+# Global code owners
+* @ArrEssJay
+
+# Contract files MUST be reviewed by maintainer (LOCKED)
+# These files define stable interfaces and require approval to change
+/contracts/** @ArrEssJay
+
+# Critical infrastructure requires human approval
+/.github/workflows/** @ArrEssJay
+/Cargo.toml @ArrEssJay
+/rust-toolchain.toml @ArrEssJay
+/chimera-web/package.json @ArrEssJay
+
+# Documentation should be reviewed
+/docs/** @ArrEssJay
+README.md @ArrEssJay
+
+# Agent-owned files can auto-merge (no owner = no required review)
+# /chimera-web/src/components/**
+# /chimera-core/src/nodes/**
+# /chimera-web/tests/**
+# /chimera-core/tests/**
+
+# Core library changes need review
+/chimera-core/src/lib.rs @ArrEssJay
+/chimera-core/src/config.rs @ArrEssJay
+/chimera-core/src/ldpc.rs @ArrEssJay
+
+# Web library main files need review
+/chimera-web/src/lib.rs @ArrEssJay
+/chimera-web/src/model.rs @ArrEssJay
+/chimera-web/index.html @ArrEssJay
+/chimera-web/style.css @ArrEssJay

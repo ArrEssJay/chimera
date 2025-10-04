@@ -1,0 +1,104 @@
+name: UI Component Validation
+
+on:
+  pull_request:
+    paths:
+      - 'chimera-web/src/components/**'
+      - 'chimera-web/src/**/*.tsx'
+      - 'chimera-web/src/**/*.ts'
+
+jobs:
+  validate-component:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chimera-web
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: chimera-web/package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: TypeScript type check
+        run: npm run typecheck
+      
+      - name: Lint check
+        run: npm run lint
+      
+      - name: Format check
+        run: npm run format:check
+      
+      - name: Unit tests with coverage
+        run: npm test -- --coverage --watchAll=false
+      
+      - name: Coverage gate (≥80%)
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(node -pe "JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json')).total.lines.pct")
+            echo "Coverage: $COVERAGE%"
+            if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+              echo "❌ Coverage $COVERAGE% is below 80% threshold"
+              exit 1
+            fi
+            echo "✅ Coverage $COVERAGE% meets 80% threshold"
+          else
+            echo "⚠️  No coverage report found"
+            exit 1
+          fi
+      
+      - name: Build check
+        run: npm run build
+      
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: chimera-web/coverage/
+          retention-days: 30
+      
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './chimera-web/coverage/coverage-summary.json';
+            
+            if (fs.existsSync(path)) {
+              const coverage = JSON.parse(fs.readFileSync(path));
+              const lines = coverage.total.lines.pct;
+              const branches = coverage.total.branches.pct;
+              const functions = coverage.total.functions.pct;
+              const statements = coverage.total.statements.pct;
+              
+              const status = lines >= 80 ? '✅' : '❌';
+              
+              const body = `## ${status} Test Coverage Report
+              
+              | Metric | Coverage | Status |
+              |--------|----------|--------|
+              | Lines | ${lines}% | ${lines >= 80 ? '✅' : '❌'} |
+              | Branches | ${branches}% | ${branches >= 80 ? '✅' : '❌'} |
+              | Functions | ${functions}% | ${functions >= 80 ? '✅' : '❌'} |
+              | Statements | ${statements}% | ${statements >= 80 ? '✅' : '❌'} |
+              
+              ${lines >= 80 ? '**All coverage thresholds met!**' : '**Coverage below 80% threshold - please add more tests**'}
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
