@@ -13,6 +13,9 @@ chimera-web/coverage/**
 chimera-web/node_modules/
 chimera-web/package-lock.json
 
+# Generated documentation
+chimera-web/docs-api/
+
 # Playwright
 chimera-web/playwright-report/
 chimera-web/test-results/
