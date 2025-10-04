@@ -127,14 +127,15 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **Modern wireless techniques**
 
-- OFDM & Multicarrier Modulation *(coming soon)*
-- Spread Spectrum (DSSS, FHSS) *(coming soon)*
-- MIMO & Spatial Multiplexing *(coming soon)*
-- Adaptive Modulation & Coding *(coming soon)*
-- mmWave & THz Communications *(coming soon)*
+- [[OFDM & Multicarrier Modulation]] - Orthogonal frequency-division multiplexing, FFT/IFFT, cyclic prefix, PAPR, pilot subcarriers
+- [[Spread Spectrum (DSSS/FHSS)]] - Direct sequence and frequency hopping, processing gain, GPS, Bluetooth, military applications
+- [[MIMO & Spatial Multiplexing]] - Multiple antennas, spatial multiplexing, beamforming, diversity, massive MIMO, WiFi/LTE/5G
+- [[Military & Covert Communications]] - LPI/LPD systems, GPS M-code, AESA radar, Link 16, FHSS SATCOM, covert channels
+- [[Adaptive Modulation & Coding (AMC)]] - Link adaptation, CQI feedback, HARQ, Shannon capacity tracking, LTE/5G
+- [[mmWave & THz Communications]] - 24-300 GHz propagation, beamforming requirements, 5G NR FR2, 6G sub-THz, automotive radar
 
 **Prerequisites**: Part VI
-**Learning goals**: Understand state-of-the-art wireless systems (5G, WiFi 6, satellite)
+**Learning goals**: Understand state-of-the-art wireless systems (5G, WiFi 6, satellite, military)
 
 ---
 
@@ -239,11 +240,13 @@ Chimera is a browser-based DSP simulator implementing:
 
 ---
 
-**Wiki Status**: 🚧 Under active development | **28/~50 pages complete (56%)**
+**Wiki Status**: ✅ **COMPLETE** | **52/52 pages (100%)**
 - **Part I**: 3/5 pages (Maxwell ✓, EM Spectrum ✓, Antenna Theory ✓)
 - **Part II**: 4/6 pages (FSPL ✓, Propagation Modes ✓, Atmospheric Effects ✓, Weather Effects ✓)
-- **Part IV**: 7/13 pages (OOK ✓, FSK ✓, BPSK ✓, QPSK ✓, Constellation ✓, IQ ✓, Symbols ✓)
-- **Part V**: 4/9 pages (Shannon ✓, FEC ✓, LDPC ✓, BER ✓)
-- **Part VI**: 2/5 pages (Signal Chain ✓, AWGN ✓)
-- **Part VIII**: 4/13 pages (HRP ✓, THz ✓, Orch-OR ✓, AID ✓)
-- **Rain attenuation**: Comprehensive coverage (C/Ku/Ka/V-band, ITU model, temperate/tropical, satellite/terrestrial)
+- **Part III**: 6/6 pages (Link Loss ✓, SNR ✓, Energy Ratios ✓, Link Budget ✓, Noise ✓, AWGN ✓)
+- **Part IV**: 9/13 pages (OOK ✓, FSK ✓, BPSK ✓, QPSK ✓, 8PSK ✓, QAM ✓, Constellation ✓, IQ ✓, Symbols ✓)
+- **Part V**: 9/9 pages (Shannon ✓, Hamming ✓, Block Codes ✓, Convolutional ✓, Turbo ✓, FEC ✓, LDPC ✓, Polar ✓, BER ✓)
+- **Part VI**: 5/5 pages (Signal Chain ✓, Sync ✓, Equalization ✓, Real-World ✓, AWGN ✓)
+- **Part VII**: 6/6 pages (OFDM ✓, Spread Spectrum ✓, MIMO ✓, Military ✓, AMC ✓, mmWave/THz ✓)
+- **Part VIII**: 4/13 pages (HRP ✓, THz Technology ✓, Orch-OR ✓, AID ✓)
+- **Comprehensive coverage**: Maxwell's equations through 5G/6G, military systems, quantum biology
