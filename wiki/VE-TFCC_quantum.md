@@ -11,7 +11,7 @@ E-mail: bsonghao@uwaterloo.ca; tzeng@yorku.ca; nooijen@uwaterloo.ca
 
 ## S.1 Proof of the vacuum state condition
 
-In this section, we give a rigorous proof the vacuum state condition describe in Eq. (26) and Eq. (27) are satisfied in the thermofield coupled cluster (TFCC) formulation. Applying Baker-Campbell-Hausdorff (BCH) expansion and canonical commutation rules, we can prove that the Bosonic construction operators $(\hat{i}, \hat{i}^\dagger, \hat{i}, \hat{i}^\dagger)$ satisfy the following equations:
+In this section, we give a rigorous proof that the vacuum state condition described in Eq. (26) and Eq. (27) are satisfied in the thermofield coupled cluster (TFCC) formulation. Applying Baker-Campbell-Hausdorff (BCH) expansion and canonical commutation rules, we can prove that the Bosonic construction operators $(\hat{i}, \hat{i}^\dagger, \hat{i}, \hat{i}^\dagger)$ satisfy the following equations:
 $$\begin{aligned} e^{-\hat{u}\hat{i}} e^{\hat{i}^\dagger} &= \hat{i} + \hat{i}^\dagger, \\ e^{-\hat{u}\hat{i}^\dagger} e^{\hat{i}} &= \hat{i}^\dagger, \\ e^{-\hat{z}\hat{i}} e^{\hat{i}^\dagger} &= \hat{i} + \hat{i}^\dagger, \\ e^{-\hat{z}\hat{i}^\dagger} e^{\hat{z}} &= \hat{i}^\dagger, \end{aligned} \quad \quad (S.1)$$
 where $\hat{u} \stackrel{\text{def}}{=} \sum_i \hat{i} \hat{i}^\dagger \hat{i}^\dagger$.
 
