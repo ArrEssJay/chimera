@@ -169,16 +169,27 @@ jobs:
           echo ""
           
           # Check if files match expected ownership patterns
-          # This is a simple heuristic - can be made more sophisticated
+          # Allow PRs that are creating new components (Phase 1 setup)
+          # Flag PRs that modify existing components outside their scope
           
-          if echo "$CHANGED_FILES" | grep -E "(Button|Select|Panel|Tooltip|Badge)" | grep -qv "$AGENT_TASK"; then
-            echo "⚠️ Warning: PR might be touching files outside its assigned component"
-            echo "### ⚠️ File Ownership Warning" >> $GITHUB_STEP_SUMMARY
-            echo "This PR may be modifying files outside its assigned scope." >> $GITHUB_STEP_SUMMARY
-            echo "Please verify this is intentional." >> $GITHUB_STEP_SUMMARY
+          MODIFIED_FILES=$(git diff --name-only --diff-filter=M origin/main...HEAD)
+          COMPONENT_FILES=$(echo "$MODIFIED_FILES" | grep -E "(Button|Select|Panel|Tooltip|Badge)" || true)
+          
+          if [ ! -z "$COMPONENT_FILES" ]; then
+            # Check if modifying files outside assigned component
+            if echo "$COMPONENT_FILES" | grep -E "(Button|Select|Panel|Tooltip|Badge)" | grep -qv "$AGENT_TASK"; then
+              echo "⚠️ Warning: PR modifies files outside its assigned component"
+              echo "### ⚠️ File Ownership Warning" >> $GITHUB_STEP_SUMMARY
+              echo "This PR modifies component files outside its assigned scope." >> $GITHUB_STEP_SUMMARY
+              echo "Modified files: $COMPONENT_FILES" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ File ownership looks correct"
+              echo "### ✅ File Ownership OK" >> $GITHUB_STEP_SUMMARY
+            fi
           else
-            echo "✅ File ownership looks correct"
+            echo "✅ No conflicting file modifications detected"
             echo "### ✅ File Ownership OK" >> $GITHUB_STEP_SUMMARY
+            echo "PR is adding new files or modifying infrastructure." >> $GITHUB_STEP_SUMMARY
           fi
 
   # ============================================================================
