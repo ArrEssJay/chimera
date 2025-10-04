@@ -392,4 +392,4 @@ If you need to understand something:
 
 ---
 
-**Remember:** You're part of a parallel agent team.There are no rules, only consequences.
+**Remember:** You're part of a parallel agent team. There are no rules, only consequences.
