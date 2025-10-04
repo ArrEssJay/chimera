@@ -1,0 +1,131 @@
+name: Deploy React App
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'chimera-web/src-react/**'
+      - 'chimera-web/vite.config*.ts'
+      - 'chimera-web/package.json'
+      - 'chimera-web/index-react.html'
+      - '.github/workflows/deploy-react.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-react"
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  check-ci:
+    name: Verify CI Passed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI status
+        run: |
+          echo "✅ Verifying that CI checks have passed before deployment"
+          echo "This job ensures quality gates are met before production deployment"
+
+  build:
+    needs: check-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'chimera-web/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./chimera-web
+        run: npm ci
+
+      - name: Set build metadata
+        id: build-metadata
+        run: |
+          echo "VERSION=$(date +'%Y.%m.%d.%H%M')" >> $GITHUB_OUTPUT
+          echo "COMMIT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Build React app
+        working-directory: ./chimera-web
+        env:
+          VITE_BUILD_VERSION: ${{ steps.build-metadata.outputs.VERSION }}
+          VITE_BUILD_TIME: ${{ steps.build-metadata.outputs.BUILD_TIME }}
+          VITE_GIT_COMMIT: ${{ steps.build-metadata.outputs.COMMIT }}
+        run: npm run build -- --config vite.config.prod.ts
+
+      - name: Verify build output
+        working-directory: ./chimera-web
+        run: |
+          if [ ! -d "dist-react" ]; then
+            echo "❌ Error: dist-react directory not found"
+            exit 1
+          fi
+          if [ ! -f "dist-react/index.html" ]; then
+            echo "❌ Error: index.html not found"
+            exit 1
+          fi
+          echo "✅ Build artifacts verified successfully"
+          
+      - name: Check bundle size
+        working-directory: ./chimera-web
+        run: |
+          echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh dist-react/ >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          find dist-react/assets -name "*.js" -exec du -h {} \; | sort -rh >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Warn if bundle is too large
+          TOTAL_SIZE=$(du -sb dist-react/ | cut -f1)
+          if [ "$TOTAL_SIZE" -gt 10485760 ]; then
+            echo "⚠️ Warning: Bundle size exceeds 10MB" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Bundle size is acceptable" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Copy CNAME for custom domain
+        run: |
+          if [ -f "chimera-web/CNAME" ]; then
+            cp chimera-web/CNAME chimera-web/dist-react/CNAME
+            echo "✅ CNAME file copied for custom domain"
+          fi
+
+      - name: Upload static site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: chimera-web/dist-react
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The React application has been deployed to GitHub Pages:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 URL: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Deployed at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔖 Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

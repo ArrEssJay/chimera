@@ -13,6 +13,11 @@ chimera-web/coverage/**
 chimera-web/node_modules/
 chimera-web/package-lock.json
 
+# Environment variables (local only)
+chimera-web/.env
+chimera-web/.env.local
+chimera-web/.env.*.local
+
 # Playwright
 chimera-web/playwright-report/
 chimera-web/test-results/
