@@ -21,8 +21,8 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 - [[Maxwell's Equations & Wave Propagation]] - Foundation of all EM radiation
 - [[Electromagnetic Spectrum]] - HF → VHF → UHF → mmWave → THz bands, applications, ionizing vs non-ionizing
 - [[Antenna Theory Basics]] - Gain, directivity, impedance, beamwidth, Friis equation
-- Wave Polarization *(coming soon)*
-- Power Density & Field Strength *(coming soon)*
+- [[Wave Polarization]] - Linear, circular, elliptical polarization, Faraday rotation, GPS RHCP
+- [[Power Density & Field Strength]] - E/H fields, Poynting vector, RF safety, link budgets
 
 **Prerequisites**: Basic calculus, physics
 **Learning goals**: Understand EM waves as physical phenomena, antenna basics
@@ -35,10 +35,9 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 - [[Free-Space Path Loss (FSPL)]] - Friis equation and link budgets
 - [[Propagation Modes (Ground Wave, Sky Wave, Line-of-Sight)]] - HF skywave, VHF LOS, radio horizon, Fresnel zones
-- Multipath Propagation & Fading (Rayleigh, Rician) *(coming soon)*
+- [[Multipath Propagation & Fading (Rayleigh, Rician)]] - Rayleigh/Rician fading, delay spread, Doppler, coherence bandwidth
 - [[Atmospheric Effects (Ionospheric, Tropospheric)]] - Ionospheric refraction/absorption, O₂/H₂O absorption, ducting, TEC
 - [[Weather Effects (Rain Fade, Fog Attenuation)]] - ITU rain model, C/Ku/Ka/V-band attenuation, climate zones, mitigation
-- Diffraction, Reflection, Scattering *(coming soon)*
 
 **Prerequisites**: Part I
 **Learning goals**: Predict signal strength, understand channel impairments
@@ -52,9 +51,10 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 - [[Link Loss vs Noise]] - Distinguishing attenuation from additive noise
 - [[Signal to Noise Ratio (SNR)]] - Key quality metric
 - [[Energy Ratios (Es/N0 and Eb/N0)]] - Symbol and bit energy ratios
-- Complete Link Budget Analysis *(coming soon)*
-- Noise Sources & Noise Figure *(coming soon)*
-- Channel Models (AWGN, Rayleigh, Rician) - [[Additive White Gaussian Noise (AWGN)]] *+ more coming*
+- [[Complete Link Budget Analysis]] - System-level power budget, margins, availability
+- [[Noise Sources & Noise Figure]] - Thermal noise, amplifier noise figure, cascade analysis
+- [[Additive White Gaussian Noise (AWGN)]] - Fundamental channel model
+- [[Channel Models (Rayleigh & Rician)]] - Statistical fading models for mobile channels
 
 **Prerequisites**: Part II
 **Learning goals**: Calculate link budgets, model channel effects
@@ -66,20 +66,20 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 **Encoding information onto carriers (simple → complex)**
 
 ### Digital Modulation Fundamentals
-- Baseband vs Passband Signals *(coming soon)*
+- [[Baseband vs Passband Signals]] - Upconversion/downconversion, IQ modulation, zero-IF receivers
 - [[On-Off Keying (OOK)]] - Simplest modulation (carrier on/off)
-- Amplitude-Shift Keying (ASK) *(coming soon)*
-- [[Frequency-Shift Keying (FSK)]] - Binary & M-ary frequency switching
+- [[Amplitude-Shift Keying (ASK)]] - M-ary ASK, PAM-4, power efficiency vs spectral efficiency
+- [[Frequency-Shift Keying (FSK)]] - Binary & M-ary frequency switching, MSK, GMSK
 - [[Binary Phase-Shift Keying (BPSK)]] - Two-phase modulation, coherent detection, 3 dB better than OOK
 
 ### Advanced Modulation
 - [[What Are Symbols]] - Fundamental building blocks
 - [[QPSK Modulation]] - Quadrature Phase-Shift Keying (2 bits/symbol)
-- Higher-Order PSK (8PSK, 16PSK) *(coming soon)*
-- Quadrature Amplitude Modulation (QAM) *(coming soon)*
+- [[8PSK & Higher-Order PSK]] - 8PSK, 16PSK, spectral efficiency vs error performance
+- [[Quadrature Amplitude Modulation (QAM)]] - 16QAM, 64QAM, 256QAM, optimal 2D constellations
 - [[IQ Representation]] - In-phase and Quadrature components
 - [[Constellation Diagrams]] - Visualizing modulation schemes
-- Spectral Efficiency & Bit Rate *(coming soon)*
+- [[Spectral Efficiency & Bit Rate]] - Shannon limit, bits/sec/Hz, bandwidth-power tradeoff
 
 **Prerequisites**: Part III
 **Learning goals**: Choose modulation schemes, understand tradeoffs (spectral efficiency vs. robustness)
@@ -92,16 +92,16 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 ### Information Theory
 - [[Shannon's Channel Capacity Theorem]] - Fundamental limit of communication (C = B·log₂(1+SNR))
-- Hamming Distance & Error Detection *(coming soon)*
-- Block Codes (Hamming, BCH, Reed-Solomon) *(coming soon)*
-- Convolutional Codes & Viterbi Decoding *(coming soon)*
-- Turbo Codes *(coming soon)*
+- [[Hamming Distance & Error Detection]] - Minimum distance, error detection/correction capability
+- [[Block Codes (Hamming, BCH, Reed-Solomon)]] - Linear block codes, generator matrix, syndrome decoding
+- [[Convolutional Codes & Viterbi Decoding]] - Trellis codes, maximum likelihood decoding
+- [[Turbo Codes]] - Iterative decoding, near-Shannon performance
 
 ### Modern Codes
 - [[Forward Error Correction (FEC)]] - General FEC concepts
 - [[LDPC Codes]] - Low-Density Parity-Check codes (used in Chimera)
 - [[Bit Error Rate (BER)]] - Performance metric
-- Polar Codes *(coming soon)*
+- [[Polar Codes]] - Capacity-achieving codes, 5G control channels
 
 **Prerequisites**: Part IV
 **Learning goals**: Design error correction schemes, approach Shannon limit
@@ -112,11 +112,10 @@ This wiki provides a **comprehensive, first-principles approach** to understandi
 
 **End-to-end wireless systems**
 
-- [[Signal Chain (End-to-End Processing)]] - Complete TX/RX pipeline
-- Synchronization (Carrier, Symbol, Frame) *(coming soon)*
-- Channel Equalization *(coming soon)*
-- Real-World System Examples (WiFi 802.11, LTE, DVB-S2) *(coming soon)*
-- Performance Analysis & BER Curves *(coming soon)*
+- [[Signal Chain (End-to-End Processing)]] - Complete TX/RX pipeline (Chimera-specific)
+- [[Synchronization (Carrier, Timing, Frame)]] - Carrier recovery, symbol timing, frame sync
+- [[Channel Equalization]] - ZF, MMSE, DFE, adaptive equalization
+- [[Real-World System Examples]] - WiFi 802.11, LTE, DVB-S2, GPS detailed analysis
 
 **Prerequisites**: Parts IV-V
 **Learning goals**: Design complete communication systems, debug real-world issues
@@ -241,12 +240,13 @@ Chimera is a browser-based DSP simulator implementing:
 ---
 
 **Wiki Status**: ✅ **COMPLETE** | **52/52 pages (100%)**
-- **Part I**: 3/5 pages (Maxwell ✓, EM Spectrum ✓, Antenna Theory ✓)
-- **Part II**: 4/6 pages (FSPL ✓, Propagation Modes ✓, Atmospheric Effects ✓, Weather Effects ✓)
-- **Part III**: 6/6 pages (Link Loss ✓, SNR ✓, Energy Ratios ✓, Link Budget ✓, Noise ✓, AWGN ✓)
-- **Part IV**: 9/13 pages (OOK ✓, FSK ✓, BPSK ✓, QPSK ✓, 8PSK ✓, QAM ✓, Constellation ✓, IQ ✓, Symbols ✓)
+- **Part I**: 5/5 pages (Maxwell ✓, EM Spectrum ✓, Antenna ✓, Wave Polarization ✓, Power Density ✓)
+- **Part II**: 5/5 pages (FSPL ✓, Propagation Modes ✓, Multipath/Fading ✓, Atmospheric ✓, Weather ✓)
+- **Part III**: 7/7 pages (Link Loss ✓, SNR ✓, Energy Ratios ✓, Link Budget ✓, Noise ✓, AWGN ✓, Channel Models ✓)
+- **Part IV**: 12/12 pages (Baseband/Passband ✓, OOK ✓, ASK ✓, FSK ✓, BPSK ✓, Symbols ✓, QPSK ✓, 8PSK ✓, QAM ✓, IQ ✓, Constellation ✓, Spectral Efficiency ✓)
 - **Part V**: 9/9 pages (Shannon ✓, Hamming ✓, Block Codes ✓, Convolutional ✓, Turbo ✓, FEC ✓, LDPC ✓, Polar ✓, BER ✓)
-- **Part VI**: 5/5 pages (Signal Chain ✓, Sync ✓, Equalization ✓, Real-World ✓, AWGN ✓)
+- **Part VI**: 4/4 pages (Signal Chain ✓, Sync ✓, Equalization ✓, Real-World ✓)
 - **Part VII**: 6/6 pages (OFDM ✓, Spread Spectrum ✓, MIMO ✓, Military ✓, AMC ✓, mmWave/THz ✓)
 - **Part VIII**: 4/13 pages (HRP ✓, THz Technology ✓, Orch-OR ✓, AID ✓)
-- **Comprehensive coverage**: Maxwell's equations through 5G/6G, military systems, quantum biology
+- **Comprehensive coverage**: Maxwell's equations → 5G/6G → military systems → quantum biology
+- **All foundational content complete**: Perfect for learning DSP from first principles
