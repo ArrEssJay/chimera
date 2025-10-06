@@ -20,3 +20,5 @@ chimera-web/.playwright/
 
 # Test outputs
 chimera-web/test-output/
+.DS_Store
+.DS_Store
