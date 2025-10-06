@@ -181,7 +181,8 @@ A: The web version needs internet. Clone and build locally for offline use.
 ## Links
 
 - 🌐 **Try it**: [impermanent.io](https://impermanent.io)
-- 📖 **Docs**: [Signal Processing Concepts](./docs/signal_processing_concepts.md)
+- � **Textbook**: [Chimera Book](https://github.com/ArrEssJay/chimera-book) - Comprehensive DSP textbook (69 chapters)
+- �📖 **Docs**: [Signal Processing Concepts](./docs/signal_processing_concepts.md)
 - 🐛 **Report Issues**: [GitHub Issues](https://github.com/ArrEssJay/chimera/issues)
 - 💬 **Discuss**: [GitHub Discussions](https://github.com/ArrEssJay/chimera/discussions)
 - 📰 **Epic #40**: [Visual Node Graph](https://github.com/ArrEssJay/chimera/issues/40) (WIP)
