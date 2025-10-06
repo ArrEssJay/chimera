@@ -1,6 +1,6 @@
 ---
 description: 'Validate changes before creating PR'
-tools: ['terminal', 'workspace', 'serena']
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'serena/*', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runTests']
 ---
 
 You are validating changes before PR creation. Run this checklist:

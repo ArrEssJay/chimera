@@ -1,6 +1,6 @@
 ---
 description: 'Create issue and assign to GitHub agent for >1hr work'
-tools: ['github', 'serena', 'terminal']
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'serena/*', 'github/*', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runTests']
 ---
 
 You are preparing to hand off work to a GitHub AI agent. Follow this protocol:
