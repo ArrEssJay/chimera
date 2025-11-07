@@ -16,7 +16,9 @@
     "build-storybook": "storybook build",
     "chromatic": "chromatic --exit-zero-on-changes",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "docs:api": "typedoc",
+    "docs:api:watch": "typedoc --watch"
   },
   "dependencies": {
     "react": "^18.3.1",

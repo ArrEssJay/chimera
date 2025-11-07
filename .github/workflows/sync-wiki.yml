@@ -1,0 +1,69 @@
+name: Sync Wiki & Build PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-fonts-recommended fonts-dejavu
+          
+      - name: Build Wiki PDF
+        run: |
+          echo "📄 Building wiki PDF..."
+          bash ./scripts/export_wiki_to_pdf.sh
+          
+      - name: Checkout wiki repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Sync wiki files
+        run: |
+          echo "📚 Syncing wiki pages from main repo to wiki..."
+          rsync -av --delete --exclude='.git' wiki/ wiki-repo/
+          
+      - name: Commit and push wiki changes
+        working-directory: wiki-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          
+          if git diff --cached --quiet; then
+            echo "✅ No wiki changes to sync"
+          else
+            git commit -m "Auto-sync from main repo - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push origin master
+            echo "✅ Wiki published successfully!"
+          fi
+          
+      - name: Commit and push PDF to main repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add chimera-wiki.pdf
+          
+          if git diff --cached --quiet; then
+            echo "✅ No PDF changes"
+          else
+            git commit -m "docs: update wiki PDF export [skip ci]"
+            git push origin main
+            echo "✅ PDF published to main repo!"
+          fi

@@ -232,6 +232,7 @@ version = "0.1.0"
 dependencies = [
  "approx 0.5.1",
  "getrandom 0.2.16",
+ "js-sys",
  "ldpc",
  "ndarray 0.15.6",
  "num-complex 0.4.6",
@@ -240,9 +241,11 @@ dependencies = [
  "rand_distr",
  "rayon",
  "serde",
+ "serde-wasm-bindgen 0.6.5",
  "serde_with",
  "sparse-bin-mat",
  "thiserror",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -10,6 +10,7 @@ pub mod decoder;
 pub mod diagnostics;
 pub mod encoder;
 pub mod ldpc;
+pub mod node_graph;
 pub mod utils;
 
 use std::f64::consts::TAU;
