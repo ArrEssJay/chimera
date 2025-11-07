@@ -1,0 +1,39 @@
+{
+  "entryPoints": ["src-react"],
+  "entryPointStrategy": "expand",
+  "out": "docs-api",
+  "name": "Chimera React Components API",
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.stories.tsx",
+    "**/node_modules/**"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "readme": "none",
+  "plugin": ["typedoc-plugin-markdown"],
+  "gitRevision": "main",
+  "includeVersion": true,
+  "sort": ["source-order"],
+  "categorizeByGroup": true,
+  "defaultCategory": "Components",
+  "categoryOrder": [
+    "Components",
+    "Stores",
+    "Types",
+    "Utilities",
+    "*"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "searchInComments": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}
