@@ -1,6 +1,10 @@
 /* Import existing design tokens from parent style.css */
 @import '../../style.css';
 
+/* Import responsive and accessibility styles */
+@import './responsive.css';
+@import './accessibility.css';
+
 /* Additional React-specific styles */
 * {
   box-sizing: border-box;

@@ -1,0 +1,431 @@
+/**
+ * Responsive Design & Accessibility Styles
+ * 
+ * Breakpoints:
+ * - Mobile: < 640px
+ * - Tablet: 640px - 1024px
+ * - Desktop: > 1024px
+ * 
+ * WCAG 2.1 AA Compliant
+ */
+
+/* ==================== CSS Variables for Spacing ==================== */
+:root {
+  /* Spacing scale for responsive design */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+
+  /* Touch target minimum size (WCAG 2.1 AA) */
+  --touch-target-min: 44px;
+
+  /* Focus outline */
+  --focus-outline-width: 2px;
+  --focus-outline-offset: 2px;
+  --focus-outline-color: var(--accent, lch(65% 40 210));
+
+  /* Responsive font sizes */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+}
+
+/* ==================== Focus Styles (Keyboard Navigation) ==================== */
+
+/* Remove default outline, replace with custom visible focus */
+*:focus {
+  outline: none;
+}
+
+/* Visible focus indicator for all interactive elements */
+*:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+  border-radius: 2px;
+}
+
+/* Enhanced focus for buttons */
+button:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: 0 0 0 4px rgba(65, 140, 210, 0.2);
+}
+
+/* Enhanced focus for inputs */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: 1px;
+  border-color: var(--focus-outline-color);
+}
+
+/* Focus for links */
+a:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+  text-decoration: underline;
+}
+
+/* ==================== Skip Navigation Link ==================== */
+
+.skip-to-main {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  z-index: 9999;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--accent);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s ease;
+}
+
+.skip-to-main:focus {
+  top: 0;
+  outline: var(--focus-outline-width) solid var(--text-primary);
+  outline-offset: -4px;
+}
+
+/* ==================== Touch Targets (Mobile Accessibility) ==================== */
+
+/* Ensure all interactive elements meet minimum touch target size */
+@media (max-width: 640px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .chimera-button,
+  .chimera-select__trigger {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  /* Smaller buttons still need adequate touch targets */
+  .chimera-button--sm {
+    min-height: var(--touch-target-min);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  /* Icon-only buttons need explicit sizing */
+  button[aria-label]:not(:has(*)) {
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+  }
+}
+
+/* ==================== Mobile Responsive Styles (< 640px) ==================== */
+
+@media (max-width: 640px) {
+  /* Base font size adjustment */
+  html {
+    font-size: 14px;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  .header-content {
+    width: 100%;
+  }
+
+  .logo-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .help-hint {
+    width: 100%;
+  }
+
+  /* Main content padding */
+  .main-grid {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  /* Panel adjustments */
+  .panel {
+    padding: var(--spacing-md);
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  /* Control grid to single column */
+  .control-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  /* Chart grid adjustments */
+  .chart-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  /* Node graph single column */
+  .node-graph {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  /* Metrics grid adjustments */
+  .telemetry-panel .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  /* Log columns single column */
+  .log-columns {
+    grid-template-columns: 1fr;
+  }
+
+  /* Frame table scrollable */
+  .frame-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Footer adjustments */
+  .footer-content {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  /* Field inline to stacked */
+  .field-inline {
+    grid-template-columns: 1fr;
+  }
+
+  /* Audio actions wrap */
+  .audio-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .audio-actions button {
+    width: 100%;
+  }
+}
+
+/* ==================== Tablet Responsive Styles (640px - 1024px) ==================== */
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  /* Header adjustments */
+  .app-header {
+    padding: var(--spacing-lg);
+  }
+
+  /* Main content */
+  .main-grid {
+    padding: var(--spacing-lg);
+    gap: var(--spacing-lg);
+  }
+
+  /* Control grid two columns */
+  .control-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  /* Chart grid two columns */
+  .chart-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  /* Node graph two columns */
+  .node-graph {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+
+  /* Metrics grid two columns */
+  .telemetry-panel .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==================== Desktop Optimizations (> 1024px) ==================== */
+
+@media (min-width: 1024px) {
+  /* Full node graph layout */
+  .node-graph {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* Multi-column layouts */
+  .chart-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .telemetry-panel .metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+/* ==================== High Contrast Mode Support ==================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --bg: lch(0% 0 0);
+    --text-primary: lch(100% 0 0);
+    --border-color: lch(50% 0 0);
+    --accent: lch(70% 50 210);
+  }
+
+  /* Ensure borders are visible */
+  .panel,
+  .chimera-panel,
+  button,
+  input,
+  select,
+  textarea {
+    border-width: 2px;
+  }
+
+  /* Stronger focus indicators */
+  *:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* ==================== Reduced Motion Support ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==================== Print Styles ==================== */
+
+@media print {
+  /* Hide non-essential elements */
+  .app-header,
+  .app-footer,
+  button,
+  .run-controls {
+    display: none;
+  }
+
+  /* Optimize for print */
+  .main-grid,
+  .panel {
+    break-inside: avoid;
+  }
+
+  /* High contrast for print */
+  body {
+    background: white;
+    color: black;
+  }
+
+  .panel {
+    border: 1px solid black;
+  }
+}
+
+/* ==================== Screen Reader Only Content ==================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Make screen reader content visible when focused */
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ==================== Keyboard Navigation Enhancements ==================== */
+
+/* Visible focus for custom components */
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+}
+
+/* Focus within for containers */
+.chimera-select:focus-within {
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+  border-radius: 4px;
+}
+
+/* ==================== Mobile Orientation ==================== */
+
+@media (max-width: 640px) and (orientation: landscape) {
+  /* Optimize for landscape mobile view */
+  .node-graph {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==================== Large Screen Optimizations (> 1600px) ==================== */
+
+@media (min-width: 1600px) {
+  .main-grid,
+  .app-header,
+  .app-footer {
+    max-width: 1600px;
+  }
+}
+
+/* ==================== Text Zoom Support ==================== */
+
+/* Ensure layouts don't break when text is zoomed to 200% */
+@media (min-width: 640px) {
+  .control-grid,
+  .chart-grid,
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  }
+}
