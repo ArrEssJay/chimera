@@ -174,7 +174,7 @@ jobs:
           MODIFIED_FILES=$(git diff --name-only --diff-filter=M origin/main...HEAD)
           COMPONENT_FILES=$(echo "$MODIFIED_FILES" | grep -E "(Button|Select|Panel|Tooltip|Badge)" || true)
           
-          if [ -n "$COMPONENT_FILES" ]; then
+          if [ ! -z "$COMPONENT_FILES" ]; then
             # Check if modifying files outside assigned component
             if echo "$COMPONENT_FILES" | grep -E "(Button|Select|Panel|Tooltip|Badge)" | grep -qv "$AGENT_TASK"; then
               echo "⚠️ Warning: PR modifies files outside its assigned component"
