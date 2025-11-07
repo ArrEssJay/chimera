@@ -191,11 +191,11 @@ export interface IQSample {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     #[cfg(target_arch = "wasm32")]
     fn test_wasm_registry_creation() {
+        use super::WasmNodeRegistry;
+        
         let registry = WasmNodeRegistry::new();
         let result = registry.available_nodes();
         assert!(result.is_ok());
