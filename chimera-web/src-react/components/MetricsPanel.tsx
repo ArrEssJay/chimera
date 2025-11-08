@@ -5,18 +5,58 @@
  * and processing logs from the backend.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SimulationReport, DemodulationDiagnostics } from '../types';
+import { getWASMDSPService, StreamData } from '../services/WASMDSPService';
 
 export interface MetricsPanelProps {
   report: SimulationReport | null;
   diagnostics: DemodulationDiagnostics | null;
   logs: string[];
   isProcessing: boolean;
+  decodedBitstream?: string;
+  ber?: number;
 }
 
-const MetricsPanel: React.FC<MetricsPanelProps> = ({ report, diagnostics, logs, isProcessing }) => {
+const MetricsPanel: React.FC<MetricsPanelProps> = ({ 
+  report, 
+  diagnostics, 
+  logs, 
+  isProcessing,
+  decodedBitstream: propDecodedBitstream,
+  ber: propBer 
+}) => {
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const [streamData, setStreamData] = useState<StreamData | null>(null);
+  const [accumulatedText, setAccumulatedText] = useState<string>('');  
+  
+  // Subscribe to streaming data
+  useEffect(() => {
+    const service = getWASMDSPService();
+    const subscriptionId = 'metrics-panel';
+    
+    service.subscribe(subscriptionId, (data) => {
+      setStreamData(data);
+      if (data.decodedText) {
+        setAccumulatedText(prev => prev + data.decodedText);
+      }
+    });
+    
+    return () => {
+      service.unsubscribe(subscriptionId);
+    };
+  }, []);
+  
+  // Reset accumulated text when processing stops
+  useEffect(() => {
+    if (!isProcessing) {
+      setAccumulatedText('');
+      setStreamData(null);
+    }
+  }, [isProcessing]);
+  
+  const decodedBitstream = accumulatedText || propDecodedBitstream;
+  const ber = streamData?.ber ?? propBer;
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -53,6 +93,49 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({ report, diagnostics, logs, 
           )}
         </div>
       </div>
+
+      {/* Streaming Data */}
+      {isProcessing && (
+        <>
+          <div className="metrics-section">
+            <h3>Live Decoded Data</h3>
+            <div className="recovered-message">
+              {decodedBitstream || <em className="empty-message">Waiting for data...</em>}
+            </div>
+            {decodedBitstream && (
+              <div className="metric-detail">
+                {decodedBitstream.length} characters decoded
+              </div>
+            )}
+          </div>
+
+          {ber !== undefined && (
+            <div className="metrics-section">
+              <h3>Current BER</h3>
+              <div className="metric-card post-fec">
+                <div className="metric-value">{formatBER(ber)}</div>
+                <div className="metric-detail">Real-time bit error rate</div>
+              </div>
+            </div>
+          )}
+          
+          {streamData && (
+            <div className="metrics-section">
+              <h3>Signal Quality</h3>
+              <div className="info-grid">
+                <div className="info-row">
+                  <span className="info-label">Constellation Points:</span>
+                  <span className="info-value">{streamData.constellationI.length}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">FFT Bins:</span>
+                  <span className="info-value">{streamData.fftMagnitude.length}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* BER Statistics */}
       {report && (

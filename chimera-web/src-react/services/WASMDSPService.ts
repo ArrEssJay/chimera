@@ -19,18 +19,14 @@ export interface StreamData {
   constellationI: Float32Array;
   constellationQ: Float32Array;
   fftMagnitude: Float32Array;
-  fftPhase: Float32Array;
   ber: number;
   decodedText: string;
+  timingError: number;
+  meanEvm: number;
+  peakEvm: number;
+  syncFound: boolean;
+  symbolCount: number;
   timestamp: number;
-  // Additional metrics for display
-  preFecBer?: number;
-  postFecBer?: number;
-  syncFound?: boolean;
-  syncPosition?: number;
-  meanEvm?: number;
-  frameCount?: number;
-  logs?: string[];
 }
 
 export type DataCallback = (data: StreamData) => void;
@@ -192,9 +188,13 @@ export class WASMDSPService {
         constellationI: output.constellation_i,
         constellationQ: output.constellation_q,
         fftMagnitude: output.fft_magnitude,
-        fftPhase: output.fft_phase,
         ber: output.ber,
         decodedText: output.decoded_text,
+        timingError: output.timing_error,
+        meanEvm: output.mean_evm,
+        peakEvm: output.peak_evm,
+        syncFound: output.sync_found,
+        symbolCount: output.symbol_count,
         timestamp: now,
       };
 
@@ -223,6 +223,7 @@ export class WASMDSPService {
   /**
    * Notify metrics subscribers
    */
+  // @ts-expect-error - Reserved for future metrics functionality
   private notifyMetricsSubscribers(metrics: any): void {
     this.metricsSubscribers.forEach((callback) => {
       try {

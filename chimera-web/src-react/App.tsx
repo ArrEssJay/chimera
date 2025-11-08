@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
 import VisualizationPanel from './components/VisualizationPanel';
-import MetricsPanel from './components/MetricsPanel';
 import { getWASMDSPService } from './services/WASMDSPService';
-import { SimulationConfig, SimulationReport, DemodulationDiagnostics } from './types';
+import { SimulationConfig } from './types';
 
 const App: React.FC = () => {
   const [config, setConfig] = useState<SimulationConfig>({
@@ -16,9 +15,14 @@ const App: React.FC = () => {
 
   const [isDSPRunning, setIsDSPRunning] = useState(false);
   const [showVisualization, setShowVisualization] = useState(true);
-  const [report, setReport] = useState<SimulationReport | null>(null);
-  const [diagnostics, setDiagnostics] = useState<DemodulationDiagnostics | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [streamData, setStreamData] = useState<{
+    decodedText: string;
+    ber: number;
+    constellationI: Float32Array;
+    constellationQ: Float32Array;
+    fftMagnitude: Float32Array;
+  } | null>(null);
   const [dspService] = useState(() => getWASMDSPService());
 
   useEffect(() => {
@@ -27,8 +31,20 @@ const App: React.FC = () => {
       setLogs(newLogs);
     });
 
+    // Subscribe to streaming data
+    dspService.subscribe('app-stream', (data) => {
+      setStreamData({
+        decodedText: data.decodedText,
+        ber: data.ber,
+        constellationI: data.constellationI,
+        constellationQ: data.constellationQ,
+        fftMagnitude: data.fftMagnitude,
+      });
+    });
+
     return () => {
       dspService.unsubscribeFromLogs('app-logs');
+      dspService.unsubscribe('app-stream');
     };
   }, [dspService]);
 
@@ -149,17 +165,10 @@ const App: React.FC = () => {
           <VisualizationPanel
             isProcessing={isDSPRunning}
             showPlots={showVisualization}
+            streamData={streamData}
+            logs={logs}
           />
         </main>
-
-        <aside className="sidebar-right">
-          <MetricsPanel
-            report={report}
-            diagnostics={diagnostics}
-            logs={logs}
-            isProcessing={isDSPRunning}
-          />
-        </aside>
       </div>
     </div>
   );

@@ -15,20 +15,26 @@ use std::f64::consts::TAU;
 pub struct StreamingOutput {
     /// Audio samples (modulated carrier)
     pub audio_samples: Vec<f32>,
-    /// Baseband I component
-    pub baseband_i: Vec<f32>,
-    /// Baseband Q component
-    pub baseband_q: Vec<f32>,
     /// Constellation points (I component) after demodulation
     pub constellation_i: Vec<f32>,
     /// Constellation points (Q component) after demodulation
     pub constellation_q: Vec<f32>,
+    /// FFT magnitude (dB)
+    pub fft_magnitude: Vec<f32>,
     /// Decoded data bytes
     pub decoded_data: Vec<u8>,
-    /// BER samples
-    pub ber_samples: Vec<f32>,
-    /// Timing error
+    /// Bit error rate
+    pub ber: f32,
+    /// Timing error (fractional samples)
     pub timing_error: f64,
+    /// Mean EVM (Error Vector Magnitude)
+    pub mean_evm: f32,
+    /// Peak EVM
+    pub peak_evm: f32,
+    /// Sync found flag
+    pub sync_found: bool,
+    /// Number of symbols decoded
+    pub symbol_count: usize,
 }
 
 /// Streaming DSP pipeline
@@ -90,10 +96,6 @@ impl StreamingPipeline {
                 &self.protocol,
             );
             
-            // Extract outputs
-            output.baseband_i = encoding.qpsk_symbols.iter().map(|c| c.re as f32).collect();
-            output.baseband_q = encoding.qpsk_symbols.iter().map(|c| c.im as f32).collect();
-            
             // Generate audio from baseband
             if let Some(clean_signal) = encoding.clean_signal.as_slice() {
                 output.audio_samples = self.iq_to_audio(clean_signal);
@@ -105,11 +107,47 @@ impl StreamingPipeline {
             output.constellation_q = demodulation.diagnostics.received_symbols_q.iter()
                 .map(|&v| v as f32).collect();
             
+            // Compute FFT of constellation
+            let baseband_i: Vec<f32> = encoding.qpsk_symbols.iter().map(|c| c.re as f32).collect();
+            let baseband_q: Vec<f32> = encoding.qpsk_symbols.iter().map(|c| c.im as f32).collect();
+            let fft_processor = FFTProcessor::new(512);
+            let fft_result = fft_processor.process(&baseband_i, &baseband_q);
+            output.fft_magnitude = fft_result.magnitude;
+            
             // Decoded data
             output.decoded_data = demodulation.decoded_bitstream.clone();
             
-            // BER
-            output.ber_samples.push(demodulation.report.post_fec_ber as f32);
+            // Compute EVM from constellation points
+            let (mean_evm, peak_evm) = if !demodulation.diagnostics.received_symbols_i.is_empty() {
+                let mut evm_sum = 0.0_f64;
+                let mut max_evm = 0.0_f64;
+                let count = demodulation.diagnostics.received_symbols_i.len();
+                
+                for i in 0..count {
+                    let i_val = demodulation.diagnostics.received_symbols_i[i];
+                    let q_val = demodulation.diagnostics.received_symbols_q[i];
+                    
+                    // Find closest reference point (QPSK: ±1, ±1)
+                    let ref_i = if i_val >= 0.0 { 1.0 } else { -1.0 };
+                    let ref_q = if q_val >= 0.0 { 1.0 } else { -1.0 };
+                    
+                    // EVM is normalized error magnitude
+                    let error = ((i_val - ref_i).powi(2) + (q_val - ref_q).powi(2)).sqrt();
+                    evm_sum += error;
+                    max_evm = max_evm.max(error);
+                }
+                
+                (evm_sum / count as f64, max_evm)
+            } else {
+                (0.0, 0.0)
+            };
+            
+            // Metrics
+            output.ber = demodulation.report.post_fec_ber as f32;
+            output.mean_evm = mean_evm as f32;
+            output.peak_evm = peak_evm as f32;
+            output.sync_found = !demodulation.decoded_bitstream.is_empty(); // Assume sync if we got data
+            output.symbol_count = demodulation.diagnostics.received_symbols_i.len();
             
             self.frame_counter += 1;
         }

@@ -3,7 +3,7 @@
 //! Exposes the streaming pipeline to JavaScript for use in web applications.
 
 use wasm_bindgen::prelude::*;
-use chimera_core::streaming::{StreamingPipeline, FFTProcessor};
+use chimera_core::streaming::StreamingPipeline;
 use chimera_core::config::{SimulationConfig, ProtocolConfig, LDPCConfig};
 use js_sys::Float32Array;
 use serde::{Deserialize, Serialize};
@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 #[wasm_bindgen]
 pub struct WASMStreamingDSP {
     pipeline: StreamingPipeline,
-    fft_processor: FFTProcessor,
 }
 
 #[wasm_bindgen]
@@ -30,7 +29,6 @@ impl WASMStreamingDSP {
         
         Ok(WASMStreamingDSP {
             pipeline: StreamingPipeline::new(sim, protocol, ldpc),
-            fft_processor: FFTProcessor::new(2048),
         })
     }
     
@@ -50,25 +48,35 @@ impl WASMStreamingDSP {
         // Process through pipeline
         let output = self.pipeline.process_chunk(&input_bytes);
         
-        // Compute FFT of baseband signal
-        let fft_result = if !output.baseband_i.is_empty() && !output.baseband_q.is_empty() {
-            self.fft_processor.process(&output.baseband_i, &output.baseband_q)
-        } else {
-            chimera_core::streaming::FFTResult {
-                magnitude: vec![],
-                phase: vec![],
-            }
-        };
+        self.create_output(output)
+    }
+    
+    /// Process raw bytes and return output
+    #[wasm_bindgen]
+    pub fn process(&mut self, input_data: &[u8]) -> Result<WASMStreamOutput, JsValue> {
+        let output = self.pipeline.process_chunk(input_data);
+        self.create_output(output)
+    }
+    
+    /// Helper to create WASM output from streaming output
+    fn create_output(&mut self, output: chimera_core::streaming::StreamingOutput) -> Result<WASMStreamOutput, JsValue> {
+        
+        // Convert decoded bytes to string
+        let decoded_text = String::from_utf8_lossy(&output.decoded_data).to_string();
         
         // Package for JavaScript
         Ok(WASMStreamOutput {
             audio: Float32Array::from(&output.audio_samples[..]),
             constellation_i: Float32Array::from(&output.constellation_i[..]),
             constellation_q: Float32Array::from(&output.constellation_q[..]),
-            fft_magnitude: Float32Array::from(&fft_result.magnitude[..]),
-            fft_phase: Float32Array::from(&fft_result.phase[..]),
-            ber: output.ber_samples.last().copied().unwrap_or(0.0),
-            decoded_text: String::from_utf8_lossy(&output.decoded_data).to_string(),
+            fft_magnitude: Float32Array::from(&output.fft_magnitude[..]),
+            ber: output.ber,
+            decoded_text,
+            timing_error: output.timing_error,
+            mean_evm: output.mean_evm,
+            peak_evm: output.peak_evm,
+            sync_found: output.sync_found,
+            symbol_count: output.symbol_count,
         })
     }
     
@@ -106,9 +114,13 @@ pub struct WASMStreamOutput {
     constellation_i: Float32Array,
     constellation_q: Float32Array,
     fft_magnitude: Float32Array,
-    fft_phase: Float32Array,
     ber: f32,
     decoded_text: String,
+    timing_error: f64,
+    mean_evm: f32,
+    peak_evm: f32,
+    sync_found: bool,
+    symbol_count: usize,
 }
 
 #[wasm_bindgen]
@@ -134,11 +146,6 @@ impl WASMStreamOutput {
     }
     
     #[wasm_bindgen(getter)]
-    pub fn fft_phase(&self) -> Float32Array {
-        self.fft_phase.clone()
-    }
-    
-    #[wasm_bindgen(getter)]
     pub fn ber(&self) -> f32 {
         self.ber
     }
@@ -146,6 +153,31 @@ impl WASMStreamOutput {
     #[wasm_bindgen(getter)]
     pub fn decoded_text(&self) -> String {
         self.decoded_text.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn timing_error(&self) -> f64 {
+        self.timing_error
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn mean_evm(&self) -> f32 {
+        self.mean_evm
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn peak_evm(&self) -> f32 {
+        self.peak_evm
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn sync_found(&self) -> bool {
+        self.sync_found
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn symbol_count(&self) -> usize {
+        self.symbol_count
     }
 }
 

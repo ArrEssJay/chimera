@@ -84,12 +84,41 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     const magnitude = latestDataRef.current;
     if (!magnitude || magnitude.length === 0) {
       // Draw empty state
-      ctx.fillStyle = '#1a1a1a';
+      ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, width, height);
-      ctx.fillStyle = '#888888';
+      
+      // Draw grid even when no data
+      if (showGrid) {
+        ctx.strokeStyle = '#222222';
+        ctx.lineWidth = 1;
+        
+        // Horizontal lines
+        for (let i = 0; i <= 4; i++) {
+          const y = (i / 4) * height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+        
+        // Vertical lines
+        for (let i = 0; i <= 10; i++) {
+          const x = (i / 10) * width;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.fillStyle = '#666666';
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Waiting for data...', width / 2, height / 2);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Waiting for data...', width / 2, height / 2 - 10);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#555555';
+      ctx.fillText('Start DSP processing to see spectrum', width / 2, height / 2 + 15);
       return;
     }
 

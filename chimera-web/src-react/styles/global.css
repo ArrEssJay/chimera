@@ -130,8 +130,7 @@ code {
   overflow: hidden;
 }
 
-.sidebar-left,
-.sidebar-right {
+.sidebar-left {
   width: 320px;
   background: #1a1a1a;
   border-right: 1px solid #333;
@@ -139,17 +138,13 @@ code {
   padding: 1.5rem;
 }
 
-.sidebar-right {
-  border-right: none;
-  border-left: 1px solid #333;
-}
-
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
   background: #0a0a0a;
+  padding: 2rem;
 }
 
 /* ConfigPanel Styles */
@@ -589,4 +584,117 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Diagnostics Section */
+.diagnostics-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #333;
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.diagnostic-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.diagnostic-card.wide {
+  grid-column: span 2;
+}
+
+.diagnostic-card h3 {
+  font-size: 1.1rem;
+  color: #00d4ff;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.diagnostic-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diagnostic-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #2a2a2a;
+  font-size: 0.9rem;
+}
+
+.diagnostic-table td:first-child {
+  color: #888;
+  font-weight: 500;
+}
+
+.diagnostic-table td.value {
+  text-align: right;
+  color: #00d4ff;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.diagnostic-table td.value.success {
+  color: #00d9a5;
+}
+
+.diagnostic-table td.value.error {
+  color: #ff6b6b;
+}
+
+.diagnostic-table tr:last-child td {
+  border-bottom: none;
+}
+
+.decoded-output,
+.logs-output {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 1rem;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #00ff88;
+  line-height: 1.5;
+}
+
+.logs-output {
+  color: #e0e0e0;
+}
+
+.log-line {
+  margin-bottom: 0.25rem;
+  color: #aaa;
+}
+
+.decoded-output .empty,
+.logs-output .empty {
+  color: #666;
+  font-style: italic;
+}
+
+/* Update visualization grid to be side-by-side */
+.visualization-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.visualization-item {
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
 }

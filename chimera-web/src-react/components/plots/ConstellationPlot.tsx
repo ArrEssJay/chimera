@@ -82,7 +82,7 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
     const scale = Math.min(width, height) / 4; // Scale to fit +/-2 range
 
     // Clear canvas
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#0a0a0a';
     ctx.fillRect(0, 0, width, height);
 
     // Draw grid
@@ -171,6 +171,16 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         ctx.arc(x, y, 2, 0, 2 * Math.PI);
         ctx.fill();
       }
+    } else {
+      // Show "waiting for data" message when no points
+      ctx.fillStyle = '#666666';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Waiting for data...', centerX, centerY - 20);
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#555555';
+      ctx.fillText('Start DSP processing to see constellation', centerX, centerY + 10);
     }
 
     // Draw labels
