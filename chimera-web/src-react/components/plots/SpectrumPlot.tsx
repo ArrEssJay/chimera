@@ -18,18 +18,38 @@ export interface SpectrumPlotProps {
 }
 
 const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
-  width = 600,
-  height = 300,
+  width: propWidth = 0,
+  height: propHeight = 0,
   showGrid = true,
   minDb = -80,
   maxDb = 0,
   smoothing = 0.8,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const smoothedMagnitudeRef = useRef<Float32Array | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const latestDataRef = useRef<Float32Array | null>(null);
-  const [peakFreq, setPeakFreq] = useState(0);
+  const [dimensions, setDimensions] = useState({ width: propWidth || 600, height: propHeight || 300 });
+
+  // Handle responsive sizing
+  useEffect(() => {
+    if (propWidth && propHeight) {
+      setDimensions({ width: propWidth, height: propHeight });
+      return;
+    }
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [propWidth, propHeight]);
 
   useEffect(() => {
     const dspService = getWASMDSPService();
@@ -39,23 +59,6 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     dspService.subscribe(subscriptionId, (data: StreamData) => {
       // Store latest FFT magnitude data
       latestDataRef.current = data.fftMagnitude;
-      
-      // Find peak frequency
-      if (data.fftMagnitude.length > 0) {
-        let maxVal = -Infinity;
-        let maxIdx = 0;
-        for (let i = 0; i < data.fftMagnitude.length; i++) {
-          if (data.fftMagnitude[i] > maxVal) {
-            maxVal = data.fftMagnitude[i];
-            maxIdx = i;
-          }
-        }
-        
-        // Convert bin index to frequency (assuming 48kHz sample rate)
-        const sampleRate = 48000;
-        const freq = (maxIdx * sampleRate) / (data.fftMagnitude.length * 2);
-        setPeakFreq(Math.round(freq));
-      }
     });
 
     // Start rendering loop
@@ -72,7 +75,7 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [smoothing]);
+  }, [smoothing, dimensions]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -81,10 +84,12 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const { width, height } = dimensions;
     const magnitude = latestDataRef.current;
+    
     if (!magnitude || magnitude.length === 0) {
       // Draw empty state
-      ctx.fillStyle = '#0a0a0a';
+      ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, width, height);
       
       // Draw grid even when no data
@@ -228,20 +233,18 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
   };
 
   return (
-    <div className="spectrum-plot">
+    <div ref={containerRef} className="spectrum-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
+        width={dimensions.width}
+        height={dimensions.height}
         style={{
-          border: '1px solid #333',
-          borderRadius: '4px',
+          width: '100%',
+          height: '100%',
+          border: '1px solid #2a2a2a',
           background: '#1a1a1a',
         }}
       />
-      <div style={{ marginTop: '8px', color: '#888', fontSize: '12px' }}>
-        Peak: {peakFreq} Hz | Smoothing: {(smoothing * 100).toFixed(0)}%
-      </div>
     </div>
   );
 };

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the mandatory styling standards for the Chimera SIGINT Workbench interface. All contributors must follow these guidelines to maintain the professional, military-grade aesthetic.
+This document defines the mandatory styling standards for the Chimera DSP Workbench interface. All contributors must follow these guidelines to maintain the professional, military-grade aesthetic.
 
 ## Color System
 

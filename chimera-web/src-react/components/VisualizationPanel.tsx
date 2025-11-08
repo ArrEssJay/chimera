@@ -72,8 +72,8 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
           </div>
           <div className="visualization-content">
             <ConstellationPlot
-              width={500}
-              height={500}
+              width={0}
+              height={0}
               maxPoints={1000}
               showGrid={true}
               showReference={true}
@@ -90,8 +90,8 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
           </div>
           <div className="visualization-content">
             <SpectrumPlot
-              width={500}
-              height={500}
+              width={0}
+              height={0}
               showGrid={true}
               minDb={-80}
               maxDb={0}

@@ -17,16 +17,36 @@ export interface ConstellationPlotProps {
 }
 
 const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
-  width = 400,
-  height = 400,
+  width: propWidth = 0,
+  height: propHeight = 0,
   maxPoints = 1000,
   showGrid = true,
   showReference = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const dataBufferRef = useRef<{ i: number[]; q: number[] }>({ i: [], q: [] });
   const animationFrameRef = useRef<number | null>(null);
-  const [pointCount, setPointCount] = useState(0);
+  const [dimensions, setDimensions] = useState({ width: propWidth || 400, height: propHeight || 400 });
+
+  // Handle responsive sizing
+  useEffect(() => {
+    if (propWidth && propHeight) {
+      setDimensions({ width: propWidth, height: propHeight });
+      return;
+    }
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [propWidth, propHeight]);
 
   useEffect(() => {
     const dspService = getWASMDSPService();
@@ -49,8 +69,6 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         buffer.i.splice(0, excess);
         buffer.q.splice(0, excess);
       }
-
-      setPointCount(buffer.i.length);
     });
 
     // Start rendering loop
@@ -67,7 +85,7 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [maxPoints]);
+  }, [maxPoints, dimensions]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -77,12 +95,13 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
     if (!ctx) return;
 
     const buffer = dataBufferRef.current;
+    const { width, height } = dimensions;
     const centerX = width / 2;
     const centerY = height / 2;
-    const scale = Math.min(width, height) / 4; // Scale to fit +/-2 range
+    const scale = Math.min(width, height) / 4.5; // Tighter fit
 
     // Clear canvas
-    ctx.fillStyle = '#0a0a0a';
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, width, height);
 
     // Draw grid
@@ -191,20 +210,18 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
   };
 
   return (
-    <div className="constellation-plot">
+    <div ref={containerRef} className="constellation-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
+        width={dimensions.width}
+        height={dimensions.height}
         style={{
-          border: '1px solid #333',
-          borderRadius: '4px',
+          width: '100%',
+          height: '100%',
+          border: '1px solid #2a2a2a',
           background: '#1a1a1a',
         }}
       />
-      <div style={{ marginTop: '8px', color: '#888', fontSize: '12px' }}>
-        Points: {pointCount} / {maxPoints}
-      </div>
     </div>
   );
 };
