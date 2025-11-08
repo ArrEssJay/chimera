@@ -18,6 +18,7 @@ approx = "0.5"
 ldpc = "0.7"
 sparse-bin-mat = "0.7"
 rayon = "1.11.0"
+rustfft = "6"
 # TODO: integrate an LDPC implementation once we settle on a crate (e.g. `ldpc` or `sparse-ldpc`).
 # ldpc-backend = { package = "sparse-ldpc", version = "0.4", optional = true }
 

@@ -2,10 +2,12 @@ use wasm_bindgen::prelude::*;
 
 pub mod model;
 pub mod presets;
+pub mod streaming_wasm;
 mod ui;
 
 pub use model::{run_pipeline, SimulationInput, SimulationOutput};
 pub use presets::{FramePreset, PresetBundle};
+pub use streaming_wasm::{WASMStreamingDSP, WASMStreamOutput};
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {

@@ -239,6 +239,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_distr",
  "rayon",
+ "rustfft",
  "serde",
  "serde_with",
  "sparse-bin-mat",
