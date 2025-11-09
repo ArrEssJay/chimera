@@ -29,9 +29,16 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const smoothedMagnitudeRef = useRef<Float32Array | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const latestDataRef = useRef<Float32Array | null>(null);
+  const latestDataRef = useRef<{ magnitude: Float32Array; freqStart: number; freqEnd: number } | null>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth || 600, height: propHeight || 300 });
   const [showTx, setShowTx] = useState(false); // Toggle between TX and RX
+  
+  // Zoom and pan state - default to full Nyquist range
+  const sampleRate = 48000;
+  const [freqRange, setFreqRange] = useState({ start: 0, end: sampleRate / 2 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, freq: 0 });
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; freq: number; db: number } | null>(null);
 
   // Handle responsive sizing
   useEffect(() => {
@@ -58,10 +65,20 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
 
     // Subscribe to DSP data updates
     dspService.subscribe(subscriptionId, (data: StreamData) => {
-      // Store latest FFT magnitude data - select TX or RX
-      latestDataRef.current = showTx 
-        ? data.preChannel.txSpectrumMagnitude 
-        : data.postChannel.rxSpectrumMagnitude;
+      // Store latest FFT magnitude data with frequency range - select TX or RX
+      if (showTx) {
+        latestDataRef.current = {
+          magnitude: data.preChannel.txSpectrumMagnitude,
+          freqStart: data.preChannel.spectrumFreqStartHz,
+          freqEnd: data.preChannel.spectrumFreqEndHz,
+        };
+      } else {
+        latestDataRef.current = {
+          magnitude: data.postChannel.rxSpectrumMagnitude,
+          freqStart: data.postChannel.spectrumFreqStartHz,
+          freqEnd: data.postChannel.spectrumFreqEndHz,
+        };
+      }
     });
 
     // Start rendering loop
@@ -88,9 +105,9 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     if (!ctx) return;
 
     const { width, height } = dimensions;
-    const magnitude = latestDataRef.current;
+    const data = latestDataRef.current;
     
-    if (!magnitude || magnitude.length === 0) {
+    if (!data || !data.magnitude || data.magnitude.length === 0) {
       // Draw empty state
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, width, height);
@@ -131,6 +148,7 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     }
 
     // Initialize smoothed buffer
+    const magnitude = data.magnitude;
     if (!smoothedMagnitudeRef.current || smoothedMagnitudeRef.current.length !== magnitude.length) {
       smoothedMagnitudeRef.current = new Float32Array(magnitude);
     }
@@ -183,7 +201,6 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     }
 
     // Draw spectrum as a line with peak marker
-    const binWidth = width / smoothed.length;
     const dbRange = maxDb - minDb;
 
     // Find peak for display
@@ -202,38 +219,71 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     ctx.lineWidth = 1.5;
     ctx.beginPath();
 
+    // Map FFT data to display frequency range
+    const dataFreqStart = data.freqStart || 0;
+    const dataFreqEnd = data.freqEnd || sampleRate / 2;
+    const dataFreqSpan = dataFreqEnd - dataFreqStart;
+    
     for (let i = 0; i < smoothed.length; i++) {
+      // Calculate frequency of this FFT bin
+      const binFreq = dataFreqStart + (i / smoothed.length) * dataFreqSpan;
+      
+      // Skip if outside display range
+      if (binFreq < freqRange.start || binFreq > freqRange.end) continue;
+      
+      // Map to screen X coordinate
+      const x = ((binFreq - freqRange.start) / (freqRange.end - freqRange.start)) * width;
+      
       const db = Math.max(minDb, Math.min(maxDb, smoothed[i])); // Clamp to range
       const normalizedDb = (db - minDb) / dbRange;
       const y = height - normalizedDb * height;
-      const x = i * binWidth;
 
-      if (i === 0) {
+      if (i === 0 || binFreq <= freqRange.start) {
         ctx.moveTo(x, y);
       } else {
         ctx.lineTo(x, y);
+      }
+      
+      // Update peak if in range
+      if (smoothed[i] > peakValue) {
+        peakValue = smoothed[i];
+        peakIndex = i;
       }
     }
 
     ctx.stroke();
 
     // Draw peak marker
-    if (peakValue > minDb) {
-      const peakX = peakIndex * binWidth;
-      const normalizedPeak = (peakValue - minDb) / dbRange;
-      const peakY = height - normalizedPeak * height;
+    if (peakValue > minDb && peakIndex >= 0) {
+      // Calculate peak frequency
+      const dataFreqStart = data.freqStart || 0;
+      const dataFreqEnd = data.freqEnd || sampleRate / 2;
+      const dataFreqSpan = dataFreqEnd - dataFreqStart;
+      const peakFreq = dataFreqStart + (peakIndex / smoothed.length) * dataFreqSpan;
       
-      // Peak dot
-      ctx.fillStyle = '#ff4444';
-      ctx.beginPath();
-      ctx.arc(peakX, peakY, 3, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Peak value label
-      ctx.fillStyle = '#ff4444';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${peakValue.toFixed(1)} dB`, peakX, peakY - 8);
+      // Only draw if in visible range
+      if (peakFreq >= freqRange.start && peakFreq <= freqRange.end) {
+        const peakX = ((peakFreq - freqRange.start) / (freqRange.end - freqRange.start)) * width;
+        const normalizedPeak = (peakValue - minDb) / dbRange;
+        const peakY = height - normalizedPeak * height;
+        
+        // Peak dot
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(peakX, peakY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Peak value label
+        ctx.fillStyle = '#ff4444';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${peakValue.toFixed(1)} dB`, peakX, peakY - 8);
+        
+        // Peak frequency label
+        ctx.fillStyle = '#ff8888';
+        const freqLabel = peakFreq >= 1000 ? `${(peakFreq / 1000).toFixed(3)}k` : `${peakFreq.toFixed(1)}`;
+        ctx.fillText(freqLabel, peakX, peakY - 20);
+      }
     }
 
     // Draw frequency axis labels
@@ -241,13 +291,14 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
     
-    const sampleRate = 48000;
-    const nyquist = sampleRate / 2;
+    // Use current zoom/pan range
+    const displayFreqStart = freqRange.start;
+    const displayFreqEnd = freqRange.end;
     
     [0, 0.25, 0.5, 0.75, 1].forEach((frac) => {
-      const freq = frac * nyquist;
+      const freq = displayFreqStart + frac * (displayFreqEnd - displayFreqStart);
       const x = frac * width;
-      const label = freq >= 1000 ? `${(freq / 1000).toFixed(1)}k` : `${freq.toFixed(0)}`;
+      const label = freq >= 1000 ? `${(freq / 1000).toFixed(2)}k` : `${freq.toFixed(1)}`;
       ctx.fillText(label, x, height - 5);
     });
     
@@ -256,6 +307,79 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(showTx ? 'TX Spectrum' : 'RX Spectrum', 5, 15);
+  };
+
+  // Mouse event handlers for pan and zoom
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseFreqFrac = mouseX / rect.width;
+    const mouseFreq = freqRange.start + mouseFreqFrac * (freqRange.end - freqRange.start);
+
+    // Zoom factor
+    const zoomFactor = e.deltaY > 0 ? 1.2 : 0.8;
+    const newSpan = (freqRange.end - freqRange.start) * zoomFactor;
+    
+    // Keep mouse position fixed during zoom
+    const newStart = mouseFreq - mouseFreqFrac * newSpan;
+    const newEnd = mouseFreq + (1 - mouseFreqFrac) * newSpan;
+    
+    // Clamp to valid range
+    const clampedStart = Math.max(0, newStart);
+    const clampedEnd = Math.min(sampleRate / 2, newEnd);
+    
+    setFreqRange({ start: clampedStart, end: clampedEnd });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsPanning(true);
+    setPanStart({ x: e.clientX, freq: freqRange.start });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (isPanning) {
+      const dx = e.clientX - panStart.x;
+      const rect = canvas.getBoundingClientRect();
+      const freqDelta = -(dx / rect.width) * (freqRange.end - freqRange.start);
+      const newStart = panStart.freq + freqDelta;
+      const span = freqRange.end - freqRange.start;
+      
+      // Clamp to valid range
+      const clampedStart = Math.max(0, Math.min(sampleRate / 2 - span, newStart));
+      setFreqRange({ start: clampedStart, end: clampedStart + span });
+    }
+
+    // Update tooltip
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const freqFrac = mouseX / rect.width;
+    const freq = freqRange.start + freqFrac * (freqRange.end - freqRange.start);
+    const dbFrac = 1 - (mouseY / rect.height);
+    const db = minDb + dbFrac * (maxDb - minDb);
+    
+    setTooltip({ x: mouseX, y: mouseY, freq, db });
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPanning(false);
+    setTooltip(null);
+  };
+
+  const handleDoubleClick = () => {
+    // Reset to full range
+    setFreqRange({ start: 0, end: sampleRate / 2 });
   };
 
   return (
@@ -269,11 +393,36 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
           height: '100%',
           border: '1px solid #2a2a2a',
           background: '#1a1a1a',
-          cursor: 'pointer',
+          cursor: isPanning ? 'grabbing' : 'grab',
         }}
-        onClick={() => setShowTx(!showTx)}
-        title="Click to toggle TX/RX"
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onDoubleClick={handleDoubleClick}
+        title="Scroll to zoom, drag to pan, double-click to reset"
       />
+      
+      {/* Tooltip */}
+      {tooltip && (
+        <div style={{
+          position: 'absolute',
+          left: tooltip.x + 10,
+          top: tooltip.y - 30,
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: '#fff',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          border: '1px solid #444',
+        }}>
+          {tooltip.freq >= 1000 ? `${(tooltip.freq / 1000).toFixed(3)} kHz` : `${tooltip.freq.toFixed(1)} Hz`} | {tooltip.db.toFixed(1)} dB
+        </div>
+      )}
+      
       <div className="plot-controls" style={{
         position: 'absolute',
         top: '4px',

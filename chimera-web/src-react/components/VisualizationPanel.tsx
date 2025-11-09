@@ -12,39 +12,35 @@ import { getWASMDSPService, StreamData } from '../services/WASMDSPService';
 
 export interface VisualizationPanelProps {
   isProcessing: boolean;
-  showPlots?: boolean;
   streamData: StreamData | null;
-  logs: string[];
 }
 
 const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ 
-  isProcessing, 
-  showPlots = true
+  isProcessing,
+  streamData: externalStreamData
 }) => {
   const [liveStreamData, setLiveStreamData] = useState<StreamData | null>(null);
-  const [accumulatedText, setAccumulatedText] = useState<string>('');
+  const service = getWASMDSPService();
+  
+  // Use external data if provided, otherwise use live subscription
+  const streamData = externalStreamData || liveStreamData;
   
   // Subscribe to streaming data
   useEffect(() => {
-    const service = getWASMDSPService();
     const subscriptionId = 'viz-panel';
     
     service.subscribe(subscriptionId, (data) => {
       setLiveStreamData(data);
-      if (data.decodedText) {
-        setAccumulatedText(prev => prev + data.decodedText);
-      }
     });
     
     return () => {
       service.unsubscribe(subscriptionId);
     };
-  }, []);
+  }, [service]);
   
   // Reset on stop
   useEffect(() => {
     if (!isProcessing) {
-      setAccumulatedText('');
       setLiveStreamData(null);
     }
   }, [isProcessing]);
@@ -59,17 +55,6 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
     if (typeof status === 'boolean') return status ? 'YES' : 'NO';
     return status || '—';
   };
-
-  if (!showPlots) {
-    return (
-      <div className="visualization-panel">
-        <div className="visualization-empty">
-          <h2>Visualizations Hidden</h2>
-          <p>Click "Show Plots" to display real-time visualizations</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="visualization-panel">
@@ -245,12 +230,14 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
               </tr>
               <tr>
                 <td className="diag-label">Output</td>
-                <td className="diag-value">{accumulatedText ? `${accumulatedText.length} bytes` : '—'}</td>
+                <td className="diag-value">{streamData?.decodedText ? `${streamData.decodedText.length} bytes` : '—'}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+      
+      {/* Frame Decoder moved to sidebar */}
     </div>
   );
 };

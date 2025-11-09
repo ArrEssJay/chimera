@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
 import VisualizationPanel from './components/VisualizationPanel';
+import FrameDecoder from './components/FrameDecoder';
+import MessageDecoder from './components/MessageDecoder';
 import { getWASMDSPService, StreamData } from './services/WASMDSPService';
 import { SimulationConfig } from './types';
 
@@ -14,24 +16,16 @@ const App: React.FC = () => {
   });
 
   const [isDSPRunning, setIsDSPRunning] = useState(false);
-  const [showVisualization, setShowVisualization] = useState(true);
-  const [logs, setLogs] = useState<string[]>([]);
   const [streamData, setStreamData] = useState<StreamData | null>(null);
   const [dspService] = useState(() => getWASMDSPService());
 
   useEffect(() => {
-    // Subscribe to logs
-    dspService.subscribeToLogs('app-logs', (newLogs) => {
-      setLogs(newLogs);
-    });
-
     // Subscribe to streaming data
     dspService.subscribe('app-stream', (data) => {
       setStreamData(data);
     });
 
     return () => {
-      dspService.unsubscribeFromLogs('app-logs');
       dspService.unsubscribe('app-stream');
     };
   }, [dspService]);
@@ -84,7 +78,6 @@ const App: React.FC = () => {
       await dspService.start();
       
       setIsDSPRunning(true);
-      setShowVisualization(true);
       dspService.addLog('DSP engine started successfully');
       
       // TODO: Trigger actual encoding/decoding with the message
@@ -104,10 +97,6 @@ const App: React.FC = () => {
     dspService.addLog('DSP engine stopped');
   };
 
-  const handleToggleVisualization = () => {
-    setShowVisualization(!showVisualization);
-  };
-
   return (
     <div className="app">
       <header className="app-header">
@@ -123,14 +112,6 @@ const App: React.FC = () => {
           >
             {isDSPRunning ? '⏹ Stop DSP' : '▶ Start DSP'}
           </button>
-          {isDSPRunning && (
-            <button
-              onClick={handleToggleVisualization}
-              className="btn btn-secondary"
-            >
-              {showVisualization ? '📊 Hide Plots' : '📊 Show Plots'}
-            </button>
-          )}
         </div>
         <div className="header-right">
           <span className="status-indicator">
@@ -152,11 +133,14 @@ const App: React.FC = () => {
         <main className="main-content">
           <VisualizationPanel
             isProcessing={isDSPRunning}
-            showPlots={showVisualization}
             streamData={streamData}
-            logs={logs}
           />
+          <MessageDecoder />
         </main>
+
+        <aside className="sidebar-right">
+          <FrameDecoder />
+        </aside>
       </div>
     </div>
   );

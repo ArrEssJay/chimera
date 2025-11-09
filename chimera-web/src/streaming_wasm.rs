@@ -69,6 +69,8 @@ impl WASMStreamingDSP {
             tx_constellation_i: Float32Array::from(&output.pre_channel.tx_constellation_i[..]),
             tx_constellation_q: Float32Array::from(&output.pre_channel.tx_constellation_q[..]),
             tx_spectrum_magnitude: Float32Array::from(&output.pre_channel.tx_spectrum_magnitude[..]),
+            tx_spectrum_freq_start_hz: output.pre_channel.spectrum_freq_start_hz,
+            tx_spectrum_freq_end_hz: output.pre_channel.spectrum_freq_end_hz,
             frame_count: output.pre_channel.frame_count as u32,
             total_frames: output.pre_channel.total_frames as u32,
             symbol_count: output.pre_channel.symbol_count as u32,
@@ -85,6 +87,8 @@ impl WASMStreamingDSP {
             rx_constellation_i: Float32Array::from(&output.post_channel.rx_constellation_i[..]),
             rx_constellation_q: Float32Array::from(&output.post_channel.rx_constellation_q[..]),
             rx_spectrum_magnitude: Float32Array::from(&output.post_channel.rx_spectrum_magnitude[..]),
+            rx_spectrum_freq_start_hz: output.post_channel.spectrum_freq_start_hz,
+            rx_spectrum_freq_end_hz: output.post_channel.spectrum_freq_end_hz,
             timing_error: Float32Array::from(&output.post_channel.timing_error[..]),
             frequency_offset_hz: output.post_channel.frequency_offset_hz,
             phase_offset_rad: output.post_channel.phase_offset_rad,
@@ -102,6 +106,14 @@ impl WASMStreamingDSP {
             frames_processed: output.frames_processed as u32,
             symbols_decoded: output.symbols_decoded as u32,
             fec_corrections: output.fec_corrections as u32,
+            
+            // Current frame data
+            frame_number: output.current_frame_data.frame_number as u32,
+            frame_sync_data: output.current_frame_data.sync_data,
+            frame_payload_data: output.current_frame_data.payload_data,
+            frame_parity_data: output.current_frame_data.parity_data,
+            frame_decoded_text: output.current_frame_data.decoded_text,
+            frame_symbol_progress: output.current_frame_data.symbol_progress as u32,
         })
     }
     
@@ -142,6 +154,8 @@ pub struct WASMStreamOutput {
     tx_constellation_i: Float32Array,
     tx_constellation_q: Float32Array,
     tx_spectrum_magnitude: Float32Array,
+    tx_spectrum_freq_start_hz: f32,
+    tx_spectrum_freq_end_hz: f32,
     frame_count: u32,
     total_frames: u32,
     symbol_count: u32,
@@ -158,6 +172,8 @@ pub struct WASMStreamOutput {
     rx_constellation_i: Float32Array,
     rx_constellation_q: Float32Array,
     rx_spectrum_magnitude: Float32Array,
+    rx_spectrum_freq_start_hz: f32,
+    rx_spectrum_freq_end_hz: f32,
     timing_error: Float32Array,
     frequency_offset_hz: f32,
     phase_offset_rad: f32,
@@ -175,6 +191,14 @@ pub struct WASMStreamOutput {
     frames_processed: u32,
     symbols_decoded: u32,
     fec_corrections: u32,
+    
+    // Current frame data
+    frame_number: u32,
+    frame_sync_data: Vec<u8>,
+    frame_payload_data: Vec<u8>,
+    frame_parity_data: Vec<u8>,
+    frame_decoded_text: String,
+    frame_symbol_progress: u32,
 }
 
 #[wasm_bindgen]
@@ -198,6 +222,16 @@ impl WASMStreamOutput {
     #[wasm_bindgen(getter)]
     pub fn tx_spectrum_magnitude(&self) -> Float32Array {
         self.tx_spectrum_magnitude.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn tx_spectrum_freq_start_hz(&self) -> f32 {
+        self.tx_spectrum_freq_start_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn tx_spectrum_freq_end_hz(&self) -> f32 {
+        self.tx_spectrum_freq_end_hz
     }
     
     #[wasm_bindgen(getter)]
@@ -272,6 +306,16 @@ impl WASMStreamOutput {
     }
     
     #[wasm_bindgen(getter)]
+    pub fn rx_spectrum_freq_start_hz(&self) -> f32 {
+        self.rx_spectrum_freq_start_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn rx_spectrum_freq_end_hz(&self) -> f32 {
+        self.rx_spectrum_freq_end_hz
+    }
+    
+    #[wasm_bindgen(getter)]
     pub fn timing_error(&self) -> Float32Array {
         self.timing_error.clone()
     }
@@ -336,6 +380,37 @@ impl WASMStreamOutput {
     #[wasm_bindgen(getter)]
     pub fn fec_corrections(&self) -> u32 {
         self.fec_corrections
+    }
+    
+    // Current frame data getters
+    #[wasm_bindgen(getter)]
+    pub fn frame_number(&self) -> u32 {
+        self.frame_number
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frame_sync_data(&self) -> Vec<u8> {
+        self.frame_sync_data.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frame_payload_data(&self) -> Vec<u8> {
+        self.frame_payload_data.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frame_parity_data(&self) -> Vec<u8> {
+        self.frame_parity_data.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frame_decoded_text(&self) -> String {
+        self.frame_decoded_text.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frame_symbol_progress(&self) -> u32 {
+        self.frame_symbol_progress
     }
 }
 

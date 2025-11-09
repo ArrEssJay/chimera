@@ -250,13 +250,218 @@ pub fn baseband_to_symbols(signal: &Array1<f64>) -> Vec<Complex64> {
     complex_from_interleaved(slice)
 }
 
-fn qpsk_constellation() -> [(Complex64, [u8; 2]); 4] {
+pub fn qpsk_constellation() -> [(Complex64, [u8; 2]); 4] {
     [
         (Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2), [0, 0]),
         (Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2), [0, 1]),
         (Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [1, 1]),
         (Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [1, 0]),
     ]
+}
+
+/// Demodulate a single QPSK symbol to bits
+pub fn demodulate_qpsk_symbol(symbol: Complex64) -> [u8; 2] {
+    let reference = qpsk_constellation();
+    let mut best_distance = f64::INFINITY;
+    let mut best_bits = [0, 0];
+    
+    for (const_point, bits) in reference.iter() {
+        let distance = (symbol - const_point).norm_sqr();
+        if distance < best_distance {
+            best_distance = distance;
+            best_bits = *bits;
+        }
+    }
+    
+    best_bits
+}
+
+/// Incremental symbol-by-symbol decoder
+pub struct StreamingSymbolDecoder {
+    protocol: ProtocolConfig,
+    matrices: LDPCMatrices,
+    
+    // Buffer for received symbols
+    symbol_buffer: Vec<Complex64>,
+    demodulated_bits: Vec<u8>,
+    
+    // Frame synchronization state
+    sync_found: bool,
+    sync_index: Option<usize>,
+    
+    // Current frame decoding state
+    current_frame_index: usize,
+    symbols_in_current_frame: usize,
+    decoded_frames: Vec<Vec<u8>>,
+    
+    logger: LogCollector,
+}
+
+impl StreamingSymbolDecoder {
+    pub fn new(protocol: ProtocolConfig, matrices: LDPCMatrices) -> Self {
+        let mut logger = LogCollector::new();
+        logger.log("Initializing streaming symbol decoder.".to_string());
+        
+        Self {
+            protocol,
+            matrices,
+            symbol_buffer: Vec::new(),
+            demodulated_bits: Vec::new(),
+            sync_found: false,
+            sync_index: None,
+            current_frame_index: 0,
+            symbols_in_current_frame: 0,
+            decoded_frames: Vec::new(),
+            logger,
+        }
+    }
+    
+    /// Add received symbols and process them incrementally
+    /// Returns (new_decoded_bits, frame_complete, current_frame_index, symbols_in_frame)
+    pub fn process_symbols(&mut self, symbols: &[Complex64]) -> (Vec<u8>, bool, usize, usize, DemodulationDiagnostics) {
+        // Add symbols to buffer
+        self.symbol_buffer.extend_from_slice(symbols);
+        
+        let mut new_decoded_bits = Vec::new();
+        let mut frame_complete = false;
+        
+        // Demodulate new symbols
+        for symbol in symbols {
+            let bits = demodulate_qpsk_symbol(*symbol);
+            self.demodulated_bits.push(bits[0]);
+            self.demodulated_bits.push(bits[1]);
+        }
+        
+        // Try to find sync if not yet found
+        if !self.sync_found {
+            self.search_for_sync();
+        }
+        
+        // Process frame if sync is found
+        if self.sync_found {
+            let sync_offset = self.sync_index.unwrap_or(0);
+            let frame_bits = self.protocol.frame_layout.frame_bits();
+            let symbols_per_frame = self.protocol.frame_layout.total_symbols;
+            
+            // Check if we have enough symbols for current position
+            let bits_available = self.demodulated_bits.len().saturating_sub(sync_offset);
+            let symbols_available = bits_available / 2;
+            let frame_start_symbol = self.current_frame_index * symbols_per_frame;
+            
+            self.symbols_in_current_frame = symbols_available.saturating_sub(frame_start_symbol)
+                .min(symbols_per_frame);
+            
+            // Check if current frame is complete
+            if symbols_available >= frame_start_symbol + symbols_per_frame {
+                // Decode the complete frame
+                let frame_bit_start = sync_offset + (frame_start_symbol * 2);
+                let frame_bit_end = frame_bit_start + frame_bits;
+                
+                if frame_bit_end <= self.demodulated_bits.len() {
+                    let frame_slice = &self.demodulated_bits[frame_bit_start..frame_bit_end];
+                    
+                    // Extract and decode payload
+                    let prefix_bits = (self.protocol.frame_layout.sync_symbols
+                        + self.protocol.frame_layout.target_id_symbols
+                        + self.protocol.frame_layout.command_type_symbols) * 2;
+                    let codeword_bits = self.matrices.codeword_bits;
+                    let payload_start = prefix_bits;
+                    let payload_end = payload_start + codeword_bits;
+                    
+                    if frame_slice.len() >= payload_end {
+                        let noisy_codeword = &frame_slice[payload_start..payload_end];
+                        let decoded = decode_ldpc(&self.matrices, noisy_codeword, 0.0);
+                        
+                        new_decoded_bits = decoded.clone();
+                        self.decoded_frames.push(decoded);
+                        
+                        if self.current_frame_index < 3 {
+                            self.logger.log(format!(
+                                "[RX] Frame {} decoded ({} payload bits).",
+                                self.current_frame_index + 1,
+                                new_decoded_bits.len()
+                            ));
+                        }
+                        
+                        self.current_frame_index += 1;
+                        self.symbols_in_current_frame = 0;
+                        frame_complete = true;
+                    }
+                }
+            }
+        }
+        
+        // Create diagnostics from recent symbols
+        let diagnostics = self.create_diagnostics(symbols);
+        
+        (new_decoded_bits, frame_complete, self.current_frame_index, self.symbols_in_current_frame, diagnostics)
+    }
+    
+    fn search_for_sync(&mut self) {
+        let sync_bit_len = self.protocol.frame_layout.sync_symbols * 2;
+        let sync_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, sync_bit_len);
+        
+        if self.demodulated_bits.len() >= sync_bits.len() {
+            for idx in 0..=(self.demodulated_bits.len() - sync_bits.len()) {
+                if self.demodulated_bits[idx..idx + sync_bits.len()] == sync_bits {
+                    self.sync_index = Some(idx);
+                    self.sync_found = true;
+                    self.logger.log(format!("Frame sync found at bit index {}", idx));
+                    break;
+                }
+            }
+        }
+    }
+    
+    fn create_diagnostics(&self, recent_symbols: &[Complex64]) -> DemodulationDiagnostics {
+        let (received_symbols_i, received_symbols_q): (Vec<f64>, Vec<f64>) =
+            recent_symbols.iter().map(|s| (s.re, s.im)).unzip();
+        
+        let symbol_decisions: Vec<SymbolDecision> = recent_symbols.iter().enumerate().map(|(i, s)| {
+            let bits = demodulate_qpsk_symbol(*s);
+            let reference = qpsk_constellation();
+            let mut distances = [0.0_f64; 4];
+            let mut best_distance = f64::INFINITY;
+            
+            for (idx, (candidate, _)) in reference.iter().enumerate() {
+                let distance = (*s - *candidate).norm_sqr();
+                distances[idx] = distance;
+                if distance < best_distance {
+                    best_distance = distance;
+                }
+            }
+            
+            SymbolDecision {
+                index: i,
+                decided_bits: bits,
+                average_i: s.re,
+                average_q: s.im,
+                min_distance: best_distance,
+                distances,
+                soft_metrics: [0.0, 0.0],
+            }
+        }).collect();
+        
+        DemodulationDiagnostics {
+            received_symbols_i,
+            received_symbols_q,
+            symbol_decisions,
+            timing_error: vec![0.0; recent_symbols.len()],
+            nco_freq_offset: vec![0.0; recent_symbols.len()],
+        }
+    }
+    
+    pub fn get_decoded_payload(&self) -> Vec<u8> {
+        self.decoded_frames.iter().flatten().copied().collect()
+    }
+    
+    pub fn is_synced(&self) -> bool {
+        self.sync_found
+    }
+    
+    pub fn get_logs(&self) -> &[String] {
+        self.logger.entries()
+    }
 }
 
 fn diagnostics_from_decisions(decisions: Vec<SymbolDecision>) -> DemodulationDiagnostics {

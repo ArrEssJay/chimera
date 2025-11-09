@@ -29,7 +29,7 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
   const dataBufferRef = useRef<{ i: number[]; q: number[] }>({ i: [], q: [] });
   const animationFrameRef = useRef<number | null>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth || 400, height: propHeight || 400 });
-  const [showTx, setShowTx] = useState(false); // Toggle between TX and RX
+  const [showTx, setShowTx] = useState(true); // TX enabled by default
 
   // Handle responsive sizing
   useEffect(() => {
@@ -273,21 +273,38 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         gap: '4px',
       }}>
         <button 
-          className={`plot-toggle ${showTx ? 'active' : ''}`}
-          onClick={() => setShowTx(!showTx)}
+          className={`plot-toggle ${showTx ? 'active-tx' : ''}`}
+          onClick={() => setShowTx(true)}
           style={{
             padding: '2px 6px',
             fontSize: '10px',
-            background: showTx ? '#4a9eff' : '#2a2a2a',
-            color: showTx ? '#fff' : '#888',
-            border: `1px solid ${showTx ? '#4a9eff' : '#333'}`,
+            background: showTx ? '#ff4444' : '#2a2a2a',
+            color: showTx ? '#fff' : '#666',
+            border: `1px solid ${showTx ? '#ff4444' : '#333'}`,
             cursor: 'pointer',
             transition: 'all 0.1s',
             textTransform: 'uppercase',
             fontWeight: 500,
           }}
         >
-          {showTx ? 'TX' : 'RX'}
+          TX
+        </button>
+        <button 
+          className={`plot-toggle ${!showTx ? 'active-rx' : ''}`}
+          onClick={() => setShowTx(false)}
+          style={{
+            padding: '2px 6px',
+            fontSize: '10px',
+            background: !showTx ? '#4a9eff' : '#2a2a2a',
+            color: !showTx ? '#fff' : '#666',
+            border: `1px solid ${!showTx ? '#4a9eff' : '#333'}`,
+            cursor: 'pointer',
+            transition: 'all 0.1s',
+            textTransform: 'uppercase',
+            fontWeight: 500,
+          }}
+        >
+          RX
         </button>
       </div>
     </div>

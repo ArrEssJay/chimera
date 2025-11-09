@@ -244,6 +244,7 @@ dependencies = [
  "serde_with",
  "sparse-bin-mat",
  "thiserror",
+ "wasm-bindgen",
 ]
 
 [[package]]

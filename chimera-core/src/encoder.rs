@@ -58,6 +58,155 @@ impl FrameStream {
     }
 }
 
+/// Incremental frame encoder for symbol-by-symbol streaming
+pub struct StreamingFrameEncoder {
+    protocol: ProtocolConfig,
+    matrices: LDPCMatrices,
+    payload_bits: Vec<u8>,
+    current_frame_index: usize,
+    pub total_frames: usize,
+    current_symbol_in_frame: usize,
+    current_frame_bitstream: Vec<u8>,
+    logger: LogCollector,
+}
+
+impl StreamingFrameEncoder {
+    pub fn new(
+        payload_bits: &[u8],
+        protocol: ProtocolConfig,
+        matrices: LDPCMatrices,
+    ) -> Self {
+        let message_bits = matrices.message_bits;
+        let total_frames = if payload_bits.is_empty() {
+            1
+        } else {
+            payload_bits.len().div_ceil(message_bits)
+        };
+        
+        let mut logger = LogCollector::new();
+        logger.log(format!("Initializing streaming encoder for {total_frames} frame(s)."));
+        
+        Self {
+            protocol,
+            matrices,
+            payload_bits: payload_bits.to_vec(),
+            current_frame_index: 0,
+            total_frames,
+            current_symbol_in_frame: 0,
+            current_frame_bitstream: Vec::new(),
+            logger,
+        }
+    }
+    
+    /// Get the next batch of symbols (returns up to requested count)
+    /// Returns (symbols, frame_changed, frame_index, symbol_index_in_frame, is_complete)
+    pub fn get_next_symbols(&mut self, symbol_count: usize) -> (Vec<Complex64>, bool, usize, usize, bool) {
+        let mut symbols = Vec::new();
+        let mut frame_changed = false;
+        let start_frame = self.current_frame_index;
+        
+        while symbols.len() < symbol_count {
+            // Generate current frame if needed
+            if self.current_symbol_in_frame == 0 {
+                if self.current_frame_index > start_frame {
+                    frame_changed = true;
+                }
+                self.generate_current_frame();
+            }
+            
+            // Get symbols from current frame
+            let symbols_available = self.current_frame_bitstream.len() / 2 - self.current_symbol_in_frame;
+            let symbols_to_take = (symbol_count - symbols.len()).min(symbols_available);
+            
+            for _ in 0..symbols_to_take {
+                let bit_index = self.current_symbol_in_frame * 2;
+                let bits = &self.current_frame_bitstream[bit_index..bit_index + 2];
+                
+                let symbol = match (bits[0], bits[1]) {
+                    (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                    (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                    (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                    _ => unreachable!("bits are constrained to 0/1"),
+                };
+                
+                symbols.push(symbol);
+                self.current_symbol_in_frame += 1;
+            }
+            
+            // Check if frame is complete
+            let symbols_per_frame = self.protocol.frame_layout.total_symbols;
+            if self.current_symbol_in_frame >= symbols_per_frame {
+                self.current_frame_index += 1;
+                // Loop back to start when all frames transmitted
+                if self.current_frame_index >= self.total_frames {
+                    self.current_frame_index = 0;
+                }
+                self.current_symbol_in_frame = 0;
+                self.current_frame_bitstream.clear();
+            }
+        }
+        
+        (symbols, frame_changed, self.current_frame_index, self.current_symbol_in_frame, false)
+    }
+    
+    fn generate_current_frame(&mut self) {
+        if self.current_frame_index >= self.total_frames {
+            return;
+        }
+        
+        let layout = &self.protocol.frame_layout;
+        let message_bits = self.matrices.message_bits;
+        
+        let sync_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, layout.sync_symbols * 2);
+        let target_bits = hex_to_bitstream(&self.protocol.target_id_hex, layout.target_id_symbols * 2);
+        let command_bits_len = layout.command_type_symbols * 2;
+        
+        let frame_idx = self.current_frame_index;
+        let command_value = self.protocol.command_opcode
+            | ((frame_idx as u32) << self.protocol.current_frame_shift)
+            | ((self.total_frames as u32) << self.protocol.total_frames_shift);
+        let command_bits = int_to_bitstream(command_value as u64, command_bits_len);
+        
+        let start = frame_idx * message_bits;
+        let end = usize::min(start + message_bits, self.payload_bits.len());
+        let mut message_chunk = vec![0u8; message_bits];
+        if start < end {
+            message_chunk[..(end - start)].copy_from_slice(&self.payload_bits[start..end]);
+        }
+        
+        let codeword = encode_with_generator(&self.matrices.generator, &message_chunk);
+        let payload_section = &codeword[..message_bits];
+        let ecc_section = &codeword[message_bits..];
+        
+        self.current_frame_bitstream.clear();
+        self.current_frame_bitstream.extend_from_slice(&sync_bits);
+        self.current_frame_bitstream.extend_from_slice(&target_bits);
+        self.current_frame_bitstream.extend_from_slice(&command_bits);
+        self.current_frame_bitstream.extend_from_slice(payload_section);
+        self.current_frame_bitstream.extend_from_slice(ecc_section);
+        
+        if frame_idx < 3 {
+            self.logger.log(format!(
+                "[TX] Frame {}/{}: command=0x{command_value:08X}",
+                frame_idx + 1, self.total_frames
+            ));
+        }
+    }
+    
+    pub fn is_complete(&self) -> bool {
+        self.current_frame_index >= self.total_frames
+    }
+    
+    pub fn get_current_frame_bits(&self) -> &[u8] {
+        &self.current_frame_bitstream
+    }
+    
+    pub fn get_logs(&self) -> &[String] {
+        self.logger.entries()
+    }
+}
+
 pub struct EncodingResult {
     pub noisy_signal: Array1<f64>,
     pub clean_signal: Array1<f64>,

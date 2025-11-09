@@ -30,6 +30,8 @@ export interface PreChannelDiagnostics {
   txConstellationI: Float32Array;
   txConstellationQ: Float32Array;
   txSpectrumMagnitude: Float32Array;
+  spectrumFreqStartHz: number;
+  spectrumFreqEndHz: number;
   carrierFreqHz: number;
   symbolRateHz: number;
   modulationType: string;
@@ -46,6 +48,8 @@ export interface PostChannelDiagnostics {
   rxConstellationI: Float32Array;
   rxConstellationQ: Float32Array;
   rxSpectrumMagnitude: Float32Array;
+  spectrumFreqStartHz: number;
+  spectrumFreqEndHz: number;
   timingError: Float32Array;
   frequencyOffsetHz: number;
   phaseOffsetRad: number;
@@ -57,6 +61,15 @@ export interface PostChannelDiagnostics {
   lockStatus: string;
 }
 
+export interface FrameData {
+  frameNumber: number;
+  syncData: Uint8Array;
+  payloadData: Uint8Array;
+  parityData: Uint8Array;
+  decodedText: string;
+  symbolProgress: number; // Number of symbols transmitted so far in current frame
+}
+
 export interface StreamData {
   audio: Float32Array;
   preChannel: PreChannelDiagnostics;
@@ -65,6 +78,7 @@ export interface StreamData {
   framesProcessed: number;
   symbolsDecoded: number;
   fecCorrections: number;
+  currentFrameData: FrameData;
   timestamp: number;
 }
 
@@ -85,11 +99,8 @@ export class WASMDSPService {
   private isRunning = false;
   private frameCount = 0;
   private lastFrameTime = 0;
-  private targetFPS = 60;
-  private frameInterval = 1000 / 60; // 16.67ms
   private accumulatedLogs: string[] = [];
   private isInitialized = false;
-  private currentConfig: DSPConfig | null = null;
 
   constructor() {
     // Don't initialize in constructor - do it lazily
@@ -194,13 +205,7 @@ export class WASMDSPService {
       return;
     }
 
-    // Rate limit to target FPS
     const now = performance.now();
-    const elapsed = now - this.lastFrameTime;
-    
-    if (elapsed < this.frameInterval) {
-      return;
-    }
 
     try {
       // Get input audio
@@ -222,6 +227,16 @@ export class WASMDSPService {
         outputData[i] = audioOut[i];
       }
 
+      // Only notify subscribers if we have actual data (not rate-limited empty output)
+      // Check if we have constellation data OR a valid frame number (not zero/undefined)
+      const hasData = output.tx_constellation_i.length > 0 || 
+                     output.rx_constellation_i.length > 0 ||
+                     (output.frame_number && output.frame_number > 0);
+      
+      if (!hasData) {
+        return; // Skip empty updates
+      }
+
       // Notify subscribers with processed data
       const streamData: StreamData = {
         audio: output.audio,
@@ -232,6 +247,8 @@ export class WASMDSPService {
           txConstellationI: output.tx_constellation_i,
           txConstellationQ: output.tx_constellation_q,
           txSpectrumMagnitude: output.tx_spectrum_magnitude,
+          spectrumFreqStartHz: output.tx_spectrum_freq_start_hz || 0,
+          spectrumFreqEndHz: output.tx_spectrum_freq_end_hz || 24000,
           carrierFreqHz: output.carrier_freq_hz,
           symbolRateHz: output.symbol_rate_hz,
           modulationType: output.modulation_type,
@@ -247,6 +264,8 @@ export class WASMDSPService {
           rxConstellationI: output.rx_constellation_i,
           rxConstellationQ: output.rx_constellation_q,
           rxSpectrumMagnitude: output.rx_spectrum_magnitude,
+          spectrumFreqStartHz: output.rx_spectrum_freq_start_hz || 0,
+          spectrumFreqEndHz: output.rx_spectrum_freq_end_hz || 24000,
           timingError: output.timing_error,
           frequencyOffsetHz: output.frequency_offset_hz,
           phaseOffsetRad: output.phase_offset_rad,
@@ -261,6 +280,14 @@ export class WASMDSPService {
         framesProcessed: output.frames_processed,
         symbolsDecoded: output.symbols_decoded,
         fecCorrections: output.fec_corrections,
+        currentFrameData: {
+          frameNumber: output.frame_number || 0,
+          syncData: new Uint8Array(output.frame_sync_data || []),
+          payloadData: new Uint8Array(output.frame_payload_data || []),
+          parityData: new Uint8Array(output.frame_parity_data || []),
+          decodedText: output.frame_decoded_text || '',
+          symbolProgress: output.frame_symbol_progress || 0, // Use actual symbol progress from backend
+        },
         timestamp: now,
       };
 
@@ -423,11 +450,11 @@ export class WASMDSPService {
   }
 
   /**
-   * Set target FPS for data updates
+   * Set target FPS for data updates (no longer used - updates on every audio chunk)
    */
   setTargetFPS(fps: number): void {
-    this.targetFPS = Math.max(1, Math.min(fps, 120));
-    this.frameInterval = 1000 / this.targetFPS;
+    // Deprecated - keeping for API compatibility
+    console.log(`Target FPS set to ${fps} (deprecated - now updates continuously)`);
   }
 
   /**
