@@ -13,14 +13,13 @@ import { getWASMDSPService, StreamData } from '../services/WASMDSPService';
 export interface VisualizationPanelProps {
   isProcessing: boolean;
   showPlots?: boolean;
-  streamData: { decodedText: string; ber: number; constellationI: Float32Array; constellationQ: Float32Array; fftMagnitude: Float32Array } | null;
+  streamData: StreamData | null;
   logs: string[];
 }
 
 const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ 
   isProcessing, 
-  showPlots = true,
-  logs 
+  showPlots = true
 }) => {
   const [liveStreamData, setLiveStreamData] = useState<StreamData | null>(null);
   const [accumulatedText, setAccumulatedText] = useState<string>('');
@@ -49,6 +48,18 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
       setLiveStreamData(null);
     }
   }, [isProcessing]);
+
+  const formatValue = (value: number | undefined, decimals: number = 2): string => {
+    if (value === undefined || value === null) return '—';
+    if (Math.abs(value) < 0.001 && value !== 0) return value.toExponential(2);
+    return value.toFixed(decimals);
+  };
+
+  const formatStatus = (status: string | boolean | undefined): string => {
+    if (typeof status === 'boolean') return status ? 'YES' : 'NO';
+    return status || '—';
+  };
+
   if (!showPlots) {
     return (
       <div className="visualization-panel">
@@ -62,117 +73,155 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
 
   return (
     <div className="visualization-panel">
-      <div className="visualization-grid">
-        <div className="visualization-item">
-          <div className="visualization-header">
-            <h3>Constellation Diagram</h3>
-            <span className="visualization-desc">
-              {isProcessing ? 'Live QPSK Symbol Scatter' : 'Ready - Start DSP to view data'}
-            </span>
-          </div>
-          <div className="visualization-content">
-            <ConstellationPlot
-              width={0}
-              height={0}
-              maxPoints={1000}
-              showGrid={true}
-              showReference={true}
-            />
-          </div>
+      <div className="plot-container">
+        <div className="plot-wrapper">
+          <ConstellationPlot
+            width={0}
+            height={0}
+            maxPoints={1000}
+            showGrid={true}
+            showReference={true}
+          />
         </div>
-
-        <div className="visualization-item">
-          <div className="visualization-header">
-            <h3>Spectrum Analyzer</h3>
-            <span className="visualization-desc">
-              {isProcessing ? 'Live Frequency Domain Analysis' : 'Ready - Start DSP to view data'}
-            </span>
-          </div>
-          <div className="visualization-content">
-            <SpectrumPlot
-              width={0}
-              height={0}
-              showGrid={true}
-              minDb={-80}
-              maxDb={0}
-              smoothing={0.8}
-            />
-          </div>
+        <div className="plot-wrapper">
+          <SpectrumPlot
+            width={0}
+            height={0}
+            showGrid={true}
+            minDb={-80}
+            maxDb={0}
+            smoothing={0.8}
+          />
         </div>
       </div>
       
-      {/* Diagnostics Section */}
-      <div className="diagnostics-section">
-        <div className="diagnostics-grid">
-          {/* Signal Quality Metrics */}
-          <div className="diagnostic-card">
-            <h3>Signal Quality</h3>
-            <table className="diagnostic-table">
-              <tbody>
-                <tr>
-                  <td>BER (Post-FEC):</td>
-                  <td className="value">{liveStreamData ? liveStreamData.ber.toExponential(2) : '—'}</td>
-                </tr>
-                <tr>
-                  <td>Mean EVM:</td>
-                  <td className="value">{liveStreamData ? liveStreamData.meanEvm.toFixed(4) : '—'}</td>
-                </tr>
-                <tr>
-                  <td>Peak EVM:</td>
-                  <td className="value">{liveStreamData ? liveStreamData.peakEvm.toFixed(4) : '—'}</td>
-                </tr>
-                <tr>
-                  <td>Timing Error:</td>
-                  <td className="value">{liveStreamData ? liveStreamData.timingError.toFixed(4) : '—'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Frame Status */}
-          <div className="diagnostic-card">
-            <h3>Frame Status</h3>
-            <table className="diagnostic-table">
-              <tbody>
-                <tr>
-                  <td>Sync Found:</td>
-                  <td className={`value ${liveStreamData?.syncFound ? 'success' : 'error'}`}>
-                    {liveStreamData ? (liveStreamData.syncFound ? '✓ Yes' : '✗ No') : '—'}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Symbol Count:</td>
-                  <td className="value">{liveStreamData ? liveStreamData.symbolCount : '—'}</td>
-                </tr>
-                <tr>
-                  <td>Decoded Bytes:</td>
-                  <td className="value">{accumulatedText.length}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Decoded Data */}
-          <div className="diagnostic-card wide">
-            <h3>Decoded Bitstream</h3>
-            <div className="decoded-output">
-              {accumulatedText || <em className="empty">Waiting for decoded data...</em>}
-            </div>
-          </div>
-          
-          {/* Processing Logs */}
-          <div className="diagnostic-card wide">
-            <h3>Processing Logs</h3>
-            <div className="logs-output">
-              {logs.length > 0 ? (
-                logs.map((log, idx) => (
-                  <div key={idx} className="log-line">{log}</div>
-                ))
-              ) : (
-                <em className="empty">No logs yet</em>
-              )}
-            </div>
-          </div>
+      <div className="diagnostics-container">
+        {/* Pre-Channel (Transmitter) Diagnostics */}
+        <div className="diagnostic-section">
+          <h3>TX (Pre-Channel)</h3>
+          <table className="diagnostic-table">
+            <tbody>
+              <tr>
+                <td className="diag-label">Frame #</td>
+                <td className="diag-value">{liveStreamData?.preChannel.frameCount || 0}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Symbols</td>
+                <td className="diag-value">{liveStreamData?.preChannel.symbolCount || 0}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Carrier</td>
+                <td className="diag-value">{formatValue(liveStreamData?.preChannel.carrierFreqHz, 0)} Hz</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Rate</td>
+                <td className="diag-value">{liveStreamData?.preChannel.symbolRateHz || 0} sym/s</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Modulation</td>
+                <td className="diag-value">{liveStreamData?.preChannel.modulationType || 'QPSK'}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">FEC Rate</td>
+                <td className="diag-value">{liveStreamData?.preChannel.fecRate || '64/128'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Post-Channel (Receiver) Diagnostics */}
+        <div className="diagnostic-section">
+          <h3>RX (Post-Channel)</h3>
+          <table className="diagnostic-table">
+            <tbody>
+              <tr>
+                <td className="diag-label">Lock Status</td>
+                <td className={`diag-value ${liveStreamData?.postChannel.lockStatus === 'LOCKED' ? 'status-good' : 'status-warn'}`}>
+                  {liveStreamData?.postChannel.lockStatus || 'UNLOCKED'}
+                </td>
+              </tr>
+              <tr>
+                <td className="diag-label">Sync</td>
+                <td className={`diag-value ${liveStreamData?.postChannel.syncStatus ? 'status-good' : 'status-bad'}`}>
+                  {formatStatus(liveStreamData?.postChannel.syncStatus)}
+                </td>
+              </tr>
+              <tr>
+                <td className="diag-label">Freq Offset</td>
+                <td className="diag-value">{formatValue(liveStreamData?.postChannel.frequencyOffsetHz, 1)} Hz</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Phase Offset</td>
+                <td className="diag-value">{formatValue(liveStreamData?.postChannel.phaseOffsetRad, 3)} rad</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Timing Error</td>
+                <td className="diag-value">
+                  {liveStreamData?.postChannel.timingError && liveStreamData.postChannel.timingError.length > 0 
+                    ? formatValue(liveStreamData.postChannel.timingError[liveStreamData.postChannel.timingError.length - 1], 4)
+                    : '—'}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Signal Quality Metrics */}
+        <div className="diagnostic-section">
+          <h3>Signal Quality</h3>
+          <table className="diagnostic-table">
+            <tbody>
+              <tr>
+                <td className="diag-label">EVM</td>
+                <td className={`diag-value ${(liveStreamData?.postChannel.evmPercent || 0) < 10 ? 'status-good' : 'status-warn'}`}>
+                  {formatValue(liveStreamData?.postChannel.evmPercent, 1)}%
+                </td>
+              </tr>
+              <tr>
+                <td className="diag-label">SNR Est</td>
+                <td className={`diag-value ${(liveStreamData?.postChannel.snrEstimateDb || 0) > 10 ? 'status-good' : 'status-warn'}`}>
+                  {formatValue(liveStreamData?.postChannel.snrEstimateDb, 1)} dB
+                </td>
+              </tr>
+              <tr>
+                <td className="diag-label">BER (Inst)</td>
+                <td className={`diag-value ${(liveStreamData?.postChannel.berInstantaneous || 0) < 0.01 ? 'status-good' : 'status-bad'}`}>
+                  {formatValue(liveStreamData?.postChannel.berInstantaneous, 6)}
+                </td>
+              </tr>
+              <tr>
+                <td className="diag-label">BER (Avg)</td>
+                <td className={`diag-value ${(liveStreamData?.postChannel.berAverage || 0) < 0.01 ? 'status-good' : 'status-warn'}`}>
+                  {formatValue(liveStreamData?.postChannel.berAverage, 6)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Decoder Performance */}
+        <div className="diagnostic-section">
+          <h3>Decoder</h3>
+          <table className="diagnostic-table">
+            <tbody>
+              <tr>
+                <td className="diag-label">Frames</td>
+                <td className="diag-value">{liveStreamData?.framesProcessed || 0}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Symbols</td>
+                <td className="diag-value">{liveStreamData?.symbolsDecoded || 0}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">FEC Fixes</td>
+                <td className="diag-value">{liveStreamData?.fecCorrections || 0}</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Output</td>
+                <td className="diag-value">{accumulatedText ? `${accumulatedText.length} bytes` : '—'}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

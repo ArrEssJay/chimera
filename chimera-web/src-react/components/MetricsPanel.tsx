@@ -56,7 +56,7 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({
   }, [isProcessing]);
   
   const decodedBitstream = accumulatedText || propDecodedBitstream;
-  const ber = streamData?.ber ?? propBer;
+  const ber = streamData?.postChannel.berAverage ?? propBer;
 
   // Auto-scroll logs to bottom
   useEffect(() => {
@@ -125,11 +125,11 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({
               <div className="info-grid">
                 <div className="info-row">
                   <span className="info-label">Constellation Points:</span>
-                  <span className="info-value">{streamData.constellationI.length}</span>
+                  <span className="info-value">{streamData.postChannel.rxConstellationI.length}</span>
                 </div>
                 <div className="info-row">
                   <span className="info-label">FFT Bins:</span>
-                  <span className="info-value">{streamData.fftMagnitude.length}</span>
+                  <span className="info-value">{streamData.postChannel.rxSpectrumMagnitude.length}</span>
                 </div>
               </div>
             </div>

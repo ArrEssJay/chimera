@@ -61,22 +61,42 @@ impl WASMStreamingDSP {
     /// Helper to create WASM output from streaming output
     fn create_output(&mut self, output: chimera_core::streaming::StreamingOutput) -> Result<WASMStreamOutput, JsValue> {
         
-        // Convert decoded bytes to string
-        let decoded_text = String::from_utf8_lossy(&output.decoded_data).to_string();
-        
         // Package for JavaScript
         Ok(WASMStreamOutput {
             audio: Float32Array::from(&output.audio_samples[..]),
-            constellation_i: Float32Array::from(&output.constellation_i[..]),
-            constellation_q: Float32Array::from(&output.constellation_q[..]),
-            fft_magnitude: Float32Array::from(&output.fft_magnitude[..]),
-            ber: output.ber,
-            decoded_text,
-            timing_error: output.timing_error,
-            mean_evm: output.mean_evm,
-            peak_evm: output.peak_evm,
-            sync_found: output.sync_found,
-            symbol_count: output.symbol_count,
+            
+            // Pre-channel (TX)
+            tx_constellation_i: Float32Array::from(&output.pre_channel.tx_constellation_i[..]),
+            tx_constellation_q: Float32Array::from(&output.pre_channel.tx_constellation_q[..]),
+            tx_spectrum_magnitude: Float32Array::from(&output.pre_channel.tx_spectrum_magnitude[..]),
+            frame_count: output.pre_channel.frame_count as u32,
+            symbol_count: output.pre_channel.symbol_count as u32,
+            carrier_freq_hz: output.pre_channel.carrier_freq_hz,
+            symbol_rate_hz: output.pre_channel.symbol_rate_hz,
+            modulation_type: output.pre_channel.modulation_type,
+            fec_rate: output.pre_channel.fec_rate,
+            
+            // Post-channel (RX)
+            rx_constellation_i: Float32Array::from(&output.post_channel.rx_constellation_i[..]),
+            rx_constellation_q: Float32Array::from(&output.post_channel.rx_constellation_q[..]),
+            rx_spectrum_magnitude: Float32Array::from(&output.post_channel.rx_spectrum_magnitude[..]),
+            timing_error: Float32Array::from(&output.post_channel.timing_error[..]),
+            frequency_offset_hz: output.post_channel.frequency_offset_hz,
+            phase_offset_rad: output.post_channel.phase_offset_rad,
+            evm_percent: output.post_channel.evm_percent,
+            snr_estimate_db: output.post_channel.snr_estimate_db,
+            ber_instantaneous: output.post_channel.ber_instantaneous,
+            ber_average: output.post_channel.ber_average,
+            sync_status: output.post_channel.sync_status,
+            lock_status: output.post_channel.lock_status,
+            
+            // Decoded
+            decoded_text: output.decoded_text,
+            
+            // Performance
+            frames_processed: output.frames_processed as u32,
+            symbols_decoded: output.symbols_decoded as u32,
+            fec_corrections: output.fec_corrections as u32,
         })
     }
     
@@ -110,17 +130,41 @@ impl WASMStreamingDSP {
 /// Output structure exposed to JavaScript
 #[wasm_bindgen]
 pub struct WASMStreamOutput {
+    // Audio
     audio: Float32Array,
-    constellation_i: Float32Array,
-    constellation_q: Float32Array,
-    fft_magnitude: Float32Array,
-    ber: f32,
+    
+    // Pre-channel (TX)
+    tx_constellation_i: Float32Array,
+    tx_constellation_q: Float32Array,
+    tx_spectrum_magnitude: Float32Array,
+    frame_count: u32,
+    symbol_count: u32,
+    carrier_freq_hz: f64,
+    symbol_rate_hz: u32,
+    modulation_type: String,
+    fec_rate: String,
+    
+    // Post-channel (RX)
+    rx_constellation_i: Float32Array,
+    rx_constellation_q: Float32Array,
+    rx_spectrum_magnitude: Float32Array,
+    timing_error: Float32Array,
+    frequency_offset_hz: f32,
+    phase_offset_rad: f32,
+    evm_percent: f32,
+    snr_estimate_db: f32,
+    ber_instantaneous: f32,
+    ber_average: f32,
+    sync_status: bool,
+    lock_status: String,
+    
+    // Decoded
     decoded_text: String,
-    timing_error: f64,
-    mean_evm: f32,
-    peak_evm: f32,
-    sync_found: bool,
-    symbol_count: usize,
+    
+    // Performance
+    frames_processed: u32,
+    symbols_decoded: u32,
+    fec_corrections: u32,
 }
 
 #[wasm_bindgen]
@@ -130,54 +174,133 @@ impl WASMStreamOutput {
         self.audio.clone()
     }
     
+    // Pre-channel getters
     #[wasm_bindgen(getter)]
-    pub fn constellation_i(&self) -> Float32Array {
-        self.constellation_i.clone()
+    pub fn tx_constellation_i(&self) -> Float32Array {
+        self.tx_constellation_i.clone()
     }
     
     #[wasm_bindgen(getter)]
-    pub fn constellation_q(&self) -> Float32Array {
-        self.constellation_q.clone()
+    pub fn tx_constellation_q(&self) -> Float32Array {
+        self.tx_constellation_q.clone()
     }
     
     #[wasm_bindgen(getter)]
-    pub fn fft_magnitude(&self) -> Float32Array {
-        self.fft_magnitude.clone()
+    pub fn tx_spectrum_magnitude(&self) -> Float32Array {
+        self.tx_spectrum_magnitude.clone()
     }
     
     #[wasm_bindgen(getter)]
-    pub fn ber(&self) -> f32 {
-        self.ber
+    pub fn frame_count(&self) -> u32 {
+        self.frame_count
     }
     
+    #[wasm_bindgen(getter)]
+    pub fn symbol_count(&self) -> u32 {
+        self.symbol_count
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn carrier_freq_hz(&self) -> f64 {
+        self.carrier_freq_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn symbol_rate_hz(&self) -> u32 {
+        self.symbol_rate_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn modulation_type(&self) -> String {
+        self.modulation_type.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn fec_rate(&self) -> String {
+        self.fec_rate.clone()
+    }
+    
+    // Post-channel getters
+    #[wasm_bindgen(getter)]
+    pub fn rx_constellation_i(&self) -> Float32Array {
+        self.rx_constellation_i.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn rx_constellation_q(&self) -> Float32Array {
+        self.rx_constellation_q.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn rx_spectrum_magnitude(&self) -> Float32Array {
+        self.rx_spectrum_magnitude.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn timing_error(&self) -> Float32Array {
+        self.timing_error.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frequency_offset_hz(&self) -> f32 {
+        self.frequency_offset_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn phase_offset_rad(&self) -> f32 {
+        self.phase_offset_rad
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn evm_percent(&self) -> f32 {
+        self.evm_percent
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn snr_estimate_db(&self) -> f32 {
+        self.snr_estimate_db
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn ber_instantaneous(&self) -> f32 {
+        self.ber_instantaneous
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn ber_average(&self) -> f32 {
+        self.ber_average
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn sync_status(&self) -> bool {
+        self.sync_status
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn lock_status(&self) -> String {
+        self.lock_status.clone()
+    }
+    
+    // Decoded getters
     #[wasm_bindgen(getter)]
     pub fn decoded_text(&self) -> String {
         self.decoded_text.clone()
     }
     
+    // Performance getters
     #[wasm_bindgen(getter)]
-    pub fn timing_error(&self) -> f64 {
-        self.timing_error
+    pub fn frames_processed(&self) -> u32 {
+        self.frames_processed
     }
     
     #[wasm_bindgen(getter)]
-    pub fn mean_evm(&self) -> f32 {
-        self.mean_evm
+    pub fn symbols_decoded(&self) -> u32 {
+        self.symbols_decoded
     }
     
     #[wasm_bindgen(getter)]
-    pub fn peak_evm(&self) -> f32 {
-        self.peak_evm
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn sync_found(&self) -> bool {
-        self.sync_found
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn symbol_count(&self) -> usize {
-        self.symbol_count
+    pub fn fec_corrections(&self) -> u32 {
+        self.fec_corrections
     }
 }
 

@@ -3,6 +3,7 @@
  * 
  * Uses Canvas 2D API with requestAnimationFrame for 60fps updates.
  * Displays I/Q symbol points with color-coded decision boundaries.
+ * Supports toggling between TX and RX constellations.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,6 +29,7 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
   const dataBufferRef = useRef<{ i: number[]; q: number[] }>({ i: [], q: [] });
   const animationFrameRef = useRef<number | null>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth || 400, height: propHeight || 400 });
+  const [showTx, setShowTx] = useState(false); // Toggle between TX and RX
 
   // Handle responsive sizing
   useEffect(() => {
@@ -57,10 +59,14 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
       // Update buffer with new constellation points
       const buffer = dataBufferRef.current;
       
+      // Select TX or RX constellation
+      const constellationI = showTx ? data.preChannel.txConstellationI : data.postChannel.rxConstellationI;
+      const constellationQ = showTx ? data.preChannel.txConstellationQ : data.postChannel.rxConstellationQ;
+      
       // Add new points
-      for (let i = 0; i < data.constellationI.length; i++) {
-        buffer.i.push(data.constellationI[i]);
-        buffer.q.push(data.constellationQ[i]);
+      for (let i = 0; i < constellationI.length; i++) {
+        buffer.i.push(constellationI[i]);
+        buffer.q.push(constellationQ[i]);
       }
 
       // Limit buffer size
@@ -85,7 +91,7 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [maxPoints, dimensions]);
+  }, [maxPoints, dimensions, showTx]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -176,18 +182,30 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         const age = (pointsToRender - i) / pointsToRender;
         const alpha = Math.max(0.1, age * 0.8);
         
-        // Color based on quadrant
+        // Color based on TX/RX and quality
         let color = '#ffffff';
-        if (iVal > 0 && qVal > 0) color = '#00ffff'; // Q1: cyan
-        else if (iVal < 0 && qVal > 0) color = '#ffff00'; // Q2: yellow
-        else if (iVal < 0 && qVal < 0) color = '#ff00ff'; // Q3: magenta
-        else if (iVal > 0 && qVal < 0) color = '#00ff00'; // Q4: green
+        if (showTx) {
+          color = '#00ff88'; // Green for TX (ideal)
+        } else {
+          // Color code RX by error from ideal
+          const distance = Math.sqrt(iVal * iVal + qVal * qVal);
+          const idealDistance = 1.0;
+          const error = Math.abs(distance - idealDistance);
+          
+          if (error < 0.1) {
+            color = '#00ff88'; // Green - good
+          } else if (error < 0.3) {
+            color = '#ffaa00'; // Orange - warning
+          } else {
+            color = '#ff4444'; // Red - error
+          }
+        }
         
         ctx.fillStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         
         // Draw point
         ctx.beginPath();
-        ctx.arc(x, y, 2, 0, 2 * Math.PI);
+        ctx.arc(x, y, showTx ? 1.5 : 2, 0, 2 * Math.PI);
         ctx.fill();
       }
     } else {
@@ -207,10 +225,20 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
     ctx.font = '12px monospace';
     ctx.fillText('I', width - 15, centerY + 20);
     ctx.fillText('Q', centerX - 10, 20);
+    
+    // Draw title
+    ctx.fillStyle = '#4a9eff';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(showTx ? 'TX Constellation' : 'RX Constellation', 5, 15);
+    
+    // Draw point count
+    ctx.fillStyle = '#666';
+    ctx.fillText(`Points: ${buffer.i.length}`, 5, height - 5);
   };
 
   return (
-    <div ref={containerRef} className="constellation-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div ref={containerRef} className="constellation-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <canvas
         ref={canvasRef}
         width={dimensions.width}
@@ -220,8 +248,36 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
           height: '100%',
           border: '1px solid #2a2a2a',
           background: '#1a1a1a',
+          cursor: 'pointer',
         }}
+        onClick={() => setShowTx(!showTx)}
+        title="Click to toggle TX/RX"
       />
+      <div className="plot-controls" style={{
+        position: 'absolute',
+        top: '4px',
+        right: '4px',
+        display: 'flex',
+        gap: '4px',
+      }}>
+        <button 
+          className={`plot-toggle ${showTx ? 'active' : ''}`}
+          onClick={() => setShowTx(!showTx)}
+          style={{
+            padding: '2px 6px',
+            fontSize: '10px',
+            background: showTx ? '#4a9eff' : '#2a2a2a',
+            color: showTx ? '#fff' : '#888',
+            border: `1px solid ${showTx ? '#4a9eff' : '#333'}`,
+            cursor: 'pointer',
+            transition: 'all 0.1s',
+            textTransform: 'uppercase',
+            fontWeight: 500,
+          }}
+        >
+          {showTx ? 'TX' : 'RX'}
+        </button>
+      </div>
     </div>
   );
 };

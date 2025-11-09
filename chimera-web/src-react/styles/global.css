@@ -793,6 +793,126 @@ code {
   font-style: italic;
 }
 
+/* Diagnostics Container for Four-Column Layout */
+.diagnostics-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px;
+  background: #0a0a0a;
+  border-top: 1px solid #2a2a2a;
+}
+
+.diagnostic-section {
+  background: #1a1a1a;
+  padding: 6px;
+  border: 1px solid #2a2a2a;
+}
+
+.diagnostic-section h3 {
+  font-size: 11px;
+  color: #4a9eff;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.diagnostic-table tbody tr {
+  border-bottom: 1px solid #252525;
+}
+
+.diagnostic-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.diag-label {
+  padding: 3px 4px;
+  color: #666;
+  font-weight: 400;
+  white-space: nowrap;
+  width: 50%;
+}
+
+.diag-value {
+  padding: 3px 4px;
+  color: #ccc;
+  font-family: 'Courier New', monospace;
+  text-align: right;
+  font-weight: 500;
+}
+
+.diag-value.status-good {
+  color: #00ff88;
+}
+
+.diag-value.status-warn {
+  color: #ffaa00;
+}
+
+.diag-value.status-bad {
+  color: #ff4444;
+}
+
+/* Plot Container and Controls */
+.plot-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  height: 50%;
+}
+
+.plot-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.plot-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.plot-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.plot-controls {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.plot-toggle {
+  padding: 2px 6px;
+  font-size: 10px;
+  background: #2a2a2a;
+  color: #888;
+  border: 1px solid #333;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.plot-toggle:hover {
+  background: #333;
+  color: #aaa;
+}
+
+.plot-toggle.active {
+  background: #4a9eff;
+  color: #fff;
+  border-color: #4a9eff;
+}
+
 .visualization-panel {
   display: flex;
   flex-direction: column;

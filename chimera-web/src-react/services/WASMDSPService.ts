@@ -14,18 +14,50 @@ export interface StreamConfig {
   ldpc: LDPCConfig;
 }
 
+export interface DSPConfig {
+  message: string;
+  snrDb: number;
+  linkLossDb: number;
+  sampleRate: number;
+  bitDepth: string;
+  rngSeed?: number;
+}
+
+export interface PreChannelDiagnostics {
+  frameCount: number;
+  symbolCount: number;
+  txConstellationI: Float32Array;
+  txConstellationQ: Float32Array;
+  txSpectrumMagnitude: Float32Array;
+  carrierFreqHz: number;
+  symbolRateHz: number;
+  modulationType: string;
+  fecRate: string;
+}
+
+export interface PostChannelDiagnostics {
+  rxConstellationI: Float32Array;
+  rxConstellationQ: Float32Array;
+  rxSpectrumMagnitude: Float32Array;
+  timingError: Float32Array;
+  frequencyOffsetHz: number;
+  phaseOffsetRad: number;
+  evmPercent: number;
+  snrEstimateDb: number;
+  berInstantaneous: number;
+  berAverage: number;
+  syncStatus: boolean;
+  lockStatus: string;
+}
+
 export interface StreamData {
   audio: Float32Array;
-  constellationI: Float32Array;
-  constellationQ: Float32Array;
-  fftMagnitude: Float32Array;
-  ber: number;
+  preChannel: PreChannelDiagnostics;
+  postChannel: PostChannelDiagnostics;
   decodedText: string;
-  timingError: number;
-  meanEvm: number;
-  peakEvm: number;
-  syncFound: boolean;
-  symbolCount: number;
+  framesProcessed: number;
+  symbolsDecoded: number;
+  fecCorrections: number;
   timestamp: number;
 }
 
@@ -50,6 +82,7 @@ export class WASMDSPService {
   private frameInterval = 1000 / 60; // 16.67ms
   private accumulatedLogs: string[] = [];
   private isInitialized = false;
+  private currentConfig: DSPConfig | null = null;
 
   constructor() {
     // Don't initialize in constructor - do it lazily
@@ -185,16 +218,35 @@ export class WASMDSPService {
       // Notify subscribers with processed data
       const streamData: StreamData = {
         audio: output.audio,
-        constellationI: output.constellation_i,
-        constellationQ: output.constellation_q,
-        fftMagnitude: output.fft_magnitude,
-        ber: output.ber,
+        preChannel: {
+          frameCount: output.frame_count,
+          symbolCount: output.symbol_count,
+          txConstellationI: output.tx_constellation_i,
+          txConstellationQ: output.tx_constellation_q,
+          txSpectrumMagnitude: output.tx_spectrum_magnitude,
+          carrierFreqHz: output.carrier_freq_hz,
+          symbolRateHz: output.symbol_rate_hz,
+          modulationType: output.modulation_type,
+          fecRate: output.fec_rate,
+        },
+        postChannel: {
+          rxConstellationI: output.rx_constellation_i,
+          rxConstellationQ: output.rx_constellation_q,
+          rxSpectrumMagnitude: output.rx_spectrum_magnitude,
+          timingError: output.timing_error,
+          frequencyOffsetHz: output.frequency_offset_hz,
+          phaseOffsetRad: output.phase_offset_rad,
+          evmPercent: output.evm_percent,
+          snrEstimateDb: output.snr_estimate_db,
+          berInstantaneous: output.ber_instantaneous,
+          berAverage: output.ber_average,
+          syncStatus: output.sync_status,
+          lockStatus: output.lock_status,
+        },
         decodedText: output.decoded_text,
-        timingError: output.timing_error,
-        meanEvm: output.mean_evm,
-        peakEvm: output.peak_evm,
-        syncFound: output.sync_found,
-        symbolCount: output.symbol_count,
+        framesProcessed: output.frames_processed,
+        symbolsDecoded: output.symbols_decoded,
+        fecCorrections: output.fec_corrections,
         timestamp: now,
       };
 

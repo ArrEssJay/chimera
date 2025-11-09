@@ -31,6 +31,7 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
   const animationFrameRef = useRef<number | null>(null);
   const latestDataRef = useRef<Float32Array | null>(null);
   const [dimensions, setDimensions] = useState({ width: propWidth || 600, height: propHeight || 300 });
+  const [showTx, setShowTx] = useState(false); // Toggle between TX and RX
 
   // Handle responsive sizing
   useEffect(() => {
@@ -57,8 +58,10 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
 
     // Subscribe to DSP data updates
     dspService.subscribe(subscriptionId, (data: StreamData) => {
-      // Store latest FFT magnitude data
-      latestDataRef.current = data.fftMagnitude;
+      // Store latest FFT magnitude data - select TX or RX
+      latestDataRef.current = showTx 
+        ? data.preChannel.txSpectrumMagnitude 
+        : data.postChannel.rxSpectrumMagnitude;
     });
 
     // Start rendering loop
@@ -75,7 +78,7 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [smoothing, dimensions]);
+  }, [smoothing, dimensions, showTx]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -230,10 +233,16 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
       const label = freq >= 1000 ? `${(freq / 1000).toFixed(1)}k` : `${freq.toFixed(0)}`;
       ctx.fillText(label, x, height - 5);
     });
+    
+    // Draw title
+    ctx.fillStyle = '#4a9eff';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(showTx ? 'TX Spectrum' : 'RX Spectrum', 5, 15);
   };
 
   return (
-    <div ref={containerRef} className="spectrum-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div ref={containerRef} className="spectrum-plot" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <canvas
         ref={canvasRef}
         width={dimensions.width}
@@ -243,8 +252,36 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
           height: '100%',
           border: '1px solid #2a2a2a',
           background: '#1a1a1a',
+          cursor: 'pointer',
         }}
+        onClick={() => setShowTx(!showTx)}
+        title="Click to toggle TX/RX"
       />
+      <div className="plot-controls" style={{
+        position: 'absolute',
+        top: '4px',
+        right: '4px',
+        display: 'flex',
+        gap: '4px',
+      }}>
+        <button 
+          className={`plot-toggle ${showTx ? 'active' : ''}`}
+          onClick={() => setShowTx(!showTx)}
+          style={{
+            padding: '2px 6px',
+            fontSize: '10px',
+            background: showTx ? '#4a9eff' : '#2a2a2a',
+            color: showTx ? '#fff' : '#888',
+            border: `1px solid ${showTx ? '#4a9eff' : '#333'}`,
+            cursor: 'pointer',
+            transition: 'all 0.1s',
+            textTransform: 'uppercase',
+            fontWeight: 500,
+          }}
+        >
+          {showTx ? 'TX' : 'RX'}
+        </button>
+      </div>
     </div>
   );
 };
