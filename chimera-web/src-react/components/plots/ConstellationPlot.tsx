@@ -141,13 +141,14 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
       });
     }
 
-    // Draw reference constellation points for QPSK
+    // Draw reference constellation points for QPSK (normalized to ±0.707)
     if (showReference) {
+      const sqrt2 = 0.707; // √2/2 for normalized QPSK
       const refPoints = [
-        { i: 1, q: 1 },   // 00
-        { i: -1, q: 1 },  // 01
-        { i: -1, q: -1 }, // 11
-        { i: 1, q: -1 },  // 10
+        { i: sqrt2, q: sqrt2 },   // 00
+        { i: -sqrt2, q: sqrt2 },  // 01
+        { i: -sqrt2, q: -sqrt2 }, // 11
+        { i: sqrt2, q: -sqrt2 },  // 10
       ];
 
       ctx.fillStyle = '#00ff0050';
@@ -187,17 +188,28 @@ const ConstellationPlot: React.FC<ConstellationPlotProps> = ({
         if (showTx) {
           color = '#00ff88'; // Green for TX (ideal)
         } else {
-          // Color code RX by error from ideal
-          const distance = Math.sqrt(iVal * iVal + qVal * qVal);
-          const idealDistance = 1.0;
-          const error = Math.abs(distance - idealDistance);
+          // Color code RX by distance from nearest ideal QPSK point
+          const sqrt2 = 0.707;
+          const idealPoints = [
+            { i: sqrt2, q: sqrt2 },
+            { i: -sqrt2, q: sqrt2 },
+            { i: -sqrt2, q: -sqrt2 },
+            { i: sqrt2, q: -sqrt2 },
+          ];
           
-          if (error < 0.1) {
-            color = '#00ff88'; // Green - good
-          } else if (error < 0.3) {
-            color = '#ffaa00'; // Orange - warning
+          // Find minimum distance to ideal points
+          const minDistance = Math.min(
+            ...idealPoints.map(p => 
+              Math.sqrt(Math.pow(iVal - p.i, 2) + Math.pow(qVal - p.q, 2))
+            )
+          );
+          
+          if (minDistance < 0.2) {
+            color = '#00ff88'; // Green - close to ideal
+          } else if (minDistance < 0.4) {
+            color = '#ffaa00'; // Orange - moderate error
           } else {
-            color = '#ff4444'; // Red - error
+            color = '#ff4444'; // Red - large error
           }
         }
         

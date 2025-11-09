@@ -70,11 +70,16 @@ impl WASMStreamingDSP {
             tx_constellation_q: Float32Array::from(&output.pre_channel.tx_constellation_q[..]),
             tx_spectrum_magnitude: Float32Array::from(&output.pre_channel.tx_spectrum_magnitude[..]),
             frame_count: output.pre_channel.frame_count as u32,
+            total_frames: output.pre_channel.total_frames as u32,
             symbol_count: output.pre_channel.symbol_count as u32,
             carrier_freq_hz: output.pre_channel.carrier_freq_hz,
             symbol_rate_hz: output.pre_channel.symbol_rate_hz,
             modulation_type: output.pre_channel.modulation_type,
             fec_rate: output.pre_channel.fec_rate,
+            sync_bytes: output.pre_channel.frame_layout.sync_bytes as u32,
+            data_bytes: output.pre_channel.frame_layout.data_bytes as u32,
+            parity_bytes: output.pre_channel.frame_layout.parity_bytes as u32,
+            total_frame_bytes: output.pre_channel.frame_layout.total_bytes as u32,
             
             // Post-channel (RX)
             rx_constellation_i: Float32Array::from(&output.post_channel.rx_constellation_i[..]),
@@ -138,11 +143,16 @@ pub struct WASMStreamOutput {
     tx_constellation_q: Float32Array,
     tx_spectrum_magnitude: Float32Array,
     frame_count: u32,
+    total_frames: u32,
     symbol_count: u32,
     carrier_freq_hz: f64,
     symbol_rate_hz: u32,
     modulation_type: String,
     fec_rate: String,
+    sync_bytes: u32,
+    data_bytes: u32,
+    parity_bytes: u32,
+    total_frame_bytes: u32,
     
     // Post-channel (RX)
     rx_constellation_i: Float32Array,
@@ -196,6 +206,11 @@ impl WASMStreamOutput {
     }
     
     #[wasm_bindgen(getter)]
+    pub fn total_frames(&self) -> u32 {
+        self.total_frames
+    }
+    
+    #[wasm_bindgen(getter)]
     pub fn symbol_count(&self) -> u32 {
         self.symbol_count
     }
@@ -218,6 +233,26 @@ impl WASMStreamOutput {
     #[wasm_bindgen(getter)]
     pub fn fec_rate(&self) -> String {
         self.fec_rate.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn sync_bytes(&self) -> u32 {
+        self.sync_bytes
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn data_bytes(&self) -> u32 {
+        self.data_bytes
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn parity_bytes(&self) -> u32 {
+        self.parity_bytes
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn total_frame_bytes(&self) -> u32 {
+        self.total_frame_bytes
     }
     
     // Post-channel getters

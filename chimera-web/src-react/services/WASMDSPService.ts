@@ -25,6 +25,7 @@ export interface DSPConfig {
 
 export interface PreChannelDiagnostics {
   frameCount: number;
+  totalFrames: number;
   symbolCount: number;
   txConstellationI: Float32Array;
   txConstellationQ: Float32Array;
@@ -33,6 +34,12 @@ export interface PreChannelDiagnostics {
   symbolRateHz: number;
   modulationType: string;
   fecRate: string;
+  frameLayout: {
+    syncBytes: number;
+    dataBytes: number;
+    parityBytes: number;
+    totalBytes: number;
+  };
 }
 
 export interface PostChannelDiagnostics {
@@ -220,6 +227,7 @@ export class WASMDSPService {
         audio: output.audio,
         preChannel: {
           frameCount: output.frame_count,
+          totalFrames: output.total_frames || 1,
           symbolCount: output.symbol_count,
           txConstellationI: output.tx_constellation_i,
           txConstellationQ: output.tx_constellation_q,
@@ -228,6 +236,12 @@ export class WASMDSPService {
           symbolRateHz: output.symbol_rate_hz,
           modulationType: output.modulation_type,
           fecRate: output.fec_rate,
+          frameLayout: {
+            syncBytes: output.sync_bytes || 0,
+            dataBytes: output.data_bytes || 0,
+            parityBytes: output.parity_bytes || 0,
+            totalBytes: output.total_frame_bytes || 0,
+          },
         },
         postChannel: {
           rxConstellationI: output.rx_constellation_i,

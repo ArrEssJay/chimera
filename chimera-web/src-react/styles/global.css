@@ -793,14 +793,33 @@ code {
   font-style: italic;
 }
 
-/* Diagnostics Container for Four-Column Layout */
+/* Diagnostics Container for Five-Column Layout */
 .diagnostics-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   padding: 8px;
   background: #0a0a0a;
   border-top: 1px solid #2a2a2a;
+}
+
+/* Responsive breakpoints for diagnostics */
+@media (max-width: 1400px) {
+  .diagnostics-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .diagnostics-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .diagnostics-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 .diagnostic-section {

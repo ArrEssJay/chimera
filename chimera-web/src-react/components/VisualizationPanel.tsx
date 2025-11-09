@@ -102,8 +102,10 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
           <table className="diagnostic-table">
             <tbody>
               <tr>
-                <td className="diag-label">Frame #</td>
-                <td className="diag-value">{liveStreamData?.preChannel.frameCount || 0}</td>
+                <td className="diag-label">Frame</td>
+                <td className="diag-value">
+                  {liveStreamData?.preChannel.frameCount || 0}/{liveStreamData?.preChannel.totalFrames || 1}
+                </td>
               </tr>
               <tr>
                 <td className="diag-label">Symbols</td>
@@ -194,6 +196,31 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
                 <td className={`diag-value ${(liveStreamData?.postChannel.berAverage || 0) < 0.01 ? 'status-good' : 'status-warn'}`}>
                   {formatValue(liveStreamData?.postChannel.berAverage, 6)}
                 </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Frame Layout */}
+        <div className="diagnostic-section">
+          <h3>Frame Layout</h3>
+          <table className="diagnostic-table">
+            <tbody>
+              <tr>
+                <td className="diag-label">Sync</td>
+                <td className="diag-value">{liveStreamData?.preChannel.frameLayout?.syncBytes || 0} B</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Data</td>
+                <td className="diag-value">{liveStreamData?.preChannel.frameLayout?.dataBytes || 0} B</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Parity</td>
+                <td className="diag-value">{liveStreamData?.preChannel.frameLayout?.parityBytes || 0} B</td>
+              </tr>
+              <tr>
+                <td className="diag-label">Total</td>
+                <td className="diag-value">{liveStreamData?.preChannel.frameLayout?.totalBytes || 0} B</td>
               </tr>
             </tbody>
           </table>

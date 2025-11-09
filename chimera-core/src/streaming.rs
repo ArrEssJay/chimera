@@ -104,7 +104,8 @@ impl StreamingPipeline {
         
         // Calculate total frames needed for the message
         let message_bytes = sim.plaintext_source.as_bytes().len();
-        let data_bytes_per_frame = protocol.frame_layout.data_bytes;
+        // Each QPSK symbol carries 2 bits, so data_payload_symbols * 2 / 8 = bytes per frame
+        let data_bytes_per_frame = (protocol.frame_layout.data_payload_symbols * 2) / 8;
         let total_frames = if data_bytes_per_frame > 0 {
             (message_bytes + data_bytes_per_frame - 1) / data_bytes_per_frame
         } else {
@@ -185,12 +186,10 @@ impl StreamingPipeline {
                 modulation_type: "QPSK".to_string(),
                 fec_rate: format!("{}/{}", self.ldpc_suite.matrices.message_bits, self.ldpc_suite.matrices.codeword_bits),
                 frame_layout: FrameLayoutInfo {
-                    sync_bytes: self.protocol.frame_layout.sync_bytes,
-                    data_bytes: self.protocol.frame_layout.data_bytes,
-                    parity_bytes: self.protocol.frame_layout.parity_bytes,
-                    total_bytes: self.protocol.frame_layout.sync_bytes + 
-                                self.protocol.frame_layout.data_bytes + 
-                                self.protocol.frame_layout.parity_bytes,
+                    sync_bytes: (self.protocol.frame_layout.sync_symbols * 2) / 8,
+                    data_bytes: (self.protocol.frame_layout.data_payload_symbols * 2) / 8,
+                    parity_bytes: (self.protocol.frame_layout.ecc_symbols * 2) / 8,
+                    total_bytes: (self.protocol.frame_layout.total_symbols * 2) / 8,
                 },
             };
             
@@ -457,7 +456,7 @@ impl StreamingPipeline {
     pub fn reconfigure(&mut self, sim: SimulationConfig, protocol: ProtocolConfig, ldpc: LDPCConfig) {
         // Recalculate total frames
         let message_bytes = sim.plaintext_source.as_bytes().len();
-        let data_bytes_per_frame = protocol.frame_layout.data_bytes;
+        let data_bytes_per_frame = (protocol.frame_layout.data_payload_symbols * 2) / 8;
         let total_frames = if data_bytes_per_frame > 0 {
             (message_bytes + data_bytes_per_frame - 1) / data_bytes_per_frame
         } else {

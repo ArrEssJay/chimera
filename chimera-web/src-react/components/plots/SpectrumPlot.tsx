@@ -182,30 +182,31 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
       }
     }
 
-    // Draw spectrum
+    // Draw spectrum as a line with peak marker
     const binWidth = width / smoothed.length;
     const dbRange = maxDb - minDb;
 
-    // Create gradient for spectrum
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#ff0000');
-    gradient.addColorStop(0.25, '#ff8800');
-    gradient.addColorStop(0.5, '#ffff00');
-    gradient.addColorStop(0.75, '#00ff00');
-    gradient.addColorStop(1, '#0000ff');
+    // Find peak for display
+    let peakValue = minDb;
+    let peakIndex = 0;
+    
+    for (let i = 0; i < smoothed.length; i++) {
+      if (smoothed[i] > peakValue) {
+        peakValue = smoothed[i];
+        peakIndex = i;
+      }
+    }
 
-    ctx.fillStyle = gradient;
-
-    // Draw spectrum bars
+    // Draw spectrum line
+    ctx.strokeStyle = showTx ? '#00ff88' : '#4a9eff';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, height);
 
     for (let i = 0; i < smoothed.length; i++) {
-      const db = smoothed[i];
-      const normalizedDb = Math.max(0, Math.min(1, (db - minDb) / dbRange));
-      const barHeight = normalizedDb * height;
+      const db = Math.max(minDb, Math.min(maxDb, smoothed[i])); // Clamp to range
+      const normalizedDb = (db - minDb) / dbRange;
+      const y = height - normalizedDb * height;
       const x = i * binWidth;
-      const y = height - barHeight;
 
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -214,10 +215,26 @@ const SpectrumPlot: React.FC<SpectrumPlotProps> = ({
       }
     }
 
-    ctx.lineTo(width, height);
-    ctx.lineTo(0, height);
-    ctx.closePath();
-    ctx.fill();
+    ctx.stroke();
+
+    // Draw peak marker
+    if (peakValue > minDb) {
+      const peakX = peakIndex * binWidth;
+      const normalizedPeak = (peakValue - minDb) / dbRange;
+      const peakY = height - normalizedPeak * height;
+      
+      // Peak dot
+      ctx.fillStyle = '#ff4444';
+      ctx.beginPath();
+      ctx.arc(peakX, peakY, 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Peak value label
+      ctx.fillStyle = '#ff4444';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${peakValue.toFixed(1)} dB`, peakX, peakY - 8);
+    }
 
     // Draw frequency axis labels
     ctx.fillStyle = '#888888';
