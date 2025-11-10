@@ -224,7 +224,8 @@ impl StreamingPipeline {
         let noise_std = channel.noise_std;
         
         // Initialize THz carrier processor
-        let thz_config = ThzCarrierConfig::default();
+        let mut thz_config = ThzCarrierConfig::default();
+        thz_config.bypass_simulation = sim.bypass_thz_simulation;
         let thz_processor = ThzCarrierProcessor::new(thz_config, SimulationConfig::SAMPLE_RATE as f64);
         
         Self {
@@ -284,19 +285,6 @@ impl StreamingPipeline {
     /// When false, uses fixed carrier frequency (12 kHz instead of 11999/12001 Hz)
     pub fn set_fsk_enabled(&mut self, enabled: bool) {
         self.protocol.enable_fsk = enabled;
-    }
-    
-    /// Generate idle carrier audio (no data modulation)
-    /// Useful for baseline/calibration audio
-    pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Vec<f32> {
-        // Generate silence as base signal
-        let silence = vec![0.0f32; num_samples];
-        
-        // Modulate with low-depth THz carriers
-        let modulated = self.thz_processor.modulate_data_carrier(&silence);
-        
-        // Extract audio through non-linear mixing
-        self.thz_processor.nonlinear_mixing(&modulated)
     }
     
     /// Process a chunk - now emits updates every N symbols instead of every frame

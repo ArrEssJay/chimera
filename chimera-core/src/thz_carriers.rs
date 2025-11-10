@@ -42,6 +42,8 @@ pub struct ThzCarrierConfig {
     pub mixing_coefficient: f32,
     /// Phase noise standard deviation (radians)
     pub phase_noise_std: f32,
+    /// Bypass THz simulation for validation (returns input signal unchanged)
+    pub bypass_simulation: bool,
 }
 
 impl Default for ThzCarrierConfig {
@@ -54,6 +56,7 @@ impl Default for ThzCarrierConfig {
             modulation_depth: 0.05,    // 5% idle state
             mixing_coefficient: 0.7,
             phase_noise_std: 0.001,
+            bypass_simulation: false,
         }
     }
 }
@@ -107,7 +110,16 @@ impl ThzCarrierProcessor {
     /// The mixing produces a difference frequency (F1 - F2 = 123 GHz) whose
     /// envelope carries the audio modulation. We simulate the envelope since
     /// we cannot numerically model THz oscillations at audio sample rates.
+    /// 
+    /// If bypass_simulation is enabled, returns the input signal as complex values (for validation).
     pub fn modulate_data_carrier(&mut self, audio_signal: &[f32]) -> Vec<Complex<f32>> {
+        // Bypass: return input as complex for validation
+        if self.config.bypass_simulation {
+            return audio_signal.iter()
+                .map(|&sample| Complex::new(sample, 0.0))
+                .collect();
+        }
+        
         let mut output = Vec::with_capacity(audio_signal.len());
         
         // Calculate difference frequency for reference (though we model the envelope)
@@ -158,8 +170,15 @@ impl ThzCarrierProcessor {
     /// producing the audible 12 kHz signal through biological envelope detection.
     /// 
     /// If external audio is provided, also models secondary intermodulation
-    /// between the AID signal and acoustic input at the cochlear nerve junction
+    /// between the AID signal and acoustic input at the cochlear nerve junction.
+    /// 
+    /// If bypass_simulation is enabled, returns the real part of the input signal (for validation).
     pub fn nonlinear_mixing(&self, signal: &[Complex<f32>]) -> Vec<f32> {
+        // Bypass: extract real part only, skip all mixing simulation
+        if self.config.bypass_simulation {
+            return signal.iter().map(|c| c.re).collect();
+        }
+        
         let mut output = Vec::with_capacity(signal.len());
         
         for &sample in signal {
@@ -312,5 +331,63 @@ mod tests {
         // Check DC blocking worked
         let mean: f32 = mixed.iter().sum::<f32>() / mixed.len() as f32;
         assert!(mean.abs() < 1e-6);
+    }
+    
+    #[test]
+    fn test_bypass_simulation() {
+        let mut config = ThzCarrierConfig::default();
+        config.bypass_simulation = true;
+        let mut processor = ThzCarrierProcessor::new(config, 48000.0);
+        
+        // Test input signal
+        let audio = vec![0.5, -0.3, 0.8, -0.1, 0.0];
+        
+        // When bypassed, modulate_data_carrier should return input as complex
+        let modulated = processor.modulate_data_carrier(&audio);
+        assert_eq!(modulated.len(), audio.len());
+        for (i, &sample) in audio.iter().enumerate() {
+            assert_eq!(modulated[i].re, sample);
+            assert_eq!(modulated[i].im, 0.0);
+        }
+        
+        // When bypassed, nonlinear_mixing should extract real part only
+        let demodulated = processor.nonlinear_mixing(&modulated);
+        assert_eq!(demodulated.len(), audio.len());
+        for (i, &expected) in audio.iter().enumerate() {
+            assert_eq!(demodulated[i], expected);
+        }
+    }
+    
+    #[test]
+    fn test_bypass_vs_normal_simulation() {
+        let audio = vec![0.5, -0.3, 0.8, -0.1, 0.0];
+        
+        // Normal simulation
+        let mut normal_config = ThzCarrierConfig::default();
+        normal_config.bypass_simulation = false;
+        let mut normal_processor = ThzCarrierProcessor::new(normal_config, 48000.0);
+        let normal_modulated = normal_processor.modulate_data_carrier(&audio);
+        let normal_output = normal_processor.nonlinear_mixing(&normal_modulated);
+        
+        // Bypassed simulation
+        let mut bypass_config = ThzCarrierConfig::default();
+        bypass_config.bypass_simulation = true;
+        let mut bypass_processor = ThzCarrierProcessor::new(bypass_config, 48000.0);
+        let bypass_modulated = bypass_processor.modulate_data_carrier(&audio);
+        let bypass_output = bypass_processor.nonlinear_mixing(&bypass_modulated);
+        
+        // Bypass should return input unchanged
+        assert_eq!(bypass_output, audio);
+        
+        // Normal simulation should be different from input (due to mixing effects)
+        // Allow for some tolerance due to normalization
+        let mut different = false;
+        for (i, &sample) in audio.iter().enumerate() {
+            if (normal_output[i] - sample).abs() > 0.01 {
+                different = true;
+                break;
+            }
+        }
+        assert!(different, "Normal simulation should differ from input signal");
     }
 }

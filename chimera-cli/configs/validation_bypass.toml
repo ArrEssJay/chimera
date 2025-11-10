@@ -1,0 +1,29 @@
+# Validation Configuration with THz Bypass
+# Bypasses THz carrier simulation for validation and testing
+# When bypass_thz_simulation is true, the audio signal passes through unchanged
+# This is useful for:
+# - Validating the modulation/demodulation chain without THz effects
+# - Baseline comparisons between bypassed and normal operation
+# - Testing signal processing without biological mixing simulation
+
+# Include base protocol configuration
+include = "protocol/raman-whisper.toml"
+
+[simulation]
+snr_db = 10.0
+link_loss_db = 0.0
+plaintext_source = "Validation test with THz simulation bypassed"
+rng_seed = 42
+
+# Bypass THz carrier simulation
+# When true, the signal passes through unchanged (no AM modulation, no non-linear mixing)
+# When false (default), full THz carrier simulation with biological demodulation
+bypass_thz_simulation = true
+
+[terminal]
+telemetry_interval_secs = 0.5
+
+[terminal.logging]
+target = "stdout"
+format = "json"
+level = "info"

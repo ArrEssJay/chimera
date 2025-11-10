@@ -62,8 +62,9 @@ output.audio_samples = mixed_audio;
 **Public API Methods:**
 - `set_modulation_mode(active: bool)` - Toggle idle/active mode
 - `set_modulation_depth(depth: f32)` - Fine-tune modulation (0.0-1.0)
-- `set_mixing_coefficient(coeff: f32)` - Adjust mixing strength
-- `generate_idle_carrier(num_samples: usize)` - Generate baseline audio
+- `set_mixing_coefficient(coeff: f32)` - Adjust mixing strength (0.0 to bypass THz)
+- `set_qpsk_enabled(enabled: bool)` - Enable/disable QPSK layer
+- `set_fsk_enabled(enabled: bool)` - Enable/disable FSK layer
 
 ### WASM Bindings
 
@@ -76,9 +77,13 @@ dsp.set_modulation_mode(true);  // Active mode (70-80% depth)
 dsp.set_modulation_mode(false); // Idle mode (<5% depth)
 
 // Fine control
-dsp.set_modulation_depth(0.75);       // Custom depth
-dsp.set_mixing_coefficient(0.5);       // Adjust mixing
-let idle = dsp.generate_idle_carrier(4800); // 100ms at 48kHz
+dsp.set_modulation_depth(0.75);        // Custom depth
+dsp.set_mixing_coefficient(0.5);       // Adjust mixing (0.0 to bypass THz)
+dsp.set_thz_bypass(true);              // Bypass THz simulation entirely
+
+// Modulation layer control
+dsp.set_qpsk_enabled(true);            // Enable QPSK
+dsp.set_fsk_enabled(true);             // Enable FSK
 ```
 
 ## Technical Specifications

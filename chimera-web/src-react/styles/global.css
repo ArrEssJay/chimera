@@ -1827,14 +1827,14 @@ code {
   font-weight: 600;
 }
 
-/* Debug Control Panel Styles */
-.debug-control-panel {
+/* Modulation Control Panel Styles */
+.modulation-control-panel {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #3a3a3a;
 }
 
-.debug-control-panel h3 {
+.modulation-control-panel h3 {
   font-size: 12px;
   font-weight: 600;
   color: #ff9f4a;
@@ -1843,7 +1843,7 @@ code {
   letter-spacing: 0.5px;
 }
 
-.debug-hint {
+.control-hint {
   font-size: 10px;
   color: #777;
   margin-bottom: 1rem;
@@ -1861,7 +1861,7 @@ code {
   opacity: 0.5;
 }
 
-.debug-status {
+.control-status {
   margin-top: 1rem;
   padding: 0.75rem;
   background: rgba(255, 159, 74, 0.1);
@@ -1869,7 +1869,7 @@ code {
   border-radius: 0;
 }
 
-.debug-status strong {
+.control-status strong {
   font-size: 10px;
   font-weight: 600;
   color: #ff9f4a;
@@ -1879,13 +1879,13 @@ code {
   letter-spacing: 0.5px;
 }
 
-.debug-status-text {
+.control-status-text {
   font-size: 11px;
   color: #ddd;
   line-height: 1.4;
 }
 
-.debug-info {
+.control-info {
   margin-top: 1rem;
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
@@ -1893,7 +1893,7 @@ code {
   border-radius: 0;
 }
 
-.debug-info details summary {
+.control-info details summary {
   font-size: 10px;
   font-weight: 600;
   color: #888;
@@ -1903,22 +1903,22 @@ code {
   user-select: none;
 }
 
-.debug-info details summary:hover {
+.control-info details summary:hover {
   color: #aaa;
 }
 
-.debug-info-content {
+.control-info-content {
   margin-top: 0.5rem;
   font-size: 10px;
   color: #666;
   line-height: 1.6;
 }
 
-.debug-info-content p {
+.control-info-content p {
   margin: 0.5rem 0;
 }
 
-.debug-info-content strong {
+.control-info-content strong {
   color: #888;
   font-weight: 600;
   display: block;

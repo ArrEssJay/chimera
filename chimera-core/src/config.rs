@@ -161,6 +161,9 @@ pub struct SimulationConfig {
     pub rng_seed: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub audio_mixing: Option<AudioMixingConfig>,
+    /// Bypass THz carrier simulation for validation (default: false)
+    #[serde(default)]
+    pub bypass_thz_simulation: bool,
 }
 
 /// Configuration for external audio intermodulation mixing
@@ -232,6 +235,7 @@ impl Default for SimulationConfig {
             plaintext_source: "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into(),
             rng_seed: None,
             audio_mixing: None,
+            bypass_thz_simulation: false,
         }
     }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
 import ThzControlPanel from './components/ThzControlPanel';
-import DebugControlPanel from './components/DebugControlPanel';
+import ModulationControlPanel from './components/ModulationControlPanel';
 import VisualizationPanel from './components/VisualizationPanel';
 import FrameDecoder from './components/FrameDecoder';
 import MessageDecoder from './components/MessageDecoder';
@@ -108,15 +108,7 @@ const App: React.FC = () => {
     dspService.addLog(`THz mixing coefficient: ${coefficient.toFixed(2)}`);
   };
 
-  const handleGenerateIdleCarrier = () => {
-    const samples = dspService.generateIdleCarrier(100);
-    if (samples) {
-      dspService.addLog(`Generated ${samples.length} samples of idle carrier`);
-      // Optionally play the samples or show them in a visualization
-    }
-  };
-
-  // Debug Control Handlers
+  // Modulation Control Handlers
   const handleQpskEnableChange = (enabled: boolean) => {
     dspService.setQpskEnabled(enabled);
     dspService.addLog(`QPSK modulation: ${enabled ? 'ENABLED' : 'DISABLED'}`);
@@ -125,6 +117,11 @@ const App: React.FC = () => {
   const handleFskEnableChange = (enabled: boolean) => {
     dspService.setFskEnabled(enabled);
     dspService.addLog(`FSK frequency dithering: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+  };
+
+  const handleThzBypassChange = (bypass: boolean) => {
+    dspService.setThzBypass(bypass);
+    dspService.addLog(`THz simulation: ${bypass ? 'BYPASSED' : 'ENABLED'}`);
   };
 
   // Show loading state while WASM initializes
@@ -175,12 +172,12 @@ const App: React.FC = () => {
             onModulationModeChange={handleModulationModeChange}
             onModulationDepthChange={handleModulationDepthChange}
             onMixingCoefficientChange={handleMixingCoefficientChange}
-            onGenerateIdleCarrier={handleGenerateIdleCarrier}
           />
-          <DebugControlPanel
+          <ModulationControlPanel
             disabled={!isDSPRunning}
             onQpskEnableChange={handleQpskEnableChange}
             onFskEnableChange={handleFskEnableChange}
+            onThzBypassChange={handleThzBypassChange}
           />
         </aside>
 

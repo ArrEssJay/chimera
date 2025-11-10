@@ -12,7 +12,6 @@ export interface ThzControlPanelProps {
   onModulationModeChange?: (active: boolean) => void;
   onModulationDepthChange?: (depth: number) => void;
   onMixingCoefficientChange?: (coefficient: number) => void;
-  onGenerateIdleCarrier?: () => void;
 }
 
 const ThzControlPanel: React.FC<ThzControlPanelProps> = ({
@@ -20,7 +19,6 @@ const ThzControlPanel: React.FC<ThzControlPanelProps> = ({
   onModulationModeChange,
   onModulationDepthChange,
   onMixingCoefficientChange,
-  onGenerateIdleCarrier,
 }) => {
   const [isActiveMode, setIsActiveMode] = useState(false);
   const [modulationDepth, setModulationDepth] = useState(0.05); // 5% idle default
@@ -162,22 +160,6 @@ const ThzControlPanel: React.FC<ThzControlPanelProps> = ({
         </div>
         <div className="config-hint">
           Third-order intermodulation strength (biological response efficiency)
-        </div>
-      </div>
-
-      {/* Idle Carrier Generator */}
-      <div className="config-section">
-        <label className="config-label">Calibration</label>
-        <button
-          className="btn btn-secondary"
-          onClick={onGenerateIdleCarrier}
-          disabled={disabled}
-          style={{ width: '100%' }}
-        >
-          Generate Idle Carrier
-        </button>
-        <div className="config-hint">
-          Generate 100ms of idle carrier audio for baseline calibration
         </div>
       </div>
 

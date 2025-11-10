@@ -191,11 +191,11 @@ impl WASMStreamingDSP {
         self.pipeline.set_fsk_enabled(enabled);
     }
     
-    /// Generate idle carrier audio (for calibration/baseline)
+    /// Enable/disable THz simulation bypass
     #[wasm_bindgen]
-    pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Float32Array {
-        let samples = self.pipeline.generate_idle_carrier(num_samples);
-        Float32Array::from(&samples[..])
+    pub fn set_thz_bypass(&mut self, bypass: bool) {
+        // When bypass is true, mixing coefficient is set to 0
+        self.pipeline.set_mixing_coefficient(if bypass { 0.0 } else { 0.7 });
     }
 }
 

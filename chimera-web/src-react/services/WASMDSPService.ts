@@ -568,23 +568,20 @@ export class WASMDSPService {
   }
 
   /**
-   * Generate idle carrier audio for calibration
+   * Enable/disable THz simulation bypass
+   * When bypassed, THz carrier modulation is disabled (mixing coefficient = 0)
    */
-  generateIdleCarrier(durationMs: number = 100): Float32Array | null {
+  setThzBypass(bypass: boolean): void {
     if (!this.dsp) {
       console.warn('DSP not initialized');
-      return null;
+      return;
     }
     
     try {
-      const sampleRate = 48000;
-      const numSamples = Math.floor((durationMs / 1000) * sampleRate);
-      const samples = this.dsp.generate_idle_carrier(numSamples);
-      console.log(`Generated ${numSamples} samples (${durationMs}ms) of idle carrier`);
-      return samples;
+      this.dsp.set_thz_bypass(bypass);
+      console.log(`THz simulation: ${bypass ? 'BYPASSED' : 'ENABLED'}`);
     } catch (error) {
-      console.error('Failed to generate idle carrier:', error);
-      return null;
+      console.error('Failed to set THz bypass:', error);
     }
   }
 
