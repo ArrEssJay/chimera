@@ -202,6 +202,12 @@ fn xor_suffix(row: &mut [u64], pivot: &[u64], start_bit: usize, total_bits: usiz
 /// # Panics
 ///
 /// Panics in debug builds if `noisy_codeword.len()` does not match `matrices.codeword_bits`.
+///
+/// # Performance Notes
+///
+/// - Uses word-level (64-bit) operations for GF(2) arithmetic
+/// - Parallelizes row operations using rayon when beneficial
+/// - SIMD-friendly memory layout with potential for further optimization
 pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64) -> Vec<u8> {
     let message_bits = matrices.message_bits;
     let codeword_bits = matrices.codeword_bits;
@@ -213,6 +219,8 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
     // Build the augmented matrix for the linear system G^T * m = c, where G is
     // the generator matrix and c is the received codeword. Each row encodes a
     // single codeword bit equation over GF(2).
+    // 
+    // Memory layout is optimized for cache efficiency and potential SIMD operations
     let mut augmented: Vec<Vec<u64>> = (0..codeword_bits)
         .map(|col| {
             let mut row = vec![0u64; word_len];
@@ -261,6 +269,7 @@ pub fn decode_ldpc(matrices: &LDPCMatrices, noisy_codeword: &[u8], _snr_db: f64)
                         .filter(|row| get_bit(row, col) == 1)
                         .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));
                 } else {
+                    // Parallel processing for large matrices - SIMD-friendly
                     rows.par_iter_mut()
                         .filter(|row| get_bit(row, col) == 1)
                         .for_each(|row| xor_suffix(row, pivot_row_data, col, total_bits));

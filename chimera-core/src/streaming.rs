@@ -317,8 +317,8 @@ impl StreamingPipeline {
         // Extract FSK state information from decoder (not encoder!)
         // The decoder actually demodulates the FSK layer from the received signal
         // Do this RIGHT AFTER decoder.process_symbols() while we still have the mutable borrow
-        let fsk_frequency = decoder.get_fsk_frequency();
-        let fsk_current_bit = decoder.get_fsk_bit();
+        let _fsk_frequency = decoder.get_fsk_frequency();
+        let _fsk_current_bit = decoder.get_fsk_bit();
         let fsk_detected_bits = decoder.get_fsk_bits().to_vec(); // Copy to owned vec
         
         // Get FSK bit history for display (last 16 bits, centered on current)

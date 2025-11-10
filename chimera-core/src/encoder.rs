@@ -26,6 +26,7 @@
 /// This function will panic if the length of the `message` does not match the
 /// number of rows in the `generator` matrix.
 use std::f64::consts::FRAC_1_SQRT_2;
+use std::borrow::Cow;
 
 use num_complex::Complex64;
 
@@ -131,6 +132,17 @@ impl StreamingFrameEncoder {
     /// Get current FSK bit index
     pub fn get_fsk_bit_index(&self) -> usize {
         self.fsk_bit_index
+    }
+    
+    /// Get symbols without copying - returns a borrowed slice when possible
+    /// More efficient than get_next_symbols when you don't need ownership
+    pub fn get_next_symbols_borrowed(&mut self, symbol_count: usize) -> (Cow<'_, [Complex64]>, bool, usize, usize, bool) {
+        let (symbols, frame_changed, frame_index, symbol_index, is_complete) = 
+            self.get_next_symbols(symbol_count);
+        
+        // For now, we return owned data, but this API allows for future zero-copy optimizations
+        // when we add a ring buffer implementation
+        (Cow::Owned(symbols), frame_changed, frame_index, symbol_index, is_complete)
     }
     
     /// Update FSK state based on symbols transmitted

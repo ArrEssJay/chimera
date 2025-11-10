@@ -11,7 +11,6 @@ fn test_streaming_rate_limiting() {
     // Create pipeline with protocol defaults
     let sim = SimulationConfig {
         plaintext_source: "Test message for rate limiting verification".to_string(),
-        sample_rate: 48000,
         snr_db: 10.0,
         link_loss_db: 0.0,
         ..Default::default()
@@ -22,18 +21,16 @@ fn test_streaming_rate_limiting() {
     
     let mut pipeline = StreamingPipeline::new(sim, protocol.clone(), ldpc);
     
-    // According to spec:
-    // - Symbol rate: 16 symbols/second
-    // - Frame size: 128 symbols
-    // - Expected frame time: 128 / 16 = 8 seconds per frame
-    let expected_frame_duration_ms = 8000.0;
+    // Note: Rate limiting has been removed for real-time performance.
+    // The streaming pipeline now emits symbols as fast as possible, with rate limiting
+    // handled by the audio output layer (Web Audio API, OS audio buffers, etc.)
     
     // Process first frame - should return immediately
     let start = Instant::now();
     let output1 = pipeline.process_chunk(&[]);
     let first_duration = start.elapsed().as_millis() as f64;
     
-    // First frame should process (no previous timing reference)
+    // First frame should process with output
     assert!(
         output1.audio_samples.len() > 0 || output1.pre_channel.symbol_count > 0,
         "First frame should have output data"
@@ -44,18 +41,18 @@ fn test_streaming_rate_limiting() {
         first_duration
     );
     
-    // Immediately try to process second frame - should be rate limited
+    // Process second frame - should also return immediately (no rate limiting)
     let start2 = Instant::now();
     let output2 = pipeline.process_chunk(&[]);
     let second_duration = start2.elapsed().as_millis() as f64;
     
-    // Second frame should return empty (rate limited)
-    assert_eq!(output2.audio_samples.len(), 0, "Second frame should be rate limited");
-    assert!(second_duration < 10.0, "Rate limit check should be fast");
+    // Second frame should also have output (no rate limiting)
+    assert!(output2.audio_samples.len() > 0, "Second frame should produce output");
+    assert!(second_duration < 1000.0, "Second frame should be fast");
     
     println!("✓ Frame 1 processed in {:.1}ms", first_duration);
-    println!("✓ Frame 2 rate-limited in {:.1}ms", second_duration);
-    println!("✓ Expected frame duration: {:.1}ms", expected_frame_duration_ms);
+    println!("✓ Frame 2 processed in {:.1}ms", second_duration);
+    println!("✓ Rate limiting delegated to audio output layer");
 }
 
 #[test]

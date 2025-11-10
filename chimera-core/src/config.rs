@@ -1,5 +1,6 @@
 //! Configuration types for the Chimera pipeline.
 use serde::{Deserialize, Serialize};
+use crate::errors::{ConfigError, Result};
 
 
 
@@ -65,6 +66,41 @@ impl ProtocolConfig {
     pub fn fsk_freq_deviation_hz(&self) -> f64 {
         self.fsk_freq_one_hz - self.carrier_freq_hz
     }
+    
+    /// Validate protocol configuration
+    pub fn validate(&self) -> Result<()> {
+        // Check sample rate validity
+        if self.qpsk_symbol_rate == 0 {
+            return Err(ConfigError::InvalidSymbolRate { 
+                rate: self.qpsk_symbol_rate 
+            }.into());
+        }
+        
+        // Check Nyquist criterion for carrier frequency
+        // Need at least 2x carrier frequency as sample rate
+        let min_sample_rate = self.carrier_freq_hz * 2.0;
+        let actual_sample_rate = SimulationConfig::SAMPLE_RATE as f64;
+        if actual_sample_rate < min_sample_rate {
+            return Err(ConfigError::NyquistViolation {
+                carrier_hz: self.carrier_freq_hz,
+                min_required_hz: min_sample_rate,
+                actual_hz: actual_sample_rate,
+            }.into());
+        }
+        
+        // Validate FSK frequencies
+        if !self.fsk_freq_zero_hz.is_finite() || !self.fsk_freq_one_hz.is_finite() {
+            return Err(ConfigError::InvalidFskFrequencies {
+                f0: self.fsk_freq_zero_hz,
+                f1: self.fsk_freq_one_hz,
+            }.into());
+        }
+        
+        // Validate frame layout
+        self.frame_layout.validate()?;
+        
+        Ok(())
+    }
 }
 
 impl Default for ProtocolConfig {
@@ -126,4 +162,50 @@ impl Default for SimulationConfig {
 impl SimulationConfig {
     /// Audio sample rate is fixed at 48 kHz
     pub const SAMPLE_RATE: usize = 48_000;
+    
+    /// Validate simulation configuration
+    pub fn validate(&self) -> Result<()> {
+        if !self.snr_db.is_finite() {
+            return Err(ConfigError::InvalidSnr { snr_db: self.snr_db }.into());
+        }
+        if !self.link_loss_db.is_finite() || self.link_loss_db < 0.0 {
+            return Err(ConfigError::InvalidSnr { snr_db: self.link_loss_db }.into());
+        }
+        Ok(())
+    }
 }
+
+impl FrameLayout {
+    /// Validate frame layout consistency
+    pub fn validate(&self) -> Result<()> {
+        let computed_total = self.sync_symbols 
+            + self.target_id_symbols 
+            + self.command_type_symbols 
+            + self.data_payload_symbols 
+            + self.ecc_symbols;
+        
+        if computed_total != self.total_symbols {
+            return Err(ConfigError::InvalidFrameLayout {
+                reason: format!(
+                    "Symbol sum mismatch: {} + {} + {} + {} + {} = {}, expected {}",
+                    self.sync_symbols,
+                    self.target_id_symbols,
+                    self.command_type_symbols,
+                    self.data_payload_symbols,
+                    self.ecc_symbols,
+                    computed_total,
+                    self.total_symbols
+                )
+            }.into());
+        }
+        
+        if self.total_symbols == 0 {
+            return Err(ConfigError::InvalidFrameLayout {
+                reason: "total_symbols cannot be zero".to_string()
+            }.into());
+        }
+        
+        Ok(())
+    }
+}
+

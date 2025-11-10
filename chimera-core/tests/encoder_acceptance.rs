@@ -18,7 +18,7 @@ fn run_simulation_emits_audio_waveforms() {
 
     assert!(!audio.clean.is_empty(), "clean audio should be non-empty");
     assert!(!audio.noisy.is_empty(), "noisy audio should be non-empty");
-    assert_eq!(audio.sample_rate, sim.sample_rate);
+    assert_eq!(audio.sample_rate, SimulationConfig::SAMPLE_RATE);
 }
 
 #[test]

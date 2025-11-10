@@ -9,6 +9,7 @@ pub mod config;
 pub mod decoder;
 pub mod diagnostics;
 pub mod encoder;
+pub mod errors;
 pub mod ldpc;
 pub mod streaming;
 pub mod utils;
