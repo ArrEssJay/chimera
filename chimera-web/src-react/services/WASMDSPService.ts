@@ -6,7 +6,7 @@
  */
 
 import type { WASMStreamingDSP, WASMStreamOutput } from '../../pkg/chimera_web';
-import type { SimulationConfig, ProtocolConfig, LDPCConfig } from '../types';
+import type { SimulationConfig, ProtocolConfig, LDPCConfig, FSKState } from '../types';
 
 export interface StreamConfig {
   simulation: SimulationConfig;
@@ -79,6 +79,7 @@ export interface StreamData {
   symbolsDecoded: number;
   fecCorrections: number;
   currentFrameData: FrameData;
+  fskState?: FSKState; // Add FSK state
   timestamp: number;
 }
 
@@ -288,6 +289,15 @@ export class WASMDSPService {
           decodedText: output.frame_decoded_text || '',
           symbolProgress: output.frame_symbol_progress || 0, // Use actual symbol progress from backend
         },
+        fskState: output.fsk_state ? {
+          current_frequency_hz: output.fsk_state.current_frequency_hz,
+          frequency_deviation_hz: output.fsk_state.frequency_deviation_hz,
+          current_bit: output.fsk_state.current_bit,
+          bit_index: output.fsk_state.bit_index,
+          bit_history: Array.from(output.fsk_state.bit_history),
+          symbols_per_bit: output.fsk_state.symbols_per_bit,
+          bit_rate_hz: output.fsk_state.bit_rate_hz,
+        } : undefined,
         timestamp: now,
       };
 

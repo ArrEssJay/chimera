@@ -81,6 +81,16 @@ export interface SimulationReport {
   sync_position: number;
 }
 
+export interface FSKState {
+  current_frequency_hz: number;
+  frequency_deviation_hz: number;
+  current_bit: number;
+  bit_index: number;
+  bit_history: number[];
+  symbols_per_bit: number;
+  bit_rate_hz: number;
+}
+
 export interface EncodingResult {
   qpsk_bitstream: Uint8Array;
   payload_bits: Uint8Array;

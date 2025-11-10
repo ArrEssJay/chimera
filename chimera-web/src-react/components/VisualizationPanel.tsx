@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import ConstellationPlot from './plots/ConstellationPlot';
 import SpectrumPlot from './plots/SpectrumPlot';
+import { FSKIndicator } from './FSKIndicator';
 import { getWASMDSPService, StreamData } from '../services/WASMDSPService';
 
 export interface VisualizationPanelProps {
@@ -235,6 +236,14 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
             </tbody>
           </table>
         </div>
+        
+        {/* FSK Layer Indicator */}
+        {streamData?.fskState && (
+          <div className="diagnostic-section fsk-section">
+            <h3>FSK Layer (±1 Hz)</h3>
+            <FSKIndicator fskState={streamData.fskState} />
+          </div>
+        )}
       </div>
       
       {/* Frame Decoder moved to sidebar */}

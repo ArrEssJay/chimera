@@ -27,36 +27,13 @@
 /// number of rows in the `generator` matrix.
 use std::f64::consts::FRAC_1_SQRT_2;
 
-use ndarray::Array1;
 use num_complex::Complex64;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-use rand_distr::StandardNormal;
 
-use crate::config::{ProtocolConfig, SimulationConfig};
-use crate::diagnostics::FrameDescriptor;
+use crate::config::ProtocolConfig;
 use crate::ldpc::LDPCMatrices;
 use crate::utils::{
-    hex_to_bitstream, int_to_bitstream, pack_bits, string_to_bitstream, LogCollector,
+    hex_to_bitstream, int_to_bitstream, LogCollector,
 };
-
-pub struct FrameStream {
-    pub frames_bitstream: Vec<u8>,
-    pub frame_count: usize,
-    pub logs: Vec<String>,
-    pub frames: Vec<FrameDescriptor>,
-}
-
-impl FrameStream {
-    pub fn empty() -> Self {
-        Self {
-            frames_bitstream: Vec::new(),
-            frame_count: 0,
-            logs: Vec::new(),
-            frames: Vec::new(),
-        }
-    }
-}
 
 /// Incremental frame encoder for symbol-by-symbol streaming
 pub struct StreamingFrameEncoder {
@@ -68,6 +45,10 @@ pub struct StreamingFrameEncoder {
     current_symbol_in_frame: usize,
     current_frame_bitstream: Vec<u8>,
     logger: LogCollector,
+    // FSK layer state (1 bit/second nested modulation)
+    fsk_bit_stream: Vec<u8>,
+    fsk_bit_index: usize,
+    symbols_since_fsk_transition: usize,
 }
 
 impl StreamingFrameEncoder {
@@ -86,6 +67,9 @@ impl StreamingFrameEncoder {
         let mut logger = LogCollector::new();
         logger.log(format!("Initializing streaming encoder for {total_frames} frame(s)."));
         
+        // Generate FSK bit stream - nested 1 bit/second layer
+        let fsk_bit_stream = Self::generate_fsk_pattern(payload_bits);
+        
         Self {
             protocol,
             matrices,
@@ -95,6 +79,68 @@ impl StreamingFrameEncoder {
             current_symbol_in_frame: 0,
             current_frame_bitstream: Vec::new(),
             logger,
+            fsk_bit_stream,
+            fsk_bit_index: 0,
+            symbols_since_fsk_transition: 0,
+        }
+    }
+    
+    /// Generate FSK bit pattern - could be message checksum, sync pattern, etc.
+    /// Creates a slow 1 bit/second nested modulation layer (±1 Hz from carrier)
+    fn generate_fsk_pattern(payload_bits: &[u8]) -> Vec<u8> {
+        let mut pattern = vec![];
+        
+        // Start with sync pattern: 10101010
+        pattern.extend_from_slice(&[1, 1, 0, 0, 1, 1, 0, 0]);
+        
+        // Add a simple 8-bit checksum of the payload
+        if !payload_bits.is_empty() {
+            let checksum = payload_bits.iter()
+                .fold(0u8, |acc, &bit| acc ^ bit);
+            for i in 0..8 {
+                pattern.push((checksum >> (7 - i)) & 1);
+            }
+        }
+        
+        // Pad with alternating bits for visibility
+        while pattern.len() < 32 {
+            pattern.push((pattern.len() % 2) as u8);
+        }
+        
+        pattern
+    }
+    
+    /// Get current FSK frequency in Hz (12000 ± 1 Hz)
+    pub fn get_current_fsk_frequency(&self) -> f64 {
+        if self.fsk_bit_index < self.fsk_bit_stream.len() {
+            if self.fsk_bit_stream[self.fsk_bit_index] == 1 {
+                12001.0  // Binary "1"
+            } else {
+                11999.0  // Binary "0"
+            }
+        } else {
+            12000.0  // Default to center frequency
+        }
+    }
+    
+    /// Get FSK bit stream for visualization
+    pub fn get_fsk_bits(&self) -> &[u8] {
+        &self.fsk_bit_stream
+    }
+    
+    /// Get current FSK bit index
+    pub fn get_fsk_bit_index(&self) -> usize {
+        self.fsk_bit_index
+    }
+    
+    /// Update FSK state based on symbols transmitted
+    fn update_fsk_state(&mut self, symbol_count: usize) {
+        // FSK changes at 1 bit/second, QPSK is 16 symbols/second
+        // So FSK bit changes every 16 QPSK symbols
+        self.symbols_since_fsk_transition += symbol_count;
+        if self.symbols_since_fsk_transition >= 16 {
+            self.symbols_since_fsk_transition = 0;
+            self.fsk_bit_index = (self.fsk_bit_index + 1) % self.fsk_bit_stream.len();
         }
     }
     
@@ -146,6 +192,9 @@ impl StreamingFrameEncoder {
                 self.current_frame_bitstream.clear();
             }
         }
+        
+        // Update FSK state
+        self.update_fsk_state(symbols.len());
         
         (symbols, frame_changed, self.current_frame_index, self.current_symbol_in_frame, false)
     }
@@ -204,281 +253,6 @@ impl StreamingFrameEncoder {
     
     pub fn get_logs(&self) -> &[String] {
         self.logger.entries()
-    }
-}
-
-pub struct EncodingResult {
-    pub noisy_signal: Array1<f64>,
-    pub clean_signal: Array1<f64>,
-    pub qpsk_symbols: Vec<Complex64>,
-    pub qpsk_bitstream: Vec<u8>,
-    pub payload_bits: Vec<u8>,
-    pub total_frames: usize,
-    pub samples_per_symbol: usize,
-    pub sample_rate: usize,
-    pub logs: Vec<String>,
-    pub frame_descriptors: Vec<FrameDescriptor>,
-}
-
-/// Creates a new `EncodingResult` with default values.
-///
-/// All vector and array fields are initialized as empty. Numerical fields
-/// are set to their default state (e.g., 0 or 1). This is useful for
-/// creating a placeholder result before the encoding process begins.
-///
-/// # Examples
-///
-/// ```
-/// # use ndarray::Array1;
-/// # use chimera_core::encoder::EncodingResult;
-/// let result = EncodingResult::new();
-///
-/// assert!(result.noisy_signal.is_empty());
-/// assert!(result.clean_signal.is_empty());
-/// assert_eq!(result.total_frames, 0);
-/// assert_eq!(result.samples_per_symbol, 1);
-/// ```
-impl EncodingResult {
-    pub fn new() -> Self {
-        Self {
-            noisy_signal: Array1::from_vec(vec![]),
-            clean_signal: Array1::from_vec(vec![]),
-            qpsk_symbols: Vec::new(),
-            qpsk_bitstream: Vec::new(),
-            payload_bits: Vec::new(),
-            total_frames: 0,
-            samples_per_symbol: 1,
-            sample_rate: 0,
-            logs: Vec::new(),
-            frame_descriptors: Vec::new(),
-        }
-    }
-}
-
-impl Default for EncodingResult {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-pub fn generate_modulated_signal(
-    sim: &SimulationConfig,
-    protocol: &ProtocolConfig,
-    matrices: &LDPCMatrices,
-) -> EncodingResult {
-    let mut logger = LogCollector::new();
-
-    let plaintext = &sim.plaintext_source;
-    let payload_bits = string_to_bitstream(plaintext);
-    logger.log(format!(
-        "Source plaintext length: {} characters ({} bits).",
-        plaintext.len(),
-        payload_bits.len()
-    ));
-
-    let frame_stream = build_frame_stream(&payload_bits, protocol, matrices, &mut logger);
-    let frame_descriptors = frame_stream.frames.clone();
-
-    let qpsk_bitstream = frame_stream.frames_bitstream.clone();
-    assert!(
-        qpsk_bitstream.len().is_multiple_of(2),
-        "QPSK bitstream must have even length"
-    );
-
-    assert!(
-        protocol.qpsk_symbol_rate > 0,
-        "QPSK symbol rate must be non-zero"
-    );
-    let samples_per_symbol = usize::max(1, sim.sample_rate / protocol.qpsk_symbol_rate);
-    let mut qpsk_symbols = Vec::with_capacity(qpsk_bitstream.len() / 2);
-
-    for bits in qpsk_bitstream.chunks_exact(2) {
-        let symbol = match (bits[0], bits[1]) {
-            (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-            (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-            (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-            (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-            _ => unreachable!("bits are constrained to 0/1"),
-        };
-        qpsk_symbols.push(symbol);
-    }
-
-    let mut clean_iq = Vec::with_capacity(qpsk_symbols.len() * 2 * samples_per_symbol);
-    for symbol in &qpsk_symbols {
-        for _ in 0..samples_per_symbol {
-            clean_iq.push(symbol.re);
-            clean_iq.push(symbol.im);
-        }
-    }
-
-    let mut rng = match sim.rng_seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
-        None => StdRng::from_entropy(),
-    };
-
-    let signal_power: f64 =
-        qpsk_symbols.iter().map(|c| c.norm_sqr()).sum::<f64>() / qpsk_symbols.len().max(1) as f64;
-
-    // Apply link loss (signal attenuation) - reduces signal power
-    // Link loss represents path loss, free-space loss, antenna gains, etc.
-    let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
-    let attenuated_signal_power = signal_power / link_loss_linear;
-
-    // Apply link loss to clean signal
-    let attenuation_factor = if link_loss_linear > 0.0 {
-        1.0 / link_loss_linear.sqrt()
-    } else {
-        1.0
-    };
-    let attenuated_iq: Vec<f64> = clean_iq.iter().map(|&x| x * attenuation_factor).collect();
-
-    // Calculate noise based on SNR (Es/N0) and attenuated signal power
-    // Note: sim.snr_db represents Es/N0 (symbol energy to noise density ratio), not Eb/N0.
-    // For QPSK with 2 bits/symbol: Eb/N0 = Es/N0 - 3.01 dB.
-    // Processing gain from oversampling: ~34.77 dB with sample_rate=48kHz, symbol_rate=16.
-    let snr_linear = 10f64.powf(sim.snr_db / 10.0);
-    let noise_variance = if snr_linear > 0.0 {
-        attenuated_signal_power / snr_linear
-    } else {
-        0.0
-    };
-    let noise_std = (noise_variance / 2.0).sqrt();
-
-    // Add AWGN to attenuated signal
-    let mut noisy_iq = Vec::with_capacity(attenuated_iq.len());
-    let normal = StandardNormal;
-    for chunk in attenuated_iq.chunks_exact(2) {
-        let noise_i: f64 = rng.sample::<f64, _>(normal) * noise_std;
-        let noise_q: f64 = rng.sample::<f64, _>(normal) * noise_std;
-        noisy_iq.push(chunk[0] + noise_i);
-        noisy_iq.push(chunk[1] + noise_q);
-    }
-
-    logger.log(format!(
-        "Generated {} QPSK symbols across {} frame(s).",
-        qpsk_symbols.len(),
-        frame_stream.frame_count
-    ));
-    if sim.link_loss_db != 0.0 {
-        logger.log(format!(
-            "Applied link loss: {:.2} dB (signal attenuation).",
-            sim.link_loss_db
-        ));
-    }
-    logger.log(format!(
-        "Applied AWGN with SNR = {:.2} dB (Es/N₀).",
-        sim.snr_db
-    ));
-
-    EncodingResult {
-        noisy_signal: Array1::from_vec(noisy_iq),
-        clean_signal: Array1::from_vec(clean_iq),
-        qpsk_symbols,
-        qpsk_bitstream,
-        payload_bits,
-        total_frames: frame_stream.frame_count,
-        samples_per_symbol,
-        sample_rate: sim.sample_rate,
-        logs: logger.entries().to_vec(),
-        frame_descriptors,
-    }
-}
-
-pub fn build_frame_stream(
-    payload_bits: &[u8],
-    protocol: &ProtocolConfig,
-    matrices: &LDPCMatrices,
-    logger: &mut LogCollector,
-) -> FrameStream {
-    let layout = &protocol.frame_layout;
-    let message_bits = matrices.message_bits;
-    let frame_bits = layout.frame_bits();
-
-    let total_frames = if payload_bits.is_empty() {
-        1
-    } else {
-        payload_bits.len().div_ceil(message_bits)
-    };
-    logger.log(format!("Payload requires {total_frames} frame(s)."));
-
-    let sync_bits = hex_to_bitstream(&protocol.sync_sequence_hex, layout.sync_symbols * 2);
-    let target_bits = hex_to_bitstream(&protocol.target_id_hex, layout.target_id_symbols * 2);
-    let command_bits_len = layout.command_type_symbols * 2;
-
-    let mut frames_bitstream = Vec::with_capacity(total_frames * frame_bits);
-    let mut frames = Vec::with_capacity(total_frames);
-
-    for frame_idx in 0..total_frames {
-        let command_value = protocol.command_opcode
-            | ((frame_idx as u32) << protocol.current_frame_shift)
-            | ((total_frames as u32) << protocol.total_frames_shift);
-        let command_bits = int_to_bitstream(command_value as u64, command_bits_len);
-
-        let start = frame_idx * message_bits;
-        let end = usize::min(start + message_bits, payload_bits.len());
-        let mut message_chunk = vec![0u8; message_bits];
-        if start < end {
-            message_chunk[..(end - start)].copy_from_slice(&payload_bits[start..end]);
-        }
-
-        let payload_window = if start < end {
-            &payload_bits[start..end]
-        } else {
-            &[] as &[u8]
-        };
-
-        let payload_preview = if !payload_window.is_empty() {
-            let mut preview_bits = payload_window.to_vec();
-            while preview_bits.len() % 8 != 0 {
-                preview_bits.push(0);
-            }
-            let preview_bytes = pack_bits(&preview_bits);
-            let mut preview = preview_bytes
-                .iter()
-                .take(8)
-                .map(|byte| format!("{:02X}", byte))
-                .collect::<Vec<_>>()
-                .join(" ");
-            if preview_bytes.len() > 8 {
-                preview.push_str(" …");
-            }
-            preview
-        } else {
-            String::from("(padding)")
-        };
-
-        let codeword = encode_with_generator(&matrices.generator, &message_chunk);
-        let payload_section = &codeword[..message_bits];
-        let ecc_section = &codeword[message_bits..];
-
-        if frame_idx < 3 {
-            logger.log(format!(
-                "[TX] Frame {}/{total_frames}: command=0x{command_value:08X}",
-                frame_idx + 1
-            ));
-        }
-
-        frames_bitstream.extend_from_slice(&sync_bits);
-        frames_bitstream.extend_from_slice(&target_bits);
-        frames_bitstream.extend_from_slice(&command_bits);
-        frames_bitstream.extend_from_slice(payload_section);
-        frames_bitstream.extend_from_slice(ecc_section);
-
-        frames.push(FrameDescriptor {
-            frame_index: frame_idx,
-            total_frames,
-            command_opcode: protocol.command_opcode,
-            command_value,
-            frame_label: format!("Frame {} of {}", frame_idx + 1, total_frames),
-            payload_preview,
-        });
-    }
-
-    FrameStream {
-        frames_bitstream,
-        frame_count: total_frames,
-        logs: logger.entries().to_vec(),
-        frames,
     }
 }
 

@@ -16,10 +16,12 @@ pub mod utils;
 use std::f64::consts::TAU;
 
 use config::{LDPCConfig, ProtocolConfig, SimulationConfig};
-use decoder::demodulate_and_decode;
 use diagnostics::{DiagnosticsBundle, ModulationAudio, SimulationReport};
-use encoder::{generate_modulated_signal, EncodingResult};
 use ldpc::LDPCSuite;
+use num_complex::Complex64;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+use rand_distr::StandardNormal;
 
 /// High-level handle returned by `run_simulation`.
 #[derive(Clone, Debug, PartialEq)]
@@ -30,73 +32,158 @@ pub struct SimulationOutput {
 }
 
 /// Execute an end-to-end simulation with the provided configuration set.
+/// Now uses streaming encoder/decoder internally.
 pub fn run_simulation(
     sim: &SimulationConfig,
     protocol: &ProtocolConfig,
     ldpc: &LDPCConfig,
 ) -> SimulationOutput {
     let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, ldpc);
-    let encoding = generate_modulated_signal(sim, protocol, &ldpc_suite.matrices);
-    let demodulation = demodulate_and_decode(&encoding, &ldpc_suite.matrices, sim, protocol);
+    
+    // Use streaming encoder
+    let payload_bits = utils::string_to_bitstream(&sim.plaintext_source);
+    let mut encoder = encoder::StreamingFrameEncoder::new(
+        &payload_bits,
+        protocol.clone(),
+        ldpc_suite.matrices.clone(),
+    );
+    
+    // Generate all symbols
+    let total_symbols = protocol.frame_layout.total_symbols * encoder.total_frames;
+    let (tx_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
+    
+    // Apply channel effects (attenuation + AWGN)
+    let mut rng = match sim.rng_seed {
+        Some(seed) => StdRng::seed_from_u64(seed),
+        None => StdRng::from_entropy(),
+    };
+    
+    let signal_power = 1.0; // QPSK normalized power
+    let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
+    let attenuated_signal_power = signal_power / link_loss_linear;
+    let attenuation_factor = if link_loss_linear > 0.0 {
+        1.0 / link_loss_linear.sqrt()
+    } else {
+        1.0
+    };
+    
+    let snr_linear = 10f64.powf(sim.snr_db / 10.0);
+    let noise_variance = if snr_linear > 0.0 {
+        attenuated_signal_power / snr_linear
+    } else {
+        0.0
+    };
+    let noise_std = (noise_variance / 2.0).sqrt();
+    
+    let normal = StandardNormal;
+    let mut rx_symbols = Vec::with_capacity(tx_symbols.len());
+    
+    for tx_symbol in &tx_symbols {
+        let attenuated = tx_symbol * attenuation_factor;
+        let noise_i: f64 = rng.sample::<f64, _>(normal) * noise_std;
+        let noise_q: f64 = rng.sample::<f64, _>(normal) * noise_std;
+        let rx_symbol = Complex64::new(
+            attenuated.re + noise_i,
+            attenuated.im + noise_q
+        );
+        rx_symbols.push(rx_symbol);
+    }
+    
+    // Use streaming decoder
+    let mut decoder = decoder::StreamingSymbolDecoder::new(
+        protocol.clone(),
+        ldpc_suite.matrices.clone(),
+    );
+    
+    let (_, _, _, _, diagnostics) = decoder.process_symbols(&rx_symbols);
+    let decoded_payload = decoder.get_decoded_payload();
+    let recovered_bytes = utils::pack_bits(&decoded_payload);
+    let recovered_message = String::from_utf8_lossy(&recovered_bytes)
+        .trim_end_matches('\u{0}')
+        .to_string();
+    
+    // Calculate BER
+    let pre_fec_errors = 0; // TODO: track in streaming decoder
+    let pre_fec_ber = 0.0;
+    
+    // Ensure both vectors are same length for comparison
+    let comparison_length = decoded_payload.len().min(payload_bits.len());
+    let post_fec_errors = if comparison_length > 0 {
+        decoded_payload[..comparison_length]
+            .iter()
+            .zip(&payload_bits[..comparison_length])
+            .filter(|(rx, tx)| rx != tx)
+            .count()
+    } else {
+        0
+    };
+    let post_fec_ber = if comparison_length > 0 {
+        post_fec_errors as f64 / comparison_length as f64
+    } else {
+        0.0
+    };
+    
+    let report = SimulationReport {
+        pre_fec_errors,
+        pre_fec_ber,
+        post_fec_errors,
+        post_fec_ber,
+        recovered_message: recovered_message.clone(),
+    };
 
-    let modulation_audio =
-        build_modulation_audio(&encoding, sim.sample_rate, protocol.carrier_freq_hz);
+    // Generate audio for diagnostics
+    let samples_per_symbol = usize::max(1, sim.sample_rate / protocol.qpsk_symbol_rate);
+    
+    // Generate clean IQ samples
+    let mut clean_iq = Vec::with_capacity(tx_symbols.len() * 2 * samples_per_symbol);
+    for symbol in &tx_symbols {
+        for _ in 0..samples_per_symbol {
+            clean_iq.push(symbol.re);
+            clean_iq.push(symbol.im);
+        }
+    }
+    
+    // Generate noisy IQ samples
+    let mut noisy_iq = Vec::with_capacity(rx_symbols.len() * 2 * samples_per_symbol);
+    for symbol in &rx_symbols {
+        for _ in 0..samples_per_symbol {
+            noisy_iq.push(symbol.re);
+            noisy_iq.push(symbol.im);
+        }
+    }
+    
+    let modulation_audio = Some(ModulationAudio {
+        sample_rate: sim.sample_rate,
+        carrier_freq_hz: protocol.carrier_freq_hz,
+        clean: iq_to_audio(&clean_iq, sim.sample_rate, protocol.carrier_freq_hz),
+        noisy: iq_to_audio(&noisy_iq, sim.sample_rate, protocol.carrier_freq_hz),
+    });
+    
+    // Build QPSK bitstream for diagnostics
+    let mut qpsk_bitstream = Vec::with_capacity(tx_symbols.len() * 2);
+    for symbol in &tx_symbols {
+        let bits = decoder::demodulate_qpsk_symbol(*symbol);
+        qpsk_bitstream.push(bits[0]);
+        qpsk_bitstream.push(bits[1]);
+    }
 
-    let diagnostics = DiagnosticsBundle {
-        encoding_logs: encoding.logs.clone(),
-        decoding_logs: demodulation.logs.clone(),
-        demodulation: demodulation.diagnostics.clone(),
+    let diagnostics_bundle = DiagnosticsBundle {
+        encoding_logs: encoder.get_logs().to_vec(),
+        decoding_logs: decoder.get_logs().to_vec(),
+        demodulation: diagnostics,
         modulation_audio,
-        tx_bits: encoding.qpsk_bitstream.clone(),
-        tx_symbols_i: encoding.qpsk_symbols.iter().map(|c| c.re).collect(),
-        tx_symbols_q: encoding.qpsk_symbols.iter().map(|c| c.im).collect(),
-        clean_baseband: encoding.clean_signal.to_vec(),
-        noisy_baseband: encoding.noisy_signal.to_vec(),
-        frames: encoding.frame_descriptors.clone(),
+        tx_bits: qpsk_bitstream,
+        tx_symbols_i: tx_symbols.iter().map(|c| c.re).collect(),
+        tx_symbols_q: tx_symbols.iter().map(|c| c.im).collect(),
+        clean_baseband: clean_iq,
+        noisy_baseband: noisy_iq,
+        frames: Vec::new(), // TODO: extract from streaming encoder
     };
 
     SimulationOutput {
-        report: demodulation.report.clone(),
-        diagnostics,
+        report,
+        diagnostics: diagnostics_bundle,
         ldpc: ldpc_suite,
-    }
-}
-
-fn build_modulation_audio(
-    encoding: &EncodingResult,
-    fallback_sample_rate: usize,
-    carrier_freq_hz: f64,
-) -> Option<ModulationAudio> {
-    let sample_rate = if encoding.sample_rate > 0 {
-        encoding.sample_rate
-    } else {
-        fallback_sample_rate
-    };
-
-    if sample_rate == 0 {
-        return None;
-    }
-
-    let clean = encoding
-        .clean_signal
-        .as_slice()
-        .map(|iq| iq_to_audio(iq, sample_rate, carrier_freq_hz))
-        .unwrap_or_default();
-    let noisy = encoding
-        .noisy_signal
-        .as_slice()
-        .map(|iq| iq_to_audio(iq, sample_rate, carrier_freq_hz))
-        .unwrap_or_default();
-
-    if clean.is_empty() && noisy.is_empty() {
-        None
-    } else {
-        Some(ModulationAudio {
-            sample_rate,
-            carrier_freq_hz,
-            clean,
-            noisy,
-        })
     }
 }
 

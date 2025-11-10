@@ -115,6 +115,25 @@ pub struct FrameData {
     pub symbol_progress: usize,
 }
 
+/// FSK layer state information (nested 1 bit/second modulation)
+#[derive(Debug, Clone, Default)]
+pub struct FSKState {
+    /// Current FSK frequency in Hz (12000 ± 1 Hz)
+    pub current_frequency_hz: f64,
+    /// Frequency deviation from center (12 kHz) in Hz
+    pub frequency_deviation_hz: f64,
+    /// Current FSK bit value (0 or 1)
+    pub current_bit: u8,
+    /// Current bit index in FSK stream
+    pub bit_index: usize,
+    /// History of recent FSK bits for visualization
+    pub bit_history: Vec<u8>,
+    /// Number of QPSK symbols per FSK bit (16 symbols at 16 sym/s = 1 second)
+    pub symbols_per_bit: usize,
+    /// FSK bit rate in Hz
+    pub bit_rate_hz: f64,
+}
+
 /// Output from a single processing chunk
 #[derive(Clone, Debug, Default)]
 pub struct StreamingOutput {
@@ -139,6 +158,9 @@ pub struct StreamingOutput {
     
     /// Current frame data
     pub current_frame_data: FrameData,
+    
+    /// FSK layer state (nested 1 bit/second modulation)
+    pub fsk_state: Option<FSKState>,
 }
 
 /// Streaming DSP pipeline
@@ -180,8 +202,9 @@ impl StreamingPipeline {
     ) -> Self {
         let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, &ldpc);
         
-        // Update symbols per batch - emit more frequently for smoother UI updates
-        let symbols_per_update = 4;
+        // Update less frequently to accumulate more samples for better spectrum resolution
+        // At 16 sym/s, updating every 16 symbols = 1 second updates
+        let symbols_per_update = 16;
         
         let rng = match sim.rng_seed {
             Some(seed) => StdRng::seed_from_u64(seed),
@@ -251,6 +274,11 @@ impl StreamingPipeline {
         let encoder = self.encoder.as_mut().unwrap();
         let decoder = self.decoder.as_mut().unwrap();
         
+        // Cache values we'll need later (before mutable borrows)
+        let sample_rate = self.config.sample_rate;
+        let symbol_rate = self.protocol.qpsk_symbol_rate;
+        let carrier_freq = self.protocol.carrier_freq_hz;
+        
         // Generate next batch of symbols
         let (tx_symbols, frame_changed, current_frame, symbol_in_frame, _is_complete) = 
             encoder.get_next_symbols(self.symbols_per_update);
@@ -293,43 +321,59 @@ impl StreamingPipeline {
         let (decoded_bits, _frame_complete, _dec_frame, _symbols_in_dec_frame, diagnostics) = 
             decoder.process_symbols(&rx_symbols);
         
+        // Extract FSK state information from decoder (not encoder!)
+        // The decoder actually demodulates the FSK layer from the received signal
+        // Do this RIGHT AFTER decoder.process_symbols() while we still have the mutable borrow
+        let fsk_frequency = decoder.get_fsk_frequency();
+        let fsk_current_bit = decoder.get_fsk_bit();
+        let fsk_detected_bits = decoder.get_fsk_bits().to_vec(); // Copy to owned vec
+        
+        // Get FSK bit history for display (last 16 bits, centered on current)
+        let mut fsk_bit_history = Vec::new();
+        if fsk_detected_bits.len() >= 16 {
+            fsk_bit_history.extend_from_slice(&fsk_detected_bits[fsk_detected_bits.len() - 16..]);
+        } else {
+            // Pad with zeros if we don't have enough history yet
+            fsk_bit_history.resize(16 - fsk_detected_bits.len(), 0);
+            fsk_bit_history.extend_from_slice(&fsk_detected_bits);
+        }
+        
         // Update counters
         self.total_symbols_generated += tx_symbols.len();
         self.total_symbols_decoded += rx_symbols.len();
         
-        // Buffer symbols for constellation display (keep last 256)
+        // Buffer symbols for spectrum (keep last 2048 for good frequency resolution)
         self.tx_symbols_buffer.extend(tx_symbols.iter().copied());
-        if self.tx_symbols_buffer.len() > 256 {
-            self.tx_symbols_buffer.drain(0..self.tx_symbols_buffer.len() - 256);
+        if self.tx_symbols_buffer.len() > 2048 {
+            self.tx_symbols_buffer.drain(0..self.tx_symbols_buffer.len() - 2048);
         }
         
         self.rx_symbols_buffer.extend(rx_symbols.iter().copied());
-        if self.rx_symbols_buffer.len() > 256 {
-            self.rx_symbols_buffer.drain(0..self.rx_symbols_buffer.len() - 256);
+        if self.rx_symbols_buffer.len() > 2048 {
+            self.rx_symbols_buffer.drain(0..self.rx_symbols_buffer.len() - 2048);
         }
         
-        // For spectrum: use only recent symbols (limit to prevent performance degradation)
-        // 256 symbols at 16 sym/s = 16 seconds of integration, plenty for good spectrum
-        const MAX_SYMBOLS_FOR_SPECTRUM: usize = 256;
+        // For spectrum: compute directly from IQ symbols (baseband spectrum)
+        // Use sliding window of last 128 symbols (8 seconds at 16 sym/s)
+        // This updates continuously giving real-time feedback
+        const SPECTRUM_SYMBOLS: usize = 128; // Much smaller - only 8 seconds worth
         
-        let tx_symbols_for_spectrum = if self.tx_symbols_buffer.len() > MAX_SYMBOLS_FOR_SPECTRUM {
-            &self.tx_symbols_buffer[self.tx_symbols_buffer.len() - MAX_SYMBOLS_FOR_SPECTRUM..]
+        // Always compute spectrum if we have at least 32 symbols (2 seconds)
+        let tx_spectrum = if self.tx_symbols_buffer.len() >= 32 {
+            let symbols_to_use = self.tx_symbols_buffer.len().min(SPECTRUM_SYMBOLS);
+            let start_idx = self.tx_symbols_buffer.len() - symbols_to_use;
+            Self::compute_baseband_spectrum(&self.tx_symbols_buffer[start_idx..])
         } else {
-            &self.tx_symbols_buffer[..]
+            Vec::new()
         };
         
-        let rx_symbols_for_spectrum = if self.rx_symbols_buffer.len() > MAX_SYMBOLS_FOR_SPECTRUM {
-            &self.rx_symbols_buffer[self.rx_symbols_buffer.len() - MAX_SYMBOLS_FOR_SPECTRUM..]
+        let rx_spectrum = if self.rx_symbols_buffer.len() >= 32 {
+            let symbols_to_use = self.rx_symbols_buffer.len().min(SPECTRUM_SYMBOLS);
+            let start_idx = self.rx_symbols_buffer.len() - symbols_to_use;
+            Self::compute_baseband_spectrum(&self.rx_symbols_buffer[start_idx..])
         } else {
-            &self.rx_symbols_buffer[..]
+            Vec::new()
         };
-        
-        // Generate modulated carrier samples for spectrum analysis
-        let sample_rate = self.config.sample_rate;
-        let symbol_rate = self.protocol.qpsk_symbol_rate;
-        let carrier_freq = self.protocol.carrier_freq_hz;
-        let tx_carrier_samples = Self::symbols_to_carrier_signal(tx_symbols_for_spectrum, sample_rate, symbol_rate, carrier_freq);
-        let rx_carrier_samples = Self::symbols_to_carrier_signal(rx_symbols_for_spectrum, sample_rate, symbol_rate, carrier_freq);
         
         // Build output
         let mut output = StreamingOutput::default();
@@ -347,11 +391,21 @@ impl StreamingPipeline {
             (i_vals, q_vals)
         };
         
-        let (tx_i_norm, tx_q_norm) = normalize_constellation(&self.tx_symbols_buffer);
-        let (rx_i_norm, rx_q_norm) = normalize_constellation(&self.rx_symbols_buffer);
+        // For constellation display: use only recent 256 symbols for clarity
+        let tx_constellation_symbols = if self.tx_symbols_buffer.len() > 256 {
+            &self.tx_symbols_buffer[self.tx_symbols_buffer.len() - 256..]
+        } else {
+            &self.tx_symbols_buffer[..]
+        };
         
-        // Compute spectra with frequency information
-        let (tx_spectrum, tx_freq_start, tx_freq_end) = Self::compute_carrier_spectrum(&tx_carrier_samples, self.config.sample_rate, self.protocol.carrier_freq_hz);
+        let rx_constellation_symbols = if self.rx_symbols_buffer.len() > 256 {
+            &self.rx_symbols_buffer[self.rx_symbols_buffer.len() - 256..]
+        } else {
+            &self.rx_symbols_buffer[..]
+        };
+        
+        let (tx_i_norm, tx_q_norm) = normalize_constellation(tx_constellation_symbols);
+        let (rx_i_norm, rx_q_norm) = normalize_constellation(rx_constellation_symbols);
         
         // Pre-channel diagnostics
         output.pre_channel = PreChannelDiagnostics {
@@ -361,8 +415,8 @@ impl StreamingPipeline {
             tx_constellation_i: tx_i_norm,
             tx_constellation_q: tx_q_norm,
             tx_spectrum_magnitude: tx_spectrum,
-            spectrum_freq_start_hz: tx_freq_start,
-            spectrum_freq_end_hz: tx_freq_end,
+            spectrum_freq_start_hz: 11900.0, // 12 kHz - 100 Hz
+            spectrum_freq_end_hz: 12100.0,   // 12 kHz + 100 Hz (200 Hz span for 32 Hz signal)
             carrier_freq_hz: self.protocol.carrier_freq_hz,
             symbol_rate_hz: self.protocol.qpsk_symbol_rate as u32,
             modulation_type: "QPSK".to_string(),
@@ -379,16 +433,13 @@ impl StreamingPipeline {
         let evm_percent = compute_evm(&tx_symbols, &rx_symbols);
         let snr_estimate_db = estimate_snr(&rx_symbols);
         
-        // Compute RX spectrum
-        let (rx_spectrum, rx_freq_start, rx_freq_end) = Self::compute_carrier_spectrum(&rx_carrier_samples, self.config.sample_rate, self.protocol.carrier_freq_hz);
-        
         // Post-channel diagnostics
         output.post_channel = PostChannelDiagnostics {
             rx_constellation_i: rx_i_norm,
             rx_constellation_q: rx_q_norm,
             rx_spectrum_magnitude: rx_spectrum,
-            spectrum_freq_start_hz: rx_freq_start,
-            spectrum_freq_end_hz: rx_freq_end,
+            spectrum_freq_start_hz: 11900.0,
+            spectrum_freq_end_hz: 12100.0,
             timing_error: diagnostics.timing_error.iter().map(|&v| v as f32).collect(),
             frequency_offset_hz: 0.0,
             phase_offset_rad: 0.0,
@@ -464,120 +515,109 @@ impl StreamingPipeline {
             symbol_progress: symbol_in_frame,
         };
         
-        // Generate audio samples for the symbols
-        output.audio_samples = self.symbols_to_audio_incremental(&tx_symbols);
+        // Generate audio samples ONLY for playback (not for spectrum!)
+        output.audio_samples = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq);
+        
+        // Extract FSK state information from decoder (not encoder!)
+        // The decoder actually demodulates the FSK layer from the received signal
+        let fsk_frequency = decoder.get_fsk_frequency();
+        let fsk_current_bit = decoder.get_fsk_bit();
+        let fsk_detected_bits = decoder.get_fsk_bits();
+        
+        // Get FSK bit history for display (last 16 bits, centered on current)
+        let mut fsk_bit_history = Vec::new();
+        if fsk_detected_bits.len() >= 16 {
+            fsk_bit_history.extend_from_slice(&fsk_detected_bits[fsk_detected_bits.len() - 16..]);
+        } else {
+            // Pad with zeros if we don't have enough history yet
+            fsk_bit_history.resize(16 - fsk_detected_bits.len(), 0);
+            fsk_bit_history.extend_from_slice(fsk_detected_bits);
+        }
+        
+        // Add FSK layer state (from decoder - actual demodulated FSK)
+        output.fsk_state = Some(FSKState {
+            current_frequency_hz: fsk_frequency,
+            frequency_deviation_hz: fsk_frequency - 12000.0,
+            current_bit: fsk_current_bit,
+            bit_index: fsk_detected_bits.len(),
+            bit_history: fsk_bit_history,
+            symbols_per_bit: 16,
+            bit_rate_hz: 1.0,
+        });
         
         output
     }
     
-    fn compute_spectrum_with_scaling(symbols: &[Complex<f64>]) -> Vec<f32> {
-        // Use larger FFT for better frequency resolution
-        let fft_size = 2048.min(symbols.len().next_power_of_two().max(2048));
+    /// Compute baseband spectrum directly from IQ symbols
+    /// Much more efficient than generating audio then computing FFT
+    fn compute_baseband_spectrum(symbols: &[Complex<f64>]) -> Vec<f32> {
+        if symbols.len() < 32 {
+            return Vec::new(); // Need at least 32 symbols for meaningful spectrum
+        }
+        
+        // Zero-pad to get better frequency resolution
+        // Even with 128 symbols, zero-pad to 512 for smoother spectrum
+        let fft_size = 512;
         let mut planner = FftPlanner::new();
         let fft = planner.plan_fft_forward(fft_size);
         
-        let mut buffer: Vec<Complex32> = symbols.iter()
-            .take(fft_size)
-            .map(|c| Complex32::new(c.re as f32, c.im as f32))
-            .collect();
+        // Create buffer with zero-padding
+        let mut buffer: Vec<Complex32> = Vec::with_capacity(fft_size);
         
-        // Pad if needed
+        // Add actual symbols
+        for symbol in symbols.iter().take(fft_size) {
+            buffer.push(Complex32::new(symbol.re as f32, symbol.im as f32));
+        }
+        
+        // Zero pad to FFT size
         while buffer.len() < fft_size {
             buffer.push(Complex32::new(0.0, 0.0));
         }
         
-        // Apply Hann window to reduce spectral leakage
-        for i in 0..buffer.len() {
-            let window_value = 0.5 * (1.0 - (2.0 * std::f32::consts::PI * i as f32 
-                / (buffer.len() as f32 - 1.0)).cos());
+        // Apply Hamming window (better for continuous signals)
+        for i in 0..symbols.len().min(fft_size) {
+            let window_value = 0.54 - 0.46 * (2.0 * std::f32::consts::PI * i as f32 
+                / (symbols.len() as f32 - 1.0)).cos();
             buffer[i] = buffer[i] * window_value;
         }
         
         fft.process(&mut buffer);
         
-        // Hann window power scaling factor
-        let window_power: f32 = 0.375;
-        let scale = 1.0 / ((fft_size as f32) * window_power.sqrt());
+        // Since we're zero-padding, adjust scaling
+        let actual_samples = symbols.len().min(fft_size) as f32;
+        let window_power: f32 = 0.397; // Hamming window power
+        let scale = 1.0 / (actual_samples * window_power.sqrt());
         
-        // Convert to power spectrum in dB with proper scaling
-        buffer.iter()
+        // Convert to power spectrum in dB
+        let spectrum: Vec<f32> = buffer.iter()
             .map(|c| {
                 let power = c.norm_sqr() * scale * scale;
                 if power > 1e-10 {
                     10.0 * power.log10()
                 } else {
-                    -100.0 // Floor value
-                }
-            })
-            .collect()
-    }
-    
-    /// Compute spectrum from real-valued modulated carrier signal (shows 12 kHz peak)
-    /// Returns (magnitude_vector, freq_start_hz, freq_end_hz)
-    fn compute_carrier_spectrum(carrier_samples: &[f32], sample_rate: usize, carrier_freq: f64) -> (Vec<f32>, f32, f32) {
-        if carrier_samples.is_empty() || sample_rate == 0 {
-            return (Vec::new(), 0.0, 0.0);
-        }
-        
-        // Use very large FFT for high frequency resolution (needed for narrow bandwidth)
-        // With 48 kHz sample rate, 16384-point FFT gives ~2.9 Hz resolution
-        let fft_size = 16384.min(carrier_samples.len().next_power_of_two().max(8192));
-        let mut planner = FftPlanner::new();
-        let fft = planner.plan_fft_forward(fft_size);
-        
-        // Convert real samples to complex (imaginary = 0)
-        let mut buffer: Vec<Complex32> = carrier_samples.iter()
-            .take(fft_size)
-            .map(|&s| Complex32::new(s, 0.0))
-            .collect();
-        
-        // Pad if needed
-        while buffer.len() < fft_size {
-            buffer.push(Complex32::new(0.0, 0.0));
-        }
-        
-        // Apply Hann window to reduce spectral leakage
-        for i in 0..buffer.len() {
-            let window_value = 0.5 * (1.0 - (2.0 * std::f32::consts::PI * i as f32 
-                / (buffer.len() as f32 - 1.0)).cos());
-            buffer[i] = buffer[i] * window_value;
-        }
-        
-        fft.process(&mut buffer);
-        
-        // Hann window power scaling factor
-        let window_power: f32 = 0.375;
-        let scale = 1.0 / ((fft_size as f32) * window_power.sqrt());
-        
-        // Calculate frequency resolution
-        let freq_resolution = sample_rate as f32 / fft_size as f32;
-        let display_span = 400.0; // Show ±200 Hz around carrier (plenty for 32 Hz BW)
-        
-        // Find bin indices for carrier ± span
-        let carrier_bin = (carrier_freq as f32 / freq_resolution) as usize;
-        let span_bins = (display_span / freq_resolution) as usize;
-        let start_bin = carrier_bin.saturating_sub(span_bins / 2);
-        let end_bin = (carrier_bin + span_bins / 2).min(fft_size / 2);
-        
-        // Calculate actual frequency range being returned
-        let freq_start = start_bin as f32 * freq_resolution;
-        let freq_end = end_bin as f32 * freq_resolution;
-        
-        // Return only the narrow frequency span around the carrier
-        let magnitude: Vec<f32> = buffer.iter()
-            .skip(start_bin)
-            .take(end_bin - start_bin)
-            .map(|c| {
-                let power = c.norm_sqr() * scale * scale;
-                if power > 1e-10 {
-                    10.0 * power.log10()
-                } else {
-                    -100.0 // Floor value
+                    -100.0
                 }
             })
             .collect();
-            
-        (magnitude, freq_start, freq_end)
+        
+        // Return the DC-centered portion
+        // FFT output: [0...fs/2, -fs/2...0]
+        // We want [-fs/2...fs/2] centered view
+        let half = spectrum.len() / 2;
+        let mut centered = Vec::with_capacity(spectrum.len());
+        centered.extend_from_slice(&spectrum[half..]);
+        centered.extend_from_slice(&spectrum[..half]);
+        
+        // Return middle portion showing ±16 Hz (covers our 32 Hz QPSK signal)
+        // With 512-point FFT at 16 sym/s: each bin = 16/512 = 0.03125 Hz
+        // For ±16 Hz span, we need 16/0.03125 = 512 bins each side = full spectrum
+        // So just return a useful portion around DC
+        let bins_for_64hz = (64.0 * fft_size as f32 / 16.0) as usize; // ±32 Hz span
+        let center = centered.len() / 2;
+        let start = center.saturating_sub(bins_for_64hz / 2);
+        let end = (center + bins_for_64hz / 2).min(centered.len());
+        
+        centered[start..end].to_vec()
     }
     
     fn compute_evm(&self, tx_symbols: &[Complex<f64>], rx_i: &[f64], rx_q: &[f64]) -> f32 {
@@ -685,8 +725,8 @@ impl StreamingPipeline {
         }
     }
     
-    /// Convert symbols to modulated carrier signal (static version for borrow checker)
-    /// This generates the actual 12 kHz QPSK-modulated carrier per the spec
+    /// Convert symbols to modulated carrier signal (static version)
+    /// This generates the actual 12 kHz QPSK-modulated carrier for AUDIO PLAYBACK ONLY
     /// 
     /// This IS the transmitted signal - no additional pulse shaping needed.
     /// The demod/decoder works on this signal after channel impairments are applied.
@@ -731,8 +771,8 @@ impl StreamingPipeline {
         }
     }
     
-    /// Convert symbols to modulated carrier signal (instance method for backward compatibility)
-    /// This generates the actual 12 kHz QPSK-modulated carrier per the spec
+    /// Convert symbols to modulated carrier signal (instance method)
+    /// This generates audio for playback ONLY - spectrum is computed directly from IQ symbols
     fn symbols_to_audio_incremental(&self, symbols: &[Complex<f64>]) -> Vec<f32> {
         Self::symbols_to_carrier_signal(symbols, self.config.sample_rate, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz)
     }

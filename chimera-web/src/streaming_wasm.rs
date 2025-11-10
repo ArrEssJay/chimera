@@ -114,6 +114,17 @@ impl WASMStreamingDSP {
             frame_parity_data: output.current_frame_data.parity_data,
             frame_decoded_text: output.current_frame_data.decoded_text,
             frame_symbol_progress: output.current_frame_data.symbol_progress as u32,
+            
+            // FSK layer state
+            fsk_state: output.fsk_state.map(|fsk| WASMFSKState {
+                current_frequency_hz: fsk.current_frequency_hz,
+                frequency_deviation_hz: fsk.frequency_deviation_hz,
+                current_bit: fsk.current_bit,
+                bit_index: fsk.bit_index,
+                bit_history: fsk.bit_history,
+                symbols_per_bit: fsk.symbols_per_bit,
+                bit_rate_hz: fsk.bit_rate_hz,
+            }),
         })
     }
     
@@ -199,6 +210,9 @@ pub struct WASMStreamOutput {
     frame_parity_data: Vec<u8>,
     frame_decoded_text: String,
     frame_symbol_progress: u32,
+    
+    // FSK layer state (optional, decoded from received signal)
+    fsk_state: Option<WASMFSKState>,
 }
 
 #[wasm_bindgen]
@@ -412,6 +426,11 @@ impl WASMStreamOutput {
     pub fn frame_symbol_progress(&self) -> u32 {
         self.frame_symbol_progress
     }
+    
+    #[wasm_bindgen(getter)]
+    pub fn fsk_state(&self) -> Option<WASMFSKState> {
+        self.fsk_state.clone()
+    }
 }
 
 /// Configuration structure for WASM
@@ -420,4 +439,55 @@ struct StreamConfigWASM {
     simulation: SimulationConfig,
     protocol: ProtocolConfig,
     ldpc: LDPCConfig,
+}
+
+/// FSK layer state for WASM
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct WASMFSKState {
+    current_frequency_hz: f64,
+    frequency_deviation_hz: f64,
+    current_bit: u8,
+    bit_index: usize,
+    bit_history: Vec<u8>,
+    symbols_per_bit: usize,
+    bit_rate_hz: f64,
+}
+
+#[wasm_bindgen]
+impl WASMFSKState {
+    #[wasm_bindgen(getter)]
+    pub fn current_frequency_hz(&self) -> f64 {
+        self.current_frequency_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn frequency_deviation_hz(&self) -> f64 {
+        self.frequency_deviation_hz
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn current_bit(&self) -> u8 {
+        self.current_bit
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn bit_index(&self) -> usize {
+        self.bit_index
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn bit_history(&self) -> Vec<u8> {
+        self.bit_history.clone()
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn symbols_per_bit(&self) -> usize {
+        self.symbols_per_bit
+    }
+    
+    #[wasm_bindgen(getter)]
+    pub fn bit_rate_hz(&self) -> f64 {
+        self.bit_rate_hz
+    }
 }
