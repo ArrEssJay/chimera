@@ -12,6 +12,7 @@ pub mod encoder;
 pub mod errors;
 pub mod ldpc;
 pub mod streaming;
+pub mod thz_carriers;
 pub mod utils;
 
 use std::f64::consts::TAU;

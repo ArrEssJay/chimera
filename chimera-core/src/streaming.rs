@@ -5,6 +5,7 @@
 
 use crate::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use crate::ldpc::{LDPCSuite};
+use crate::thz_carriers::{ThzCarrierProcessor, ThzCarrierConfig};
 use num_complex::Complex;
 use rustfft::{FftPlanner, num_complex::Complex32};
 use std::f64::consts::TAU;
@@ -175,6 +176,10 @@ pub struct StreamingPipeline {
     encoder: Option<crate::encoder::StreamingFrameEncoder>,
     decoder: Option<crate::decoder::StreamingSymbolDecoder>,
     
+    // THz carrier processor for AID effect
+    thz_processor: ThzCarrierProcessor,
+    is_active_mode: bool,
+    
     // State tracking
     frame_count: usize,
     total_frames: usize,
@@ -218,6 +223,10 @@ impl StreamingPipeline {
         let channel = crate::utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
         let noise_std = channel.noise_std;
         
+        // Initialize THz carrier processor
+        let thz_config = ThzCarrierConfig::default();
+        let thz_processor = ThzCarrierProcessor::new(thz_config, SimulationConfig::SAMPLE_RATE as f64);
+        
         Self {
             config: sim,
             protocol,
@@ -225,6 +234,8 @@ impl StreamingPipeline {
             ldpc_suite,
             encoder: None,
             decoder: None,
+            thz_processor,
+            is_active_mode: false,
             frame_count: 0,
             total_frames: 0,
             total_symbols_generated: 0,
@@ -238,6 +249,42 @@ impl StreamingPipeline {
             signal_power,
             noise_std,
         }
+    }
+    
+    /// Set modulation mode (idle vs active)
+    /// - Idle mode: Low modulation depth (<5%) for baseline carrier
+    /// - Active mode: High modulation depth (70-80%) for data transmission
+    pub fn set_modulation_mode(&mut self, active: bool) {
+        self.is_active_mode = active;
+        let depth = if active { 0.75 } else { 0.03 };
+        self.thz_processor.set_modulation_depth(depth);
+    }
+    
+    /// Set custom modulation depth (0.0 to 1.0)
+    /// Typical values:
+    /// - Idle: 0.01 to 0.05 (1-5%)
+    /// - Active: 0.70 to 0.80 (70-80%)
+    pub fn set_modulation_depth(&mut self, depth: f32) {
+        self.thz_processor.set_modulation_depth(depth);
+    }
+    
+    /// Set mixing coefficient for third-order intermodulation
+    /// Higher values increase the non-linear mixing effect
+    pub fn set_mixing_coefficient(&mut self, coefficient: f32) {
+        self.thz_processor.set_mixing_coefficient(coefficient);
+    }
+    
+    /// Generate idle carrier audio (no data modulation)
+    /// Useful for baseline/calibration audio
+    pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Vec<f32> {
+        // Generate silence as base signal
+        let silence = vec![0.0f32; num_samples];
+        
+        // Modulate with low-depth THz carriers
+        let modulated = self.thz_processor.modulate_data_carrier(&silence);
+        
+        // Extract audio through non-linear mixing
+        self.thz_processor.nonlinear_mixing(&modulated)
     }
     
     /// Process a chunk - now emits updates every N symbols instead of every frame
@@ -509,7 +556,14 @@ impl StreamingPipeline {
         };
         
         // Generate audio samples ONLY for playback (not for spectrum!)
-        output.audio_samples = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq);
+        // First generate base carrier signal
+        let base_audio = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq);
+        
+        // Apply THz carrier modulation and mixing to simulate AID effect
+        let modulated_thz = self.thz_processor.modulate_data_carrier(&base_audio);
+        let mixed_audio = self.thz_processor.nonlinear_mixing(&modulated_thz);
+        
+        output.audio_samples = mixed_audio;
         
         // Extract FSK state information from decoder (not encoder!)
         // The decoder actually demodulates the FSK layer from the received signal

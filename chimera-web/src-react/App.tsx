@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
+import ThzControlPanel from './components/ThzControlPanel';
 import VisualizationPanel from './components/VisualizationPanel';
 import FrameDecoder from './components/FrameDecoder';
 import MessageDecoder from './components/MessageDecoder';
@@ -90,6 +91,30 @@ const App: React.FC = () => {
     dspService.addLog('DSP engine stopped');
   };
 
+  // THz Control Handlers
+  const handleModulationModeChange = (active: boolean) => {
+    dspService.setModulationMode(active);
+    dspService.addLog(`THz mode: ${active ? 'Active' : 'Idle'}`);
+  };
+
+  const handleModulationDepthChange = (depth: number) => {
+    dspService.setModulationDepth(depth);
+    dspService.addLog(`THz modulation depth: ${(depth * 100).toFixed(1)}%`);
+  };
+
+  const handleMixingCoefficientChange = (coefficient: number) => {
+    dspService.setMixingCoefficient(coefficient);
+    dspService.addLog(`THz mixing coefficient: ${coefficient.toFixed(2)}`);
+  };
+
+  const handleGenerateIdleCarrier = () => {
+    const samples = dspService.generateIdleCarrier(100);
+    if (samples) {
+      dspService.addLog(`Generated ${samples.length} samples of idle carrier`);
+      // Optionally play the samples or show them in a visualization
+    }
+  };
+
   // Show loading state while WASM initializes
   if (!config) {
     return (
@@ -132,6 +157,13 @@ const App: React.FC = () => {
             onChange={setConfig}
             disabled={isDSPRunning}
             allowRuntimeUpdate={true}
+          />
+          <ThzControlPanel
+            disabled={!isDSPRunning}
+            onModulationModeChange={handleModulationModeChange}
+            onModulationDepthChange={handleModulationDepthChange}
+            onMixingCoefficientChange={handleMixingCoefficientChange}
+            onGenerateIdleCarrier={handleGenerateIdleCarrier}
           />
         </aside>
 

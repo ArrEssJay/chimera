@@ -159,6 +159,32 @@ impl WASMStreamingDSP {
     pub fn update_channel(&mut self, snr_db: f64, link_loss_db: f64) {
         self.pipeline.update_channel_params(snr_db, link_loss_db);
     }
+    
+    /// Set THz modulation mode (false = idle <5%, true = active 70-80%)
+    #[wasm_bindgen]
+    pub fn set_modulation_mode(&mut self, active: bool) {
+        self.pipeline.set_modulation_mode(active);
+    }
+    
+    /// Set custom modulation depth (0.0 to 1.0)
+    /// Typical values: idle = 0.01-0.05, active = 0.70-0.80
+    #[wasm_bindgen]
+    pub fn set_modulation_depth(&mut self, depth: f32) {
+        self.pipeline.set_modulation_depth(depth);
+    }
+    
+    /// Set mixing coefficient for third-order intermodulation
+    #[wasm_bindgen]
+    pub fn set_mixing_coefficient(&mut self, coefficient: f32) {
+        self.pipeline.set_mixing_coefficient(coefficient);
+    }
+    
+    /// Generate idle carrier audio (for calibration/baseline)
+    #[wasm_bindgen]
+    pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Float32Array {
+        let samples = self.pipeline.generate_idle_carrier(num_samples);
+        Float32Array::from(&samples[..])
+    }
 }
 
 /// Output structure exposed to JavaScript

@@ -483,6 +483,78 @@ export class WASMDSPService {
   }
 
   /**
+   * Set THz modulation mode (idle or active)
+   */
+  setModulationMode(active: boolean): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.set_modulation_mode(active);
+      console.log(`THz modulation mode: ${active ? 'Active (70-80%)' : 'Idle (<5%)'}`);
+    } catch (error) {
+      console.error('Failed to set modulation mode:', error);
+    }
+  }
+
+  /**
+   * Set custom modulation depth (0.0 to 1.0)
+   */
+  setModulationDepth(depth: number): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.set_modulation_depth(depth);
+      console.log(`THz modulation depth: ${(depth * 100).toFixed(1)}%`);
+    } catch (error) {
+      console.error('Failed to set modulation depth:', error);
+    }
+  }
+
+  /**
+   * Set mixing coefficient for third-order intermodulation
+   */
+  setMixingCoefficient(coefficient: number): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.set_mixing_coefficient(coefficient);
+      console.log(`THz mixing coefficient: ${coefficient.toFixed(2)}`);
+    } catch (error) {
+      console.error('Failed to set mixing coefficient:', error);
+    }
+  }
+
+  /**
+   * Generate idle carrier audio for calibration
+   */
+  generateIdleCarrier(durationMs: number = 100): Float32Array | null {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return null;
+    }
+    
+    try {
+      const sampleRate = 48000;
+      const numSamples = Math.floor((durationMs / 1000) * sampleRate);
+      const samples = this.dsp.generate_idle_carrier(numSamples);
+      console.log(`Generated ${numSamples} samples (${durationMs}ms) of idle carrier`);
+      return samples;
+    } catch (error) {
+      console.error('Failed to generate idle carrier:', error);
+      return null;
+    }
+  }
+
+  /**
    * Cleanup resources
    */
   dispose(): void {
