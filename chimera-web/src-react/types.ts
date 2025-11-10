@@ -2,14 +2,10 @@
  * TypeScript types matching Rust backend structures
  */
 
-export type BitDepth = 'Pcm16' | 'Pcm24' | 'Pcm32' | 'Float32';
-
 export interface SimulationConfig {
   plaintext_source: string;
   snr_db: number;
   link_loss_db: number;
-  sample_rate: number;
-  bit_depth: BitDepth;
   rng_seed?: number;
 }
 
@@ -118,56 +114,36 @@ export interface ProcessingResult {
   qpsk_symbols: Array<{ re: number; im: number }>;
 }
 
-// Preset configurations
-export interface SimulationPreset {
-  name: string;
+// FramePreset matches Rust enum in presets.rs
+export type FramePresetKey = 'raman-whisper' | 'burst-telemetry' | 'deep-space-probe';
+
+export interface FramePresetInfo {
+  key: FramePresetKey;
+  displayName: string;
   description: string;
-  config: SimulationConfig;
 }
 
-export const SIMULATION_PRESETS: SimulationPreset[] = [
+export const FRAME_PRESETS: FramePresetInfo[] = [
   {
-    name: 'Default',
-    description: 'Standard test configuration',
-    config: {
-      plaintext_source: 'Hello CHIMERA',
-      snr_db: 10,
-      link_loss_db: 0,
-      sample_rate: 48000,
-      bit_depth: 'Float32' as BitDepth,
-    },
+    key: 'raman-whisper',
+    displayName: 'Raman Whisper',
+    description: 'Baseline frame for terrestrial operations with balanced payload and ECC.',
   },
   {
-    name: 'High SNR',
-    description: 'Clean channel, minimal noise',
-    config: {
-      plaintext_source: 'Testing high SNR scenario',
-      snr_db: 20,
-      link_loss_db: 0,
-      sample_rate: 48000,
-      bit_depth: 'Float32' as BitDepth,
-    },
+    key: 'burst-telemetry',
+    displayName: 'Burst Telemetry',
+    description: 'High-rate bursts with tighter sync and extended payload for short-lived windows.',
   },
   {
-    name: 'Low SNR',
-    description: 'Noisy channel stress test',
-    config: {
-      plaintext_source: 'Low SNR test',
-      snr_db: 3,
-      link_loss_db: 5,
-      sample_rate: 48000,
-      bit_depth: 'Float32' as BitDepth,
-    },
-  },
-  {
-    name: 'Long Message',
-    description: 'Test multi-frame encoding',
-    config: {
-      plaintext_source: 'This is a longer message to test multi-frame encoding and decoding capabilities of the CHIMERA system.',
-      snr_db: 10,
-      link_loss_db: 0,
-      sample_rate: 48000,
-      bit_depth: 'Float32' as BitDepth,
-    },
+    key: 'deep-space-probe',
+    displayName: 'Deep-Space Probe',
+    description: 'Long-haul frames with heavy redundancy and relaxed bandwidth for deep-space links.',
   },
 ];
+
+// Full configuration bundle
+export interface ConfigBundle {
+  simulation: SimulationConfig;
+  protocol: ProtocolConfig;
+  ldpc: LDPCConfig;
+}

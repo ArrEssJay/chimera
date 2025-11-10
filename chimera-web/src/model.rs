@@ -48,7 +48,6 @@ pub fn run_pipeline(input: SimulationInput) -> SimulationOutput {
     sim.plaintext_source = input.plaintext;
     sim.snr_db = input.snr_db;
     sim.link_loss_db = input.link_loss_db;
-    sim.sample_rate = FIXED_SAMPLE_RATE;
 
     let output = run_simulation(&sim, &protocol, &ldpc);
     SimulationOutput {

@@ -116,6 +116,49 @@ pub fn array_from_bits(bits: &[u8]) -> Array1<u8> {
     Array1::from_vec(bits.to_vec())
 }
 
+/// Channel parameter calculations
+pub struct ChannelParams {
+    pub link_loss_linear: f64,
+    pub attenuation_factor: f64,
+    pub attenuated_signal_power: f64,
+    pub noise_variance: f64,
+    pub noise_std: f64,
+}
+
+impl ChannelParams {
+    /// Calculate channel parameters from SNR and link loss in dB
+    /// 
+    /// # Arguments
+    /// * `snr_db` - Signal-to-noise ratio in dB (Es/N0)
+    /// * `link_loss_db` - Link loss/path loss in dB
+    /// * `signal_power` - Normalized signal power (typically 1.0 for QPSK)
+    pub fn from_db(snr_db: f64, link_loss_db: f64, signal_power: f64) -> Self {
+        let link_loss_linear = 10f64.powf(link_loss_db / 10.0);
+        let attenuated_signal_power = signal_power / link_loss_linear;
+        let attenuation_factor = if link_loss_linear > 0.0 {
+            1.0 / link_loss_linear.sqrt()
+        } else {
+            1.0
+        };
+        
+        let snr_linear = 10f64.powf(snr_db / 10.0);
+        let noise_variance = if snr_linear > 0.0 {
+            attenuated_signal_power / snr_linear
+        } else {
+            0.0
+        };
+        let noise_std = (noise_variance / 2.0).sqrt();
+        
+        Self {
+            link_loss_linear,
+            attenuation_factor,
+            attenuated_signal_power,
+            noise_variance,
+            noise_std,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

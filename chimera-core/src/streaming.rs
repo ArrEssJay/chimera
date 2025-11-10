@@ -138,6 +138,7 @@ pub struct FSKState {
 #[derive(Clone, Debug, Default)]
 pub struct StreamingOutput {
     /// Audio samples (modulated carrier)
+    /// Always Float32 at 48 kHz for Web Audio API compatibility
     pub audio_samples: Vec<f32>,
     
     /// Pre-channel diagnostics
@@ -214,15 +215,8 @@ impl StreamingPipeline {
         // Pre-calculate noise parameters
         // QPSK has signal power of 1.0 (normalized)
         let signal_power = 1.0;
-        let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
-        let attenuated_signal_power = signal_power / link_loss_linear;
-        let snr_linear = 10f64.powf(sim.snr_db / 10.0);
-        let noise_variance = if snr_linear > 0.0 {
-            attenuated_signal_power / snr_linear
-        } else {
-            0.0
-        };
-        let noise_std = (noise_variance / 2.0).sqrt();
+        let channel = crate::utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
+        let noise_std = channel.noise_std;
         
         Self {
             config: sim,
@@ -275,7 +269,7 @@ impl StreamingPipeline {
         let decoder = self.decoder.as_mut().unwrap();
         
         // Cache values we'll need later (before mutable borrows)
-        let sample_rate = self.config.sample_rate;
+        let sample_rate = SimulationConfig::SAMPLE_RATE;
         let symbol_rate = self.protocol.qpsk_symbol_rate;
         let carrier_freq = self.protocol.carrier_freq_hz;
         
@@ -291,20 +285,19 @@ impl StreamingPipeline {
             return StreamingOutput::default();
         }
         
-        // Apply channel effects (attenuation + noise)
-        let link_loss_linear = 10f64.powf(self.config.link_loss_db / 10.0);
-        let attenuation_factor = if link_loss_linear > 0.0 {
-            1.0 / link_loss_linear.sqrt()
-        } else {
-            1.0
-        };
+        // Apply channel effects (attenuation + AWGN)
+        let channel = crate::utils::ChannelParams::from_db(
+            self.config.snr_db,
+            self.config.link_loss_db,
+            self.signal_power
+        );
         
         let normal = rand_distr::StandardNormal;
         let mut rx_symbols = Vec::with_capacity(tx_symbols.len());
         
         for tx_symbol in &tx_symbols {
             // Apply attenuation
-            let attenuated = tx_symbol * attenuation_factor;
+            let attenuated = tx_symbol * channel.attenuation_factor;
             
             // Add AWGN
             let noise_i: f64 = self.rng.sample::<f64, _>(normal) * self.noise_std;
@@ -689,11 +682,11 @@ impl StreamingPipeline {
     
     /// Convert I/Q samples to audio
     fn iq_to_audio(&self, iq: &[f64]) -> Vec<f32> {
-        if self.config.sample_rate == 0 || iq.len() < 2 {
+        if iq.len() < 2 {
             return Vec::new();
         }
         
-        let dt = 1.0 / self.config.sample_rate as f64;
+        let dt = 1.0 / SimulationConfig::SAMPLE_RATE as f64;
         let carrier_freq = self.protocol.carrier_freq_hz;
         let mut t = 0.0_f64;
         let mut audio = Vec::with_capacity(iq.len() / 2);
@@ -774,7 +767,7 @@ impl StreamingPipeline {
     /// Convert symbols to modulated carrier signal (instance method)
     /// This generates audio for playback ONLY - spectrum is computed directly from IQ symbols
     fn symbols_to_audio_incremental(&self, symbols: &[Complex<f64>]) -> Vec<f32> {
-        Self::symbols_to_carrier_signal(symbols, self.config.sample_rate, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz)
+        Self::symbols_to_carrier_signal(symbols, SimulationConfig::SAMPLE_RATE, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz)
     }
     
     /// Get current configuration
@@ -787,17 +780,10 @@ impl StreamingPipeline {
     
     /// Reconfigure the pipeline
     pub fn reconfigure(&mut self, sim: SimulationConfig, protocol: ProtocolConfig, ldpc: LDPCConfig) {
-        // Recalculate noise parameters
+        // Pre-calculate noise parameters
         let signal_power = 1.0;
-        let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
-        let attenuated_signal_power = signal_power / link_loss_linear;
-        let snr_linear = 10f64.powf(sim.snr_db / 10.0);
-        let noise_variance = if snr_linear > 0.0 {
-            attenuated_signal_power / snr_linear
-        } else {
-            0.0
-        };
-        let noise_std = (noise_variance / 2.0).sqrt();
+        let channel = crate::utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
+        let noise_std = channel.noise_std;
         
         let rng = match sim.rng_seed {
             Some(seed) => StdRng::seed_from_u64(seed),
@@ -822,6 +808,24 @@ impl StreamingPipeline {
         self.rng = rng;
         self.signal_power = signal_power;
         self.noise_std = noise_std;
+    }
+    
+    /// Update channel parameters (SNR and link loss) without resetting the pipeline
+    pub fn update_channel_params(&mut self, snr_db: f64, link_loss_db: f64) {
+        // Update config
+        self.config.snr_db = snr_db;
+        self.config.link_loss_db = link_loss_db;
+        
+        // Recalculate noise parameters
+        let link_loss_linear = 10f64.powf(link_loss_db / 10.0);
+        let attenuated_signal_power = self.signal_power / link_loss_linear;
+        let snr_linear = 10f64.powf(snr_db / 10.0);
+        let noise_variance = if snr_linear > 0.0 {
+            attenuated_signal_power / snr_linear
+        } else {
+            0.0
+        };
+        self.noise_std = (noise_variance / 2.0).sqrt();
     }
 }
 

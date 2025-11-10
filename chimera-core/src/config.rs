@@ -1,14 +1,7 @@
 //! Configuration types for the Chimera pipeline.
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub enum BitDepth {
-    Pcm16,
-    Pcm24,
-    Pcm32,
-    #[default]
-    Float32,
-}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FrameLayout {
@@ -113,8 +106,6 @@ impl Default for LDPCConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SimulationConfig {
-    pub sample_rate: usize,
-    pub bit_depth: BitDepth,
     pub snr_db: f64,
     pub link_loss_db: f64,
     pub plaintext_source: String,
@@ -124,12 +115,15 @@ pub struct SimulationConfig {
 impl Default for SimulationConfig {
     fn default() -> Self {
         Self {
-            sample_rate: 48_000,
-            bit_depth: BitDepth::default(),
             snr_db: -3.0,
             link_loss_db: 0.0,
             plaintext_source: "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into(),
             rng_seed: None,
         }
     }
+}
+
+impl SimulationConfig {
+    /// Audio sample rate is fixed at 48 kHz
+    pub const SAMPLE_RATE: usize = 48_000;
 }

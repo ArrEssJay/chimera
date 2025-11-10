@@ -1,242 +1,416 @@
 /**
- * ConfigPanel - Simulation configuration controls
+ * ConfigPanel - Full frame preset configuration controls
  * 
- * Provides form controls for SimulationConfig parameters with
- * validation and preset configurations.
+ * Provides form controls for all ProtocolConfig, SimulationConfig, and LDPCConfig
+ * parameters with preset selection.
  */
 
 import React, { useState } from 'react';
-import { SimulationConfig, SIMULATION_PRESETS } from '../types';
+import {
+  ConfigBundle,
+  FRAME_PRESETS,
+  FramePresetKey,
+  ProtocolConfig,
+  SimulationConfig,
+  LDPCConfig,
+  FrameLayout,
+} from '../types';
 
 export interface ConfigPanelProps {
-  config: SimulationConfig;
-  onChange: (config: SimulationConfig) => void;
+  config: ConfigBundle;
+  onChange: (config: ConfigBundle) => void;
   disabled?: boolean;
+  allowRuntimeUpdate?: boolean;
 }
 
-const ConfigPanel: React.FC<ConfigPanelProps> = ({ config, onChange, disabled = false }) => {
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+const ConfigPanel: React.FC<ConfigPanelProps> = ({
+  config,
+  onChange,
+  disabled = false,
+  allowRuntimeUpdate = false,
+}) => {
+  const [selectedPreset, setSelectedPreset] = useState<FramePresetKey | ''>('raman-whisper');
 
-  const validateAndUpdate = (field: keyof SimulationConfig, value: any) => {
-    const newConfig = { ...config, [field]: value };
-    const errors: Record<string, string> = {};
-
-    // Validation rules
-    if (field === 'snr_db' && (value < -10 || value > 30)) {
-      errors.snr_db = 'SNR must be between -10 and 30 dB';
-    }
-    if (field === 'link_loss_db' && (value < 0 || value > 50)) {
-      errors.link_loss_db = 'Link loss must be between 0 and 50 dB';
-    }
-    if (field === 'sample_rate' && value < 8000) {
-      errors.sample_rate = 'Sample rate must be at least 8000 Hz';
-    }
-    if (field === 'plaintext_source' && value.length === 0) {
-      errors.plaintext_source = 'Message cannot be empty';
-    }
-
-    setValidationErrors(errors);
-
-    // Only update if valid
-    if (Object.keys(errors).length === 0) {
-      onChange(newConfig);
+  const loadPreset = async (presetKey: FramePresetKey) => {
+    try {
+      const wasmModule = await import('../../pkg/chimera_web');
+      const bundleJson = wasmModule.get_preset_bundle(presetKey);
+      if (bundleJson) {
+        const bundle: ConfigBundle = JSON.parse(bundleJson);
+        onChange(bundle);
+        setSelectedPreset(presetKey);
+      }
+    } catch (error) {
+      console.error('Failed to load preset:', error);
     }
   };
 
-  const loadPreset = (presetIndex: number) => {
-    const preset = SIMULATION_PRESETS[presetIndex];
-    if (preset) {
-      onChange(preset.config);
-      setValidationErrors({});
-    }
+  const updateSimulation = <K extends keyof SimulationConfig>(
+    field: K,
+    value: SimulationConfig[K]
+  ) => {
+    onChange({
+      ...config,
+      simulation: {
+        ...config.simulation,
+        [field]: value,
+      },
+    });
+  };
+
+  const updateProtocol = <K extends keyof ProtocolConfig>(
+    field: K,
+    value: ProtocolConfig[K]
+  ) => {
+    onChange({
+      ...config,
+      protocol: {
+        ...config.protocol,
+        [field]: value,
+      },
+    });
+  };
+
+  const updateFrameLayout = <K extends keyof FrameLayout>(
+    field: K,
+    value: FrameLayout[K]
+  ) => {
+    onChange({
+      ...config,
+      protocol: {
+        ...config.protocol,
+        frame_layout: {
+          ...config.protocol.frame_layout,
+          [field]: value,
+        },
+      },
+    });
+  };
+
+  const updateLDPC = <K extends keyof LDPCConfig>(field: K, value: LDPCConfig[K]) => {
+    onChange({
+      ...config,
+      ldpc: {
+        ...config.ldpc,
+        [field]: value,
+      },
+    });
+  };
+
+  // Determine if field can be updated during runtime
+  const canUpdate = (field: 'snr' | 'link_loss' | 'other') => {
+    if (!disabled) return true; // Always editable when stopped
+    if (!allowRuntimeUpdate) return false; // Runtime updates disabled
+    return field === 'snr' || field === 'link_loss'; // Only these during runtime
   };
 
   return (
     <div className="config-panel">
       <h2>Configuration</h2>
 
-      {/* Presets */}
+      {/* Frame Preset Selector */}
       <div className="config-section">
-        <label className="config-label">Presets</label>
+        <label className="config-label">Frame Preset</label>
         <select
           className="config-select"
-          onChange={(e) => loadPreset(parseInt(e.target.value))}
-          disabled={disabled}
-          defaultValue=""
+          value={selectedPreset}
+          onChange={(e) => {
+            const key = e.target.value as FramePresetKey;
+            if (key) loadPreset(key);
+          }}
+          disabled={disabled && !allowRuntimeUpdate}
         >
-          <option value="" disabled>
-            Select preset...
-          </option>
-          {SIMULATION_PRESETS.map((preset, index) => (
-            <option key={index} value={index}>
-              {preset.name} - {preset.description}
+          <option value="">Custom Configuration</option>
+          {FRAME_PRESETS.map((preset) => (
+            <option key={preset.key} value={preset.key}>
+              {preset.displayName}
             </option>
           ))}
         </select>
+        {selectedPreset && (
+          <div className="config-hint">
+            {FRAME_PRESETS.find((p) => p.key === selectedPreset)?.description}
+          </div>
+        )}
       </div>
 
-      {/* Message */}
-      <div className="config-section">
-        <label className="config-label">
-          Message
-          {validationErrors.plaintext_source && (
-            <span className="validation-error">{validationErrors.plaintext_source}</span>
-          )}
-        </label>
-        <textarea
-          className="config-textarea"
-          value={config.plaintext_source}
-          onChange={(e) => validateAndUpdate('plaintext_source', e.target.value)}
-          disabled={disabled}
-          rows={4}
-          placeholder="Enter message to encode..."
-        />
-        <div className="config-hint">
-          {config.plaintext_source.length} characters
-        </div>
-      </div>
+      {/* Simulation Parameters */}
+      <div className="config-section-group">
+        <h3>Simulation</h3>
 
-      {/* SNR */}
-      <div className="config-section">
-        <label className="config-label">
-          SNR (Es/N0)
-          {validationErrors.snr_db && (
-            <span className="validation-error">{validationErrors.snr_db}</span>
-          )}
-        </label>
-        <div className="config-slider-container">
-          <input
-            type="range"
-            className="config-slider"
-            min="-10"
-            max="30"
-            step="0.5"
-            value={config.snr_db}
-            onChange={(e) => validateAndUpdate('snr_db', parseFloat(e.target.value))}
-            disabled={disabled}
+        <div className="config-section">
+          <label className="config-label">Message</label>
+          <textarea
+            className="config-textarea"
+            value={config.simulation.plaintext_source}
+            onChange={(e) => updateSimulation('plaintext_source', e.target.value)}
+            disabled={!canUpdate('other')}
+            rows={3}
+            placeholder="Enter message to encode..."
           />
+          <div className="config-hint">{config.simulation.plaintext_source.length} characters</div>
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">
+            SNR (Es/N0)
+            {allowRuntimeUpdate && disabled && <span className="live-badge">LIVE</span>}
+          </label>
+          <div className="config-slider-container">
+            <input
+              type="range"
+              className="config-slider"
+              min="-10"
+              max="30"
+              step="0.5"
+              value={config.simulation.snr_db}
+              onChange={(e) => updateSimulation('snr_db', parseFloat(e.target.value))}
+              disabled={!canUpdate('snr')}
+            />
+            <input
+              type="number"
+              className="config-number"
+              value={config.simulation.snr_db}
+              onChange={(e) => updateSimulation('snr_db', parseFloat(e.target.value))}
+              disabled={!canUpdate('snr')}
+              step="0.5"
+            />
+            <span className="config-unit">dB</span>
+          </div>
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">
+            Link Loss
+            {allowRuntimeUpdate && disabled && <span className="live-badge">LIVE</span>}
+          </label>
+          <div className="config-slider-container">
+            <input
+              type="range"
+              className="config-slider"
+              min="0"
+              max="50"
+              step="1"
+              value={config.simulation.link_loss_db}
+              onChange={(e) => updateSimulation('link_loss_db', parseFloat(e.target.value))}
+              disabled={!canUpdate('link_loss')}
+            />
+            <input
+              type="number"
+              className="config-number"
+              value={config.simulation.link_loss_db}
+              onChange={(e) => updateSimulation('link_loss_db', parseFloat(e.target.value))}
+              disabled={!canUpdate('link_loss')}
+              step="1"
+            />
+            <span className="config-unit">dB</span>
+          </div>
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">RNG Seed (Optional)</label>
           <input
             type="number"
-            className="config-number"
-            value={config.snr_db}
-            onChange={(e) => validateAndUpdate('snr_db', parseFloat(e.target.value))}
-            disabled={disabled}
-            step="0.5"
-            min="-10"
-            max="30"
+            className="config-input"
+            value={config.simulation.rng_seed ?? ''}
+            onChange={(e) =>
+              updateSimulation('rng_seed', e.target.value ? parseInt(e.target.value) : undefined)
+            }
+            disabled={!canUpdate('other')}
+            placeholder="Random"
           />
-          <span className="config-unit">dB</span>
         </div>
-        <div className="config-hint">Signal-to-noise ratio</div>
       </div>
 
-      {/* Link Loss */}
-      <div className="config-section">
-        <label className="config-label">
-          Link Loss
-          {validationErrors.link_loss_db && (
-            <span className="validation-error">{validationErrors.link_loss_db}</span>
-          )}
-        </label>
-        <div className="config-slider-container">
-          <input
-            type="range"
-            className="config-slider"
-            min="0"
-            max="50"
-            step="1"
-            value={config.link_loss_db}
-            onChange={(e) => validateAndUpdate('link_loss_db', parseFloat(e.target.value))}
-            disabled={disabled}
-          />
+      {/* Protocol Parameters */}
+      <div className="config-section-group">
+        <h3>Protocol</h3>
+
+        <div className="config-section">
+          <label className="config-label">Carrier Frequency</label>
+          <div className="config-slider-container">
+            <input
+              type="number"
+              className="config-input"
+              value={config.protocol.carrier_freq_hz}
+              onChange={(e) => updateProtocol('carrier_freq_hz', parseFloat(e.target.value))}
+              disabled={!canUpdate('other')}
+              step="0.1"
+            />
+            <span className="config-unit">Hz</span>
+          </div>
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">QPSK Symbol Rate</label>
           <input
             type="number"
-            className="config-number"
-            value={config.link_loss_db}
-            onChange={(e) => validateAndUpdate('link_loss_db', parseFloat(e.target.value))}
-            disabled={disabled}
-            step="1"
-            min="0"
-            max="50"
+            className="config-input"
+            value={config.protocol.qpsk_symbol_rate}
+            onChange={(e) => updateProtocol('qpsk_symbol_rate', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
           />
-          <span className="config-unit">dB</span>
         </div>
-        <div className="config-hint">Path loss attenuation</div>
-      </div>
 
-      {/* Sample Rate */}
-      <div className="config-section">
-        <label className="config-label">
-          Sample Rate
-          {validationErrors.sample_rate && (
-            <span className="validation-error">{validationErrors.sample_rate}</span>
-          )}
-        </label>
-        <select
-          className="config-select"
-          value={config.sample_rate}
-          onChange={(e) => validateAndUpdate('sample_rate', parseInt(e.target.value))}
-          disabled={disabled}
-        >
-          <option value={8000}>8 kHz</option>
-          <option value={16000}>16 kHz</option>
-          <option value={22050}>22.05 kHz</option>
-          <option value={44100}>44.1 kHz</option>
-          <option value={48000}>48 kHz</option>
-          <option value={96000}>96 kHz</option>
-        </select>
-        <div className="config-hint">Audio sample rate</div>
-      </div>
-
-      {/* Bit Depth */}
-      <div className="config-section">
-        <label className="config-label">Bit Depth</label>
-        <select
-          className="config-select"
-          value={config.bit_depth}
-          onChange={(e) => validateAndUpdate('bit_depth', e.target.value)}
-          disabled={disabled}
-        >
-          <option value="Pcm16">16-bit PCM</option>
-          <option value="Pcm24">24-bit PCM</option>
-          <option value="Pcm32">32-bit PCM</option>
-          <option value="Float32">32-bit Float</option>
-        </select>
-        <div className="config-hint">Audio sample format</div>
-      </div>
-
-      {/* RNG Seed */}
-      <div className="config-section">
-        <label className="config-label">RNG Seed (Optional)</label>
-        <input
-          type="number"
-          className="config-input"
-          value={config.rng_seed ?? ''}
-          onChange={(e) =>
-            validateAndUpdate('rng_seed', e.target.value ? parseInt(e.target.value) : undefined)
-          }
-          disabled={disabled}
-          placeholder="Random"
-        />
-        <div className="config-hint">For reproducible simulations</div>
-      </div>
-
-      {/* Info Panel */}
-      <div className="config-info">
-        <h3>System Info</h3>
-        <div className="info-grid">
-          <div className="info-row">
-            <span className="info-label">Modulation:</span>
-            <span className="info-value">QPSK</span>
+        <div className="config-section">
+          <label className="config-label">QPSK Bandwidth</label>
+          <div className="config-slider-container">
+            <input
+              type="number"
+              className="config-input"
+              value={config.protocol.qpsk_bandwidth_hz}
+              onChange={(e) => updateProtocol('qpsk_bandwidth_hz', parseFloat(e.target.value))}
+              disabled={!canUpdate('other')}
+              step="0.1"
+            />
+            <span className="config-unit">Hz</span>
           </div>
-          <div className="info-row">
-            <span className="info-label">FEC:</span>
-            <span className="info-value">LDPC (1/2)</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Symbol Rate:</span>
-            <span className="info-value">16 Hz</span>
-          </div>
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">FSK Bit Rate</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.fsk_bit_rate}
+            onChange={(e) => updateProtocol('fsk_bit_rate', parseFloat(e.target.value))}
+            disabled={!canUpdate('other')}
+            step="0.1"
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Sync Sequence (Hex)</label>
+          <input
+            type="text"
+            className="config-input"
+            value={config.protocol.sync_sequence_hex}
+            onChange={(e) => updateProtocol('sync_sequence_hex', e.target.value)}
+            disabled={!canUpdate('other')}
+            placeholder="A5A5A5A5"
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Target ID (Hex)</label>
+          <input
+            type="text"
+            className="config-input"
+            value={config.protocol.target_id_hex}
+            onChange={(e) => updateProtocol('target_id_hex', e.target.value)}
+            disabled={!canUpdate('other')}
+            placeholder="DEADBEEF"
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Command Opcode</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.command_opcode}
+            onChange={(e) => updateProtocol('command_opcode', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Max Frames</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.max_frames}
+            onChange={(e) => updateProtocol('max_frames', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+      </div>
+
+      {/* Frame Layout */}
+      <div className="config-section-group">
+        <h3>Frame Layout</h3>
+
+        <div className="config-section">
+          <label className="config-label">Total Symbols</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.frame_layout.total_symbols}
+            onChange={(e) => updateFrameLayout('total_symbols', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Sync Symbols</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.frame_layout.sync_symbols}
+            onChange={(e) => updateFrameLayout('sync_symbols', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Data Payload Symbols</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.frame_layout.data_payload_symbols}
+            onChange={(e) => updateFrameLayout('data_payload_symbols', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">ECC Symbols</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.protocol.frame_layout.ecc_symbols}
+            onChange={(e) => updateFrameLayout('ecc_symbols', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+      </div>
+
+      {/* LDPC Parameters */}
+      <div className="config-section-group">
+        <h3>LDPC</h3>
+
+        <div className="config-section">
+          <label className="config-label">Variable Node Degree (dv)</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.ldpc.dv}
+            onChange={(e) => updateLDPC('dv', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">Check Node Degree (dc)</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.ldpc.dc}
+            onChange={(e) => updateLDPC('dc', parseInt(e.target.value))}
+            disabled={!canUpdate('other')}
+          />
+        </div>
+
+        <div className="config-section">
+          <label className="config-label">LDPC Seed (Optional)</label>
+          <input
+            type="number"
+            className="config-input"
+            value={config.ldpc.seed ?? ''}
+            onChange={(e) => updateLDPC('seed', e.target.value ? parseInt(e.target.value) : undefined)}
+            disabled={!canUpdate('other')}
+            placeholder="Random"
+          />
         </div>
       </div>
     </div>

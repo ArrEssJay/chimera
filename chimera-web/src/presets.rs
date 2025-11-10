@@ -1,17 +1,19 @@
 use std::fmt;
 
-use chimera_core::config::{BitDepth, FrameLayout, LDPCConfig, ProtocolConfig, SimulationConfig};
+use chimera_core::config::{FrameLayout, LDPCConfig, ProtocolConfig, SimulationConfig};
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "kebab-case")]
+#[wasm_bindgen]
 pub enum FramePreset {
     RamanWhisper,
     BurstTelemetry,
     DeepSpaceProbe,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PresetBundle {
     pub protocol: ProtocolConfig,
     pub simulation: SimulationConfig,
@@ -94,9 +96,7 @@ impl FramePreset {
                 protocol.current_frame_shift = 12;
                 protocol.total_frames_shift = 18;
 
-                simulation.sample_rate = 96_000;
                 simulation.snr_db = -2.0;
-                simulation.bit_depth = BitDepth::Pcm24;
                 simulation.plaintext_source =
                     "Telemetry burst payload with accelerated downlink cadence.".into();
 
@@ -124,9 +124,7 @@ impl FramePreset {
                 protocol.current_frame_shift = 20;
                 protocol.total_frames_shift = 28;
 
-                simulation.sample_rate = 48_000;
                 simulation.snr_db = -4.0;
-                simulation.bit_depth = BitDepth::Float32;
                 simulation.plaintext_source =
                     "Deep-space probe telemetry with reinforced parity blocks.".into();
 
@@ -135,8 +133,6 @@ impl FramePreset {
                 ldpc.seed = Some(1337);
             }
         }
-
-        simulation.sample_rate = 48_000;
 
         PresetBundle {
             protocol,
@@ -162,4 +158,25 @@ impl fmt::Display for FramePreset {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.display_name())
     }
+}
+
+// WASM bindings for FramePreset utilities
+#[wasm_bindgen]
+pub fn get_all_preset_keys() -> String {
+    serde_json::to_string(&["raman-whisper", "burst-telemetry", "deep-space-probe"]).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn get_preset_bundle(key: &str) -> Option<String> {
+    FramePreset::from_key(key).map(|preset| serde_json::to_string(&preset.bundle()).unwrap())
+}
+
+#[wasm_bindgen]
+pub fn get_preset_display_name(key: &str) -> Option<String> {
+    FramePreset::from_key(key).map(|preset| preset.display_name().to_string())
+}
+
+#[wasm_bindgen]
+pub fn get_preset_description(key: &str) -> Option<String> {
+    FramePreset::from_key(key).map(|preset| preset.description().to_string())
 }

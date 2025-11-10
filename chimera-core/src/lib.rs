@@ -59,29 +59,15 @@ pub fn run_simulation(
     };
     
     let signal_power = 1.0; // QPSK normalized power
-    let link_loss_linear = 10f64.powf(sim.link_loss_db / 10.0);
-    let attenuated_signal_power = signal_power / link_loss_linear;
-    let attenuation_factor = if link_loss_linear > 0.0 {
-        1.0 / link_loss_linear.sqrt()
-    } else {
-        1.0
-    };
-    
-    let snr_linear = 10f64.powf(sim.snr_db / 10.0);
-    let noise_variance = if snr_linear > 0.0 {
-        attenuated_signal_power / snr_linear
-    } else {
-        0.0
-    };
-    let noise_std = (noise_variance / 2.0).sqrt();
+    let channel = utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
     
     let normal = StandardNormal;
     let mut rx_symbols = Vec::with_capacity(tx_symbols.len());
     
     for tx_symbol in &tx_symbols {
-        let attenuated = tx_symbol * attenuation_factor;
-        let noise_i: f64 = rng.sample::<f64, _>(normal) * noise_std;
-        let noise_q: f64 = rng.sample::<f64, _>(normal) * noise_std;
+        let attenuated = tx_symbol * channel.attenuation_factor;
+        let noise_i: f64 = rng.sample::<f64, _>(normal) * channel.noise_std;
+        let noise_q: f64 = rng.sample::<f64, _>(normal) * channel.noise_std;
         let rx_symbol = Complex64::new(
             attenuated.re + noise_i,
             attenuated.im + noise_q
@@ -132,7 +118,7 @@ pub fn run_simulation(
     };
 
     // Generate audio for diagnostics
-    let samples_per_symbol = usize::max(1, sim.sample_rate / protocol.qpsk_symbol_rate);
+    let samples_per_symbol = usize::max(1, SimulationConfig::SAMPLE_RATE / protocol.qpsk_symbol_rate);
     
     // Generate clean IQ samples
     let mut clean_iq = Vec::with_capacity(tx_symbols.len() * 2 * samples_per_symbol);
@@ -153,10 +139,10 @@ pub fn run_simulation(
     }
     
     let modulation_audio = Some(ModulationAudio {
-        sample_rate: sim.sample_rate,
+        sample_rate: SimulationConfig::SAMPLE_RATE,
         carrier_freq_hz: protocol.carrier_freq_hz,
-        clean: iq_to_audio(&clean_iq, sim.sample_rate, protocol.carrier_freq_hz),
-        noisy: iq_to_audio(&noisy_iq, sim.sample_rate, protocol.carrier_freq_hz),
+        clean: iq_to_audio(&clean_iq, SimulationConfig::SAMPLE_RATE, protocol.carrier_freq_hz),
+        noisy: iq_to_audio(&noisy_iq, SimulationConfig::SAMPLE_RATE, protocol.carrier_freq_hz),
     });
     
     // Build QPSK bitstream for diagnostics

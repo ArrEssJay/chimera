@@ -153,6 +153,12 @@ impl WASMStreamingDSP {
             ldpc: LDPCConfig::default(), // TODO: store LDPC config in pipeline
         }).unwrap_or_default()
     }
+    
+    /// Update channel parameters (SNR and link loss) without resetting the pipeline
+    #[wasm_bindgen]
+    pub fn update_channel(&mut self, snr_db: f64, link_loss_db: f64) {
+        self.pipeline.update_channel_params(snr_db, link_loss_db);
+    }
 }
 
 /// Output structure exposed to JavaScript

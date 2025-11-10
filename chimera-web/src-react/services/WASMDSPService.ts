@@ -18,8 +18,6 @@ export interface DSPConfig {
   message: string;
   snrDb: number;
   linkLossDb: number;
-  sampleRate: number;
-  bitDepth: string;
   rngSeed?: number;
 }
 
@@ -465,6 +463,23 @@ export class WASMDSPService {
   setTargetFPS(fps: number): void {
     // Deprecated - keeping for API compatibility
     console.log(`Target FPS set to ${fps} (deprecated - now updates continuously)`);
+  }
+
+  /**
+   * Update channel parameters (SNR and link loss) during runtime without restarting
+   */
+  updateChannelParams(snr_db: number, link_loss_db: number): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.update_channel(snr_db, link_loss_db);
+      console.log(`Updated channel params: SNR=${snr_db} dB, Link Loss=${link_loss_db} dB`);
+    } catch (error) {
+      console.error('Failed to update channel params:', error);
+    }
   }
 
   /**
