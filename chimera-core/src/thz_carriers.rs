@@ -5,9 +5,25 @@
 //! - Data carrier (F2): 1.875 THz AM-modulated with 12kHz audio signal
 //!
 //! The third-order intermodulation produces the perceived 12kHz audio.
+//!
+//! ## Physical Model
+//!
+//! The simulation accurately models the heterodyne mixing process:
+//! 1. **Carrier mixing**: E1·cos(2πF1t) × E2·(1+m·s(t))·cos(2πF2t)
+//!    Produces difference frequency at F1-F2 = 123 GHz carrying the modulation
+//! 2. **Biological demodulation**: Third-order intermodulation (E1² × E2)
+//!    Extracts the audio envelope through non-linear neural tissue response
+//!
+//! Since we cannot numerically simulate THz oscillations at audio sample rates,
+//! we model the mixing envelope - which is physically equivalent for the
+//! demodulation process that produces the perceived audio signal.
+//!
+//! Extended to model secondary intermodulation between the AID signal and
+//! external audio entering through normal auditory pathways.
 
 use num_complex::Complex;
 use rand::Rng;
+use crate::config::AudioMixingConfig;
 
 /// Terahertz carrier configuration for AID effect
 #[derive(Debug, Clone)]
@@ -46,6 +62,8 @@ impl Default for ThzCarrierConfig {
 pub struct ThzCarrierProcessor {
     config: ThzCarrierConfig,
     rng: rand::rngs::ThreadRng,
+    external_audio: Option<Vec<f32>>,
+    mixing_config: Option<AudioMixingConfig>,
 }
 
 impl ThzCarrierProcessor {
@@ -53,7 +71,21 @@ impl ThzCarrierProcessor {
         Self {
             config,
             rng: rand::thread_rng(),
+            external_audio: None,
+            mixing_config: None,
         }
+    }
+    
+    /// Load external audio for intermodulation mixing
+    pub fn set_external_audio(&mut self, audio: Vec<f32>, mixing_config: AudioMixingConfig) {
+        self.external_audio = Some(audio);
+        self.mixing_config = Some(mixing_config);
+    }
+    
+    /// Clear external audio
+    pub fn clear_external_audio(&mut self) {
+        self.external_audio = None;
+        self.mixing_config = None;
     }
     
     /// Set modulation depth for idle/active mode
@@ -66,27 +98,47 @@ impl ThzCarrierProcessor {
         self.config.mixing_coefficient = coeff.clamp(0.0, 1.0);
     }
     
-    /// Apply AM modulation to data carrier
+    /// Apply AM modulation to data carrier and simulate THz mixing
+    /// 
+    /// This models the heterodyne mixing of:
+    /// - Pump beam (F1 = 1.998 THz): unmodulated, high power
+    /// - Data carrier (F2 = 1.875 THz): AM-modulated with audio signal
+    /// 
+    /// The mixing produces a difference frequency (F1 - F2 = 123 GHz) whose
+    /// envelope carries the audio modulation. We simulate the envelope since
+    /// we cannot numerically model THz oscillations at audio sample rates.
     pub fn modulate_data_carrier(&mut self, audio_signal: &[f32]) -> Vec<Complex<f32>> {
         let mut output = Vec::with_capacity(audio_signal.len());
         
-        // THz carriers are at ~2 THz - far above audio frequencies
-        // We don't simulate their actual oscillations, just their modulation envelope
-        // The "carrier" phase here represents slow variations, not the THz oscillation itself
+        // Calculate difference frequency for reference (though we model the envelope)
+        let _diff_freq = (self.config.pump_frequency - self.config.data_frequency).abs();
         
         for &audio_sample in audio_signal {
-            // Add phase noise for realism (laser phase noise)
+            // Laser phase noise (accumulates over time for realism)
             let phase_noise = (self.rng.gen::<f32>() - 0.5) * self.config.phase_noise_std;
             
-            // The AM modulation envelope (not an oscillating carrier!)
-            // This represents the amplitude variation of the THz carrier
-            let modulation = 1.0 + self.config.modulation_depth * audio_sample;
+            // Pump beam envelope (unmodulated, constant power)
+            let pump_envelope = self.config.pump_power;
             
-            // Generate complex signal representing the modulation envelope
-            // Phase represents the instantaneous state, not a frequency
-            let amplitude = self.config.pump_power + self.config.data_power * modulation;
+            // Data carrier with AM modulation
+            // Modulation: (1 + m·s(t)) where m is depth and s(t) is audio
+            let modulation = 1.0 + self.config.modulation_depth * audio_sample;
+            let data_envelope = self.config.data_power * modulation;
+            
+            // Heterodyne mixing of the two THz carriers
+            // In the real system: E1·cos(2πF1t) × E2·(1+m·s(t))·cos(2πF2t)
+            // Produces: 0.5·E1·E2·(1+m·s(t))·[cos(2π(F1-F2)t) + cos(2π(F1+F2)t)]
+            // The difference term (F1-F2 = 123 GHz) carries the modulation
+            
+            // We represent the mixed envelope as a complex value
+            // Amplitude represents the envelope of the 123 GHz difference frequency
+            let mixed_amplitude = pump_envelope * data_envelope;
+            
+            // Phase noise affects both amplitude (through power fluctuation) and phase
+            let amplitude_noise = 1.0 + phase_noise * 0.01; // Small amplitude jitter
+            
             let combined = Complex::from_polar(
-                amplitude,
+                mixed_amplitude * amplitude_noise,
                 phase_noise
             );
             
@@ -98,29 +150,40 @@ impl ThzCarrierProcessor {
     
     /// Simulate non-linear mixing (demodulation in neural tissue)
     /// Implements third-order intermodulation: E1^2 * E2
+    /// 
+    /// The biological tissue acts as a non-linear mixer that performs:
+    /// E_total^3 ≈ E1^2 × E2 (third-order term)
+    /// 
+    /// This extracts the modulation envelope from the 123 GHz difference frequency,
+    /// producing the audible 12 kHz signal through biological envelope detection.
+    /// 
+    /// If external audio is provided, also models secondary intermodulation
+    /// between the AID signal and acoustic input at the cochlear nerve junction
     pub fn nonlinear_mixing(&self, signal: &[Complex<f32>]) -> Vec<f32> {
         let mut output = Vec::with_capacity(signal.len());
         
         for &sample in signal {
             let magnitude = sample.norm();
             
-            // Third-order intermodulation: |signal|² * Re(signal)
-            // This creates sum and difference frequencies
-            // The difference frequency (F2 - F1) falls in the audio range
-            let nonlinear_term = magnitude * magnitude * sample.re;
+            // Third-order intermodulation: |E|² × Re(E)
+            // This is the dominant term in E1² × E2 mixing
+            // |E|² represents the power (envelope squared)
+            // Re(E) provides the phase information
+            // Together they extract the modulation
+            let third_order_product = magnitude * magnitude * sample.re;
             
             // Apply mixing coefficient (represents biological response efficiency)
-            let mixed = self.config.mixing_coefficient * nonlinear_term;
+            // This accounts for tissue properties, neural sensitivity, etc.
+            let demodulated = self.config.mixing_coefficient * third_order_product;
             
-            output.push(mixed);
+            output.push(demodulated);
         }
         
-        // Apply simple DC blocking to center around zero
+        // Apply simple DC blocking to center around zero (biological AC coupling)
         let mean: f32 = output.iter().sum::<f32>() / output.len() as f32;
         output.iter_mut().for_each(|x| *x -= mean);
         
         // Normalize to maintain signal amplitude
-        // Find peak amplitude
         let max_abs = output.iter()
             .map(|&x| x.abs())
             .fold(0.0f32, f32::max);
@@ -132,7 +195,74 @@ impl ThzCarrierProcessor {
             output.iter_mut().for_each(|x| *x *= scale);
         }
         
+        // Apply secondary intermodulation if external audio is present
+        if let (Some(ext_audio), Some(config)) = (&self.external_audio, &self.mixing_config) {
+            self.apply_biological_intermodulation(&mut output, ext_audio, config);
+        }
+        
         output
+    }
+    
+    /// Apply biological intermodulation between AID signal and external audio
+    /// 
+    /// Models the secondary mixing that occurs at:
+    /// 1. Cochlear nerve junction (second-order products)
+    /// 2. Auditory cortex (third-order products and parametric effects)
+    /// 3. Cortical integration (perceptual blending)
+    fn apply_biological_intermodulation(
+        &self,
+        aid_signal: &mut [f32],
+        external_audio: &[f32],
+        config: &AudioMixingConfig,
+    ) {
+        let min_len = aid_signal.len().min(external_audio.len());
+        
+        for i in 0..min_len {
+            let aid = aid_signal[i] * config.aid_signal_gain;
+            let ext = external_audio[i] * config.external_audio_gain;
+            
+            // Second-order intermodulation (cochlear nerve junction)
+            // Produces sum and difference frequencies: f_aid ± f_ext
+            let second_order = if config.enable_second_order {
+                config.second_order_coefficient * aid * ext
+            } else {
+                0.0
+            };
+            
+            // Third-order intermodulation (cortical processing)
+            // Produces products like: 2*f_aid ± f_ext, f_aid ± 2*f_ext
+            let third_order = if config.enable_third_order {
+                // Model as: aid² * ext + aid * ext²
+                config.third_order_coefficient * (aid * aid * ext + aid * ext * ext)
+            } else {
+                0.0
+            };
+            
+            // Cortical integration - perceptual blending
+            // This represents the brain's non-linear integration of the two signals
+            let cortical_blend = config.cortical_coefficient * (aid + ext);
+            
+            // Combine all components
+            // The direct signals are attenuated because they partially convert to intermod products
+            let direct_attenuation = 1.0 - (config.second_order_coefficient + 
+                                           config.third_order_coefficient + 
+                                           config.cortical_coefficient) * 0.3;
+            
+            aid_signal[i] = direct_attenuation * aid + 
+                           second_order + 
+                           third_order + 
+                           cortical_blend;
+        }
+        
+        // Normalize to prevent clipping
+        let max_abs = aid_signal.iter()
+            .map(|&x| x.abs())
+            .fold(0.0f32, f32::max);
+        
+        if max_abs > 1.0 {
+            let scale = 0.95 / max_abs;
+            aid_signal.iter_mut().for_each(|x| *x *= scale);
+        }
     }
     
     /// Get current configuration

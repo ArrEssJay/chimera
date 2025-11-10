@@ -19,6 +19,9 @@ pub enum ChimeraError {
     
     #[error("DSP processing error: {0}")]
     Dsp(#[from] DspError),
+    
+    #[error("Audio loading error: {path}: {reason}")]
+    AudioLoadError { path: String, reason: String },
 }
 
 /// Encoding-specific errors

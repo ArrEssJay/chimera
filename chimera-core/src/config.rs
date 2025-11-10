@@ -159,6 +159,69 @@ pub struct SimulationConfig {
     pub link_loss_db: f64,
     pub plaintext_source: String,
     pub rng_seed: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio_mixing: Option<AudioMixingConfig>,
+}
+
+/// Configuration for external audio intermodulation mixing
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AudioMixingConfig {
+    /// Path to external audio file (mp3, m4a, wav, flac)
+    pub audio_file_path: String,
+    
+    /// Gain applied to external audio before mixing (0.0 to 1.0)
+    #[serde(default = "default_external_audio_gain")]
+    pub external_audio_gain: f32,
+    
+    /// Gain applied to AID signal before mixing (0.0 to 1.0)
+    #[serde(default = "default_aid_signal_gain")]
+    pub aid_signal_gain: f32,
+    
+    /// Enable second-order intermodulation (sum and difference products)
+    #[serde(default = "default_true")]
+    pub enable_second_order: bool,
+    
+    /// Enable third-order intermodulation (more complex products)
+    #[serde(default = "default_true")]
+    pub enable_third_order: bool,
+    
+    /// Second-order intermodulation coefficient (0.0 to 1.0)
+    #[serde(default = "default_second_order_coeff")]
+    pub second_order_coefficient: f32,
+    
+    /// Third-order intermodulation coefficient (0.0 to 1.0)
+    #[serde(default = "default_third_order_coeff")]
+    pub third_order_coefficient: f32,
+    
+    /// Cortical integration coefficient - simulates perceptual blending (0.0 to 1.0)
+    #[serde(default = "default_cortical_coeff")]
+    pub cortical_coefficient: f32,
+    
+    /// Loop external audio if shorter than AID signal
+    #[serde(default = "default_true")]
+    pub loop_audio: bool,
+}
+
+fn default_external_audio_gain() -> f32 { 0.5 }
+fn default_aid_signal_gain() -> f32 { 0.5 }
+fn default_second_order_coeff() -> f32 { 0.3 }
+fn default_third_order_coeff() -> f32 { 0.2 }
+fn default_cortical_coeff() -> f32 { 0.4 }
+
+impl Default for AudioMixingConfig {
+    fn default() -> Self {
+        Self {
+            audio_file_path: String::new(),
+            external_audio_gain: default_external_audio_gain(),
+            aid_signal_gain: default_aid_signal_gain(),
+            enable_second_order: true,
+            enable_third_order: true,
+            second_order_coefficient: default_second_order_coeff(),
+            third_order_coefficient: default_third_order_coeff(),
+            cortical_coefficient: default_cortical_coeff(),
+            loop_audio: true,
+        }
+    }
 }
 
 impl Default for SimulationConfig {
@@ -168,6 +231,7 @@ impl Default for SimulationConfig {
             link_loss_db: 0.0,
             plaintext_source: "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into(),
             rng_seed: None,
+            audio_mixing: None,
         }
     }
 }

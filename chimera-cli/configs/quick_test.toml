@@ -1,0 +1,19 @@
+# Quick Test Configuration
+# Minimal test with high SNR for fast validation
+
+# Include base protocol configuration
+include = "protocol/raman-whisper.toml"
+
+[simulation]
+snr_db = 10.0
+link_loss_db = 0.0
+plaintext_source = "Quick test message"
+rng_seed = 123
+
+[terminal]
+telemetry_interval_secs = 0.5
+
+[terminal.logging]
+target = "stdout"
+format = "json"
+level = "info"

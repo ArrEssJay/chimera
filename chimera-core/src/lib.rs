@@ -10,6 +10,7 @@ pub mod decoder;
 pub mod diagnostics;
 pub mod encoder;
 pub mod errors;
+pub mod external_audio;
 pub mod ldpc;
 pub mod streaming;
 pub mod thz_carriers;

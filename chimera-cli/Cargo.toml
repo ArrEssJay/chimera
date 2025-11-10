@@ -10,6 +10,8 @@ clap = { version = "4", features = ["derive"] }
 color-eyre = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
+toml = "0.8"
 indicatif = "0.17"
 hound = "3.5"
 chimera-core = { path = "../chimera-core" }
+chrono = { version = "0.4", features = ["serde"] }
