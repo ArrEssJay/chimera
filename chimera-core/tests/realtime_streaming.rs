@@ -3,7 +3,7 @@
 //! Verifies that data is delivered at protocol-specified rates.
 
 use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
-use chimera_core::streaming::StreamingPipeline;
+use chimera_core::pipeline::RealtimePipeline;
 use std::time::Instant;
 
 #[test]
@@ -19,7 +19,7 @@ fn test_streaming_rate_limiting() {
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     
-    let mut pipeline = StreamingPipeline::new(sim, protocol.clone(), ldpc);
+    let mut pipeline = RealtimePipeline::new(sim, protocol.clone(), ldpc);
     
     // Note: Rate limiting has been removed for real-time performance.
     // The streaming pipeline now emits symbols as fast as possible, with rate limiting

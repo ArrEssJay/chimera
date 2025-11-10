@@ -3,7 +3,7 @@
 //! Exposes the streaming pipeline to JavaScript for use in web applications.
 
 use wasm_bindgen::prelude::*;
-use chimera_core::streaming::StreamingPipeline;
+use chimera_core::pipeline::RealtimePipeline;
 use chimera_core::config::{SimulationConfig, ProtocolConfig, LDPCConfig};
 use js_sys::Float32Array;
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 /// WASM wrapper for streaming DSP engine
 #[wasm_bindgen]
 pub struct WASMStreamingDSP {
-    pipeline: StreamingPipeline,
+    pipeline: RealtimePipeline,
 }
 
 #[wasm_bindgen]
@@ -28,7 +28,7 @@ impl WASMStreamingDSP {
         let ldpc = LDPCConfig::default();
         
         Ok(WASMStreamingDSP {
-            pipeline: StreamingPipeline::new(sim, protocol, ldpc),
+            pipeline: RealtimePipeline::new(sim, protocol, ldpc),
         })
     }
     
@@ -59,7 +59,7 @@ impl WASMStreamingDSP {
     }
     
     /// Helper to create WASM output from streaming output
-    fn create_output(&mut self, output: chimera_core::streaming::StreamingOutput) -> Result<WASMStreamOutput, JsValue> {
+    fn create_output(&mut self, output: chimera_core::pipeline::RealtimeOutput) -> Result<WASMStreamOutput, JsValue> {
         
         // Package for JavaScript
         Ok(WASMStreamOutput {

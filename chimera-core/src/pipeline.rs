@@ -1,7 +1,8 @@
-//! Streaming DSP pipeline for real-time audio processing
+//! Real-time DSP pipeline for audio processing
 //!
-//! This module provides a streaming version of the batch-mode simulation,
-//! allowing chunk-by-chunk processing suitable for real-time audio applications.
+//! This module provides a real-time capable pipeline suitable for both real-time
+//! and batch processing operations. It supports chunk-by-chunk processing for
+//! real-time audio applications and can also be used for offline batch processing.
 
 use crate::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use crate::ldpc::{LDPCSuite};
@@ -137,7 +138,7 @@ pub struct FSKState {
 
 /// Output from a single processing chunk
 #[derive(Clone, Debug, Default)]
-pub struct StreamingOutput {
+pub struct RealtimeOutput {
     /// Audio samples (modulated carrier)
     /// Always Float32 at 48 kHz for Web Audio API compatibility
     pub audio_samples: Vec<f32>,
@@ -165,8 +166,9 @@ pub struct StreamingOutput {
     pub fsk_state: Option<FSKState>,
 }
 
-/// Streaming DSP pipeline
-pub struct StreamingPipeline {
+/// Real-time capable DSP pipeline
+/// Supports both real-time chunk processing and batch mode operation
+pub struct RealtimePipeline {
     config: SimulationConfig,
     protocol: ProtocolConfig,
     ldpc_config: LDPCConfig,
@@ -199,8 +201,8 @@ pub struct StreamingPipeline {
     noise_std: f64,
 }
 
-impl StreamingPipeline {
-    /// Create a new streaming pipeline with the given configuration
+impl RealtimePipeline {
+    /// Create a new real-time capable pipeline with the given configuration
     pub fn new(
         sim: SimulationConfig,
         protocol: ProtocolConfig,
@@ -287,8 +289,9 @@ impl StreamingPipeline {
         self.protocol.enable_fsk = enabled;
     }
     
-    /// Process a chunk - now emits updates every N symbols instead of every frame
-    pub fn process_chunk(&mut self, _input: &[u8]) -> StreamingOutput {
+    /// Process a chunk of data in real-time or batch mode
+    /// Returns diagnostics and audio output for the processed chunk
+    pub fn process_chunk(&mut self, _input: &[u8]) -> RealtimeOutput {
         // No rate limiting - process and emit symbols as fast as possible for real-time visualization
         
         // Initialize encoder on first call
@@ -329,7 +332,7 @@ impl StreamingPipeline {
         }
         
         if tx_symbols.is_empty() {
-            return StreamingOutput::default();
+            return RealtimeOutput::default();
         }
         
         // Apply channel effects (attenuation + AWGN)
@@ -423,7 +426,7 @@ impl StreamingPipeline {
         };
         
         // Build output
-        let mut output = StreamingOutput::default();
+        let mut output = RealtimeOutput::default();
         
         // Normalize constellation points
         let normalize_constellation = |symbols: &[Complex<f64>]| -> (Vec<f32>, Vec<f32>) {
@@ -926,9 +929,9 @@ impl StreamingPipeline {
         Self::symbols_to_carrier_signal(symbols, SimulationConfig::SAMPLE_RATE, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz, self.protocol.enable_qpsk, self.protocol.enable_fsk)
     }
     
-    /// Get current configuration
-    pub fn get_config(&self) -> StreamConfig {
-        StreamConfig {
+    /// Get current pipeline configuration
+    pub fn get_config(&self) -> PipelineConfig {
+        PipelineConfig {
             simulation: self.config.clone(),
             protocol: self.protocol.clone(),
         }
@@ -985,9 +988,9 @@ impl StreamingPipeline {
     }
 }
 
-/// Configuration for streaming pipeline
+/// Configuration for real-time pipeline
 #[derive(Clone, Debug)]
-pub struct StreamConfig {
+pub struct PipelineConfig {
     pub simulation: SimulationConfig,
     pub protocol: ProtocolConfig,
 }

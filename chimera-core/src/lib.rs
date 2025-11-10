@@ -12,7 +12,7 @@ pub mod encoder;
 pub mod errors;
 pub mod external_audio;
 pub mod ldpc;
-pub mod streaming;
+pub mod pipeline;
 pub mod thz_carriers;
 pub mod utils;
 
