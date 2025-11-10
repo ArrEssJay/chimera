@@ -6,7 +6,7 @@
 use crate::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use crate::ldpc::{LDPCSuite};
 use crate::thz_carriers::{ThzCarrierProcessor, ThzCarrierConfig};
-use num_complex::Complex;
+use num_complex::{Complex, Complex64};
 use rustfft::{FftPlanner, num_complex::Complex32};
 use std::f64::consts::TAU;
 use rand::rngs::StdRng;
@@ -274,6 +274,18 @@ impl StreamingPipeline {
         self.thz_processor.set_mixing_coefficient(coefficient);
     }
     
+    /// Enable/disable QPSK modulation (debug control)
+    /// When false, outputs unmodulated carrier (pure sine wave)
+    pub fn set_qpsk_enabled(&mut self, enabled: bool) {
+        self.protocol.enable_qpsk = enabled;
+    }
+    
+    /// Enable/disable FSK frequency dithering (debug control)
+    /// When false, uses fixed carrier frequency (12 kHz instead of 11999/12001 Hz)
+    pub fn set_fsk_enabled(&mut self, enabled: bool) {
+        self.protocol.enable_fsk = enabled;
+    }
+    
     /// Generate idle carrier audio (no data modulation)
     /// Useful for baseline/calibration audio
     pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Vec<f32> {
@@ -339,23 +351,30 @@ impl StreamingPipeline {
             self.signal_power
         );
         
-        let normal = rand_distr::StandardNormal;
-        let mut rx_symbols = Vec::with_capacity(tx_symbols.len());
+        // ===== END-TO-END AUDIO PATH =====
+        // Generate audio from TX symbols with FSK+QPSK modulation
+        let base_audio = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq, self.protocol.enable_qpsk, self.protocol.enable_fsk);
         
-        for tx_symbol in &tx_symbols {
-            // Apply attenuation
-            let attenuated = tx_symbol * channel.attenuation_factor;
-            
-            // Add AWGN
-            let noise_i: f64 = self.rng.sample::<f64, _>(normal) * self.noise_std;
-            let noise_q: f64 = self.rng.sample::<f64, _>(normal) * self.noise_std;
-            let rx_symbol = Complex::new(
-                attenuated.re + noise_i,
-                attenuated.im + noise_q
-            );
-            
-            rx_symbols.push(rx_symbol);
+        // Apply THz carrier modulation and mixing to simulate AID effect
+        // Only if mixing coefficient > 0 (allows bypass for debugging)
+        let mixed_audio = if self.thz_processor.config().mixing_coefficient > 0.0 {
+            let modulated_thz = self.thz_processor.modulate_data_carrier(&base_audio);
+            self.thz_processor.nonlinear_mixing(&modulated_thz)
+        } else {
+            // Bypass THz processing - use audio directly
+            base_audio
+        };
+        
+        // Add noise to audio (simulating channel impairments)
+        let normal = rand_distr::StandardNormal;
+        let mut noisy_audio = mixed_audio.clone();
+        for sample in noisy_audio.iter_mut() {
+            let noise: f64 = self.rng.sample::<f64, _>(normal) * (self.noise_std * 0.1); // Scale noise for audio
+            *sample += noise as f32;
         }
+        
+        // Demodulate audio back to IQ symbols for decoding
+        let rx_symbols = Self::audio_to_symbols(&noisy_audio, sample_rate, symbol_rate, carrier_freq);
         
         // Process through decoder
         let (decoded_bits, _frame_complete, _dec_frame, _symbols_in_dec_frame, diagnostics) = 
@@ -555,14 +574,7 @@ impl StreamingPipeline {
             symbol_progress: symbol_in_frame,
         };
         
-        // Generate audio samples ONLY for playback (not for spectrum!)
-        // First generate base carrier signal
-        let base_audio = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq);
-        
-        // Apply THz carrier modulation and mixing to simulate AID effect
-        let modulated_thz = self.thz_processor.modulate_data_carrier(&base_audio);
-        let mixed_audio = self.thz_processor.nonlinear_mixing(&modulated_thz);
-        
+        // Use the audio that was already generated in the end-to-end path above
         output.audio_samples = mixed_audio;
         
         // Extract FSK state information from decoder (not encoder!)
@@ -773,35 +785,137 @@ impl StreamingPipeline {
     }
     
     /// Convert symbols to modulated carrier signal (static version)
-    /// This generates the actual 12 kHz QPSK-modulated carrier for AUDIO PLAYBACK ONLY
+    /// This generates the actual 12 kHz QPSK+FSK modulated carrier for AUDIO PLAYBACK ONLY
     /// 
-    /// This IS the transmitted signal - no additional pulse shaping needed.
-    /// The demod/decoder works on this signal after channel impairments are applied.
-    fn symbols_to_carrier_signal(symbols: &[Complex<f64>], sample_rate: usize, symbol_rate: usize, carrier_freq: f64) -> Vec<f32> {
+    /// Implements the Raman Whisper Modulation Protocol v4.2:
+    /// - FSK layer: ±1 Hz frequency dithering at 1 bit/second (11999/12001 Hz)
+    /// - QPSK layer: Phase modulation at 16 symbols/second with ~20 Hz bandwidth
+    /// - Combined signal: sin(fsk_phase + qpsk_phase)
+    /// 
+    /// Debug parameters allow disabling QPSK/FSK to isolate the pure carrier
+    fn symbols_to_carrier_signal(symbols: &[Complex<f64>], sample_rate: usize, symbol_rate: usize, carrier_freq: f64, enable_qpsk: bool, enable_fsk: bool) -> Vec<f32> {
         if sample_rate == 0 || symbols.is_empty() {
             return Vec::new();
         }
         
         let samples_per_symbol = (sample_rate / symbol_rate).max(1);
-        let dt = 1.0 / sample_rate as f64;
-        let mut audio = Vec::with_capacity(symbols.len() * samples_per_symbol);
+        let samples_per_fsk_bit = sample_rate; // FSK at 1 bit/second
+        let num_samples = symbols.len() * samples_per_symbol;
+        let mut audio = Vec::with_capacity(num_samples);
         
-        // Generate QPSK-modulated carrier: s(t) = I(t)cos(2πf_c·t) - Q(t)sin(2πf_c·t)
-        // where f_c = 12 kHz carrier frequency
-        // This rectangular pulse QPSK has bandwidth ≈ 2 * symbol_rate = 32 Hz for 16 sym/s
-        for (sym_idx, symbol) in symbols.iter().enumerate() {
-            for sample_idx in 0..samples_per_symbol {
-                let t = (sym_idx * samples_per_symbol + sample_idx) as f64 * dt;
-                let angle = TAU * carrier_freq * t;
-                // QPSK modulation onto carrier
-                let sample = symbol.re * angle.cos() - symbol.im * angle.sin();
-                audio.push(sample as f32);
+        // Pre-compute QPSK phases for all symbols (Gray-coded)
+        let mut qpsk_phases = Vec::with_capacity(symbols.len());
+        for symbol in symbols {
+            // Determine phase from constellation point
+            let phase = symbol.arg(); // atan2(im, re)
+            qpsk_phases.push(phase);
+        }
+        
+        // Apply low-pass filter to QPSK phases to limit bandwidth to ~20 Hz
+        // Simple moving average filter approximation
+        let filter_window = (sample_rate as f64 / 40.0) as usize; // ~40 Hz cutoff
+        let mut filtered_phases = vec![0.0; qpsk_phases.len()];
+        for i in 0..qpsk_phases.len() {
+            let start = i.saturating_sub(filter_window / 2);
+            let end = (i + filter_window / 2 + 1).min(qpsk_phases.len());
+            let sum: f64 = qpsk_phases[start..end].iter().sum();
+            filtered_phases[i] = sum / (end - start) as f64;
+        }
+        
+        // Generate FSK bit pattern (simple alternating pattern for demo)
+        // In real implementation, this would carry actual nested data
+        let num_fsk_bits = (num_samples + samples_per_fsk_bit - 1) / samples_per_fsk_bit;
+        let mut fsk_bits = Vec::with_capacity(num_fsk_bits);
+        for i in 0..num_fsk_bits {
+            // Alternate pattern: 10101010...
+            fsk_bits.push((i % 2) as u8);
+        }
+        
+        // Phase accumulator for FSK carrier
+        let mut carrier_phase = 0.0f64;
+        
+        // Generate audio samples with combined FSK+QPSK modulation
+        for sample_idx in 0..num_samples {
+            // Determine current FSK frequency (11999 or 12001 Hz)
+            // If FSK is disabled, use constant carrier frequency
+            let fsk_bit_idx = sample_idx / samples_per_fsk_bit;
+            let fsk_freq = if enable_fsk && fsk_bit_idx < fsk_bits.len() && fsk_bits[fsk_bit_idx] == 1 {
+                12001.0
+            } else if enable_fsk {
+                11999.0
+            } else {
+                carrier_freq  // Pure 12 kHz if FSK disabled
+            };
+            
+            // Accumulate carrier phase with FSK frequency
+            carrier_phase += TAU * fsk_freq / sample_rate as f64;
+            
+            // Get interpolated QPSK phase for this sample
+            let symbol_idx = sample_idx / samples_per_symbol;
+            let qpsk_phase = if enable_qpsk && symbol_idx < filtered_phases.len() {
+                filtered_phases[symbol_idx]
+            } else {
+                0.0  // No QPSK modulation when disabled
+            };
+            
+            // Combine FSK carrier phase with QPSK phase offset
+            let total_phase = carrier_phase + qpsk_phase;
+            
+            // Generate sample
+            audio.push(total_phase.sin() as f32);
+            
+            // Wrap phase to prevent overflow
+            if carrier_phase > TAU {
+                carrier_phase -= TAU;
             }
         }
         
         Self::normalize_audio_static(&mut audio);
         audio
     }
+    
+    /// Demodulate audio back to IQ symbols for decoding
+    /// This extracts QPSK symbols from the FSK+QPSK modulated audio
+    fn audio_to_symbols(audio: &[f32], sample_rate: usize, symbol_rate: usize, carrier_freq: f64) -> Vec<Complex64> {
+        if audio.is_empty() || sample_rate == 0 {
+            return Vec::new();
+        }
+        
+        let samples_per_symbol = (sample_rate / symbol_rate).max(1);
+        let num_symbols = audio.len() / samples_per_symbol;
+        let mut symbols = Vec::with_capacity(num_symbols);
+        
+        let dt = 1.0 / sample_rate as f64;
+        
+        // Demodulate using I/Q mixing
+        for sym_idx in 0..num_symbols {
+            let start = sym_idx * samples_per_symbol;
+            let end = (start + samples_per_symbol).min(audio.len());
+            
+            let mut i_acc = 0.0f64;
+            let mut q_acc = 0.0f64;
+            
+            for (idx, &sample) in audio[start..end].iter().enumerate() {
+                let t = (start + idx) as f64 * dt;
+                let angle = TAU * carrier_freq * t;
+                
+                // I/Q demodulation
+                i_acc += sample as f64 * angle.cos();
+                q_acc += -(sample as f64) * angle.sin(); // Note the negative for Q
+            }
+            
+            // Average over the symbol period
+            let count = (end - start) as f64;
+            i_acc /= count;
+            q_acc /= count;
+            
+            // Scale by 2 to compensate for mixing (standard I/Q demod scaling)
+            symbols.push(Complex64::new(i_acc * 2.0, q_acc * 2.0));
+        }
+        
+        symbols
+    }
+
     
     /// Static version of normalize_audio for use in static methods
     fn normalize_audio_static(samples: &mut [f32]) {
@@ -821,7 +935,7 @@ impl StreamingPipeline {
     /// Convert symbols to modulated carrier signal (instance method)
     /// This generates audio for playback ONLY - spectrum is computed directly from IQ symbols
     fn symbols_to_audio_incremental(&self, symbols: &[Complex<f64>]) -> Vec<f32> {
-        Self::symbols_to_carrier_signal(symbols, SimulationConfig::SAMPLE_RATE, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz)
+        Self::symbols_to_carrier_signal(symbols, SimulationConfig::SAMPLE_RATE, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz, self.protocol.enable_qpsk, self.protocol.enable_fsk)
     }
     
     /// Get current configuration

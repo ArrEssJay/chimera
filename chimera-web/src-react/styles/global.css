@@ -1826,3 +1826,101 @@ code {
   color: #888;
   font-weight: 600;
 }
+
+/* Debug Control Panel Styles */
+.debug-control-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3a3a3a;
+}
+
+.debug-control-panel h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff9f4a;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debug-hint {
+  font-size: 10px;
+  color: #777;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.config-checkbox {
+  margin-right: 8px;
+  cursor: pointer;
+  accent-color: #ff9f4a;
+}
+
+.config-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.debug-status {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 159, 74, 0.1);
+  border: 1px solid rgba(255, 159, 74, 0.3);
+  border-radius: 0;
+}
+
+.debug-status strong {
+  font-size: 10px;
+  font-weight: 600;
+  color: #ff9f4a;
+  display: block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debug-status-text {
+  font-size: 11px;
+  color: #ddd;
+  line-height: 1.4;
+}
+
+.debug-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid #3a3a3a;
+  border-radius: 0;
+}
+
+.debug-info details summary {
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.debug-info details summary:hover {
+  color: #aaa;
+}
+
+.debug-info-content {
+  margin-top: 0.5rem;
+  font-size: 10px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.debug-info-content p {
+  margin: 0.5rem 0;
+}
+
+.debug-info-content strong {
+  color: #888;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
+}

@@ -534,6 +534,40 @@ export class WASMDSPService {
   }
 
   /**
+   * Enable/disable QPSK modulation (debug)
+   */
+  setQpskEnabled(enabled: boolean): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.set_qpsk_enabled(enabled);
+      console.log(`QPSK modulation: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    } catch (error) {
+      console.error('Failed to set QPSK enabled:', error);
+    }
+  }
+
+  /**
+   * Enable/disable FSK frequency dithering (debug)
+   */
+  setFskEnabled(enabled: boolean): void {
+    if (!this.dsp) {
+      console.warn('DSP not initialized');
+      return;
+    }
+    
+    try {
+      this.dsp.set_fsk_enabled(enabled);
+      console.log(`FSK frequency dithering: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    } catch (error) {
+      console.error('Failed to set FSK enabled:', error);
+    }
+  }
+
+  /**
    * Generate idle carrier audio for calibration
    */
   generateIdleCarrier(durationMs: number = 100): Float32Array | null {

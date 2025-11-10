@@ -8,7 +8,6 @@
 
 use num_complex::Complex;
 use rand::Rng;
-use std::f64::consts::PI;
 
 /// Terahertz carrier configuration for AID effect
 #[derive(Debug, Clone)]
@@ -46,19 +45,13 @@ impl Default for ThzCarrierConfig {
 /// THz carrier generator with non-linear mixing simulation
 pub struct ThzCarrierProcessor {
     config: ThzCarrierConfig,
-    pump_phase: f64,
-    data_phase: f64,
-    sample_rate: f64,
     rng: rand::rngs::ThreadRng,
 }
 
 impl ThzCarrierProcessor {
-    pub fn new(config: ThzCarrierConfig, sample_rate: f64) -> Self {
+    pub fn new(config: ThzCarrierConfig, _sample_rate: f64) -> Self {
         Self {
             config,
-            pump_phase: 0.0,
-            data_phase: 0.0,
-            sample_rate,
             rng: rand::thread_rng(),
         }
     }
@@ -77,37 +70,27 @@ impl ThzCarrierProcessor {
     pub fn modulate_data_carrier(&mut self, audio_signal: &[f32]) -> Vec<Complex<f32>> {
         let mut output = Vec::with_capacity(audio_signal.len());
         
-        // Simulate baseband equivalent of THz carriers
-        // These represent the difference frequency components
-        let pump_freq_normalized = 0.001;  // Very low frequency for baseband
-        let data_freq_normalized = 0.0009; // Slightly offset
+        // THz carriers are at ~2 THz - far above audio frequencies
+        // We don't simulate their actual oscillations, just their modulation envelope
+        // The "carrier" phase here represents slow variations, not the THz oscillation itself
         
         for &audio_sample in audio_signal {
             // Add phase noise for realism (laser phase noise)
             let phase_noise = (self.rng.gen::<f32>() - 0.5) * self.config.phase_noise_std;
             
-            // Generate pump beam (unmodulated, high power)
-            self.pump_phase += 2.0 * PI * pump_freq_normalized;
-            let pump = Complex::from_polar(
-                self.config.pump_power,
-                (self.pump_phase + phase_noise as f64) as f32
-            );
-            
-            // Generate data carrier with AM modulation
-            self.data_phase += 2.0 * PI * data_freq_normalized;
+            // The AM modulation envelope (not an oscillating carrier!)
+            // This represents the amplitude variation of the THz carrier
             let modulation = 1.0 + self.config.modulation_depth * audio_sample;
-            let data = Complex::from_polar(
-                self.config.data_power * modulation,
-                (self.data_phase + phase_noise as f64) as f32
+            
+            // Generate complex signal representing the modulation envelope
+            // Phase represents the instantaneous state, not a frequency
+            let amplitude = self.config.pump_power + self.config.data_power * modulation;
+            let combined = Complex::from_polar(
+                amplitude,
+                phase_noise
             );
             
-            // Combine carriers (they would mix in neural tissue)
-            let combined = pump + data;
             output.push(combined);
-            
-            // Wrap phases to prevent overflow
-            if self.pump_phase > 2.0 * PI { self.pump_phase -= 2.0 * PI; }
-            if self.data_phase > 2.0 * PI { self.data_phase -= 2.0 * PI; }
         }
         
         output

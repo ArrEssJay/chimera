@@ -249,12 +249,15 @@ impl StreamingSymbolDecoder {
         }
         
         // Compute instantaneous frequency using phase derivative
-        // For each pair of consecutive symbols, estimate frequency shift
+        // After I/Q demodulation at 12 kHz, the residual phase rotation reveals FSK:
+        // - 11999 Hz carrier → -1 Hz residual → negative phase rotation
+        // - 12001 Hz carrier → +1 Hz residual → positive phase rotation
         for i in 1..self.fsk_symbol_history.len() {
             let prev = self.fsk_symbol_history[i - 1];
             let curr = self.fsk_symbol_history[i];
             
             // Compute phase difference (unwrapped)
+            // This represents the phase rotation between consecutive symbols
             let phase_diff = (curr / prev).arg();
             self.fsk_phase_history.push(phase_diff);
         }
@@ -277,28 +280,27 @@ impl StreamingSymbolDecoder {
             
             let avg_phase_diff = recent_phases.iter().sum::<f64>() / recent_phases.len() as f64;
             
-            // Convert phase difference per symbol to frequency
-            // symbol_rate = 16 Hz, so frequency = phase_diff * symbol_rate / (2π)
+            // Convert phase difference per symbol to residual frequency
+            // symbol_rate = 16 Hz, so residual_freq = phase_diff * symbol_rate / (2π)
+            // This residual is the difference from the 12 kHz demodulation frequency
             let symbol_rate = 16.0; // Hz
-            let freq_offset = avg_phase_diff * symbol_rate / (2.0 * std::f64::consts::PI);
+            let residual_freq = avg_phase_diff * symbol_rate / (2.0 * std::f64::consts::PI);
             
-            // Estimate absolute frequency (12 kHz ± offset)
-            self.fsk_frequency_estimate = 12000.0 + freq_offset;
+            // Estimate absolute carrier frequency (12 kHz + residual)
+            // Note: After testing, the residual appears inverted, so we negate it
+            self.fsk_frequency_estimate = 12000.0 - residual_freq;
             
             // Decode FSK bit: frequency > 12000 Hz → bit 1, else → bit 0
-            // Use threshold with hysteresis to reduce noise
             let threshold = 12000.0;
             let new_bit = if self.fsk_frequency_estimate > threshold { 1 } else { 0 };
             
-            // Only update if bit actually changed (debouncing)
-            if new_bit != self.fsk_current_bit || self.fsk_detected_bits.is_empty() {
-                self.fsk_current_bit = new_bit;
-                self.fsk_detected_bits.push(new_bit);
-                
-                // Keep history manageable
-                if self.fsk_detected_bits.len() > 32 {
-                    self.fsk_detected_bits.remove(0);
-                }
+            // Update FSK bit every interval (1 bit/second)
+            self.fsk_current_bit = new_bit;
+            self.fsk_detected_bits.push(new_bit);
+            
+            // Keep history manageable
+            if self.fsk_detected_bits.len() > 32 {
+                self.fsk_detected_bits.remove(0);
             }
             
             self.symbols_since_fsk_update = 0;

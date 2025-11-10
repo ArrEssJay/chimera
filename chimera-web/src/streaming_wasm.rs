@@ -179,6 +179,18 @@ impl WASMStreamingDSP {
         self.pipeline.set_mixing_coefficient(coefficient);
     }
     
+    /// Enable/disable QPSK modulation (debug control)
+    #[wasm_bindgen]
+    pub fn set_qpsk_enabled(&mut self, enabled: bool) {
+        self.pipeline.set_qpsk_enabled(enabled);
+    }
+    
+    /// Enable/disable FSK frequency dithering (debug control)
+    #[wasm_bindgen]
+    pub fn set_fsk_enabled(&mut self, enabled: bool) {
+        self.pipeline.set_fsk_enabled(enabled);
+    }
+    
     /// Generate idle carrier audio (for calibration/baseline)
     #[wasm_bindgen]
     pub fn generate_idle_carrier(&mut self, num_samples: usize) -> Float32Array {

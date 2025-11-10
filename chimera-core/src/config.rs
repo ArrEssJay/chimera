@@ -2,6 +2,9 @@
 use serde::{Deserialize, Serialize};
 use crate::errors::{ConfigError, Result};
 
+// Default value functions for serde
+fn default_true() -> bool { true }
+
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -49,6 +52,14 @@ impl FrameLayout {
 pub struct ProtocolConfig {
     pub carrier_freq_hz: f64,
     pub qpsk_symbol_rate: usize,
+    
+    /// Debug: Enable/disable QPSK modulation (if false, outputs pure carrier)
+    #[serde(default = "default_true")]
+    pub enable_qpsk: bool,
+    
+    /// Debug: Enable/disable FSK frequency dithering (if false, uses constant carrier freq)
+    #[serde(default = "default_true")]
+    pub enable_fsk: bool,
     pub qpsk_bandwidth_hz: f64,
     pub fsk_bit_rate: f64,
     pub fsk_freq_zero_hz: f64,
@@ -108,6 +119,8 @@ impl Default for ProtocolConfig {
         Self {
             carrier_freq_hz: 12_000.0,
             qpsk_symbol_rate: 16,
+            enable_qpsk: true,
+            enable_fsk: true,
             qpsk_bandwidth_hz: 20.0,
             fsk_bit_rate: 1.0,
             fsk_freq_zero_hz: 11_999.0,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ConfigPanel from './components/ConfigPanel';
 import ThzControlPanel from './components/ThzControlPanel';
+import DebugControlPanel from './components/DebugControlPanel';
 import VisualizationPanel from './components/VisualizationPanel';
 import FrameDecoder from './components/FrameDecoder';
 import MessageDecoder from './components/MessageDecoder';
@@ -115,6 +116,17 @@ const App: React.FC = () => {
     }
   };
 
+  // Debug Control Handlers
+  const handleQpskEnableChange = (enabled: boolean) => {
+    dspService.setQpskEnabled(enabled);
+    dspService.addLog(`QPSK modulation: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+  };
+
+  const handleFskEnableChange = (enabled: boolean) => {
+    dspService.setFskEnabled(enabled);
+    dspService.addLog(`FSK frequency dithering: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+  };
+
   // Show loading state while WASM initializes
   if (!config) {
     return (
@@ -164,6 +176,11 @@ const App: React.FC = () => {
             onModulationDepthChange={handleModulationDepthChange}
             onMixingCoefficientChange={handleMixingCoefficientChange}
             onGenerateIdleCarrier={handleGenerateIdleCarrier}
+          />
+          <DebugControlPanel
+            disabled={!isDSPRunning}
+            onQpskEnableChange={handleQpskEnableChange}
+            onFskEnableChange={handleFskEnableChange}
           />
         </aside>
 

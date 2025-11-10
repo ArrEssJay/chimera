@@ -175,6 +175,114 @@ pub fn run_simulation(
     }
 }
 
+/// Generate audio for a message without real-time streaming delays
+/// Returns the complete audio waveform for the entire message
+pub fn generate_audio_batch(
+    message: &str,
+    protocol: &ProtocolConfig,
+    ldpc: &LDPCConfig,
+) -> Vec<f32> {
+    let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, ldpc);
+    
+    // Encode message to symbols
+    let payload_bits = utils::string_to_bitstream(message);
+    let mut encoder = encoder::StreamingFrameEncoder::new(
+        &payload_bits,
+        protocol.clone(),
+        ldpc_suite.matrices.clone(),
+    );
+    
+    // Generate all symbols at once
+    let total_symbols = protocol.frame_layout.total_symbols * encoder.total_frames;
+    let (tx_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
+    
+    // Convert symbols to audio using the same function as streaming
+    let sample_rate = SimulationConfig::SAMPLE_RATE;
+    let symbol_rate = protocol.qpsk_symbol_rate;
+    let carrier_freq = protocol.carrier_freq_hz;
+    
+    symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq, protocol.enable_qpsk, protocol.enable_fsk)
+}
+
+/// Convert QPSK symbols to modulated audio carrier
+fn symbols_to_carrier_signal(
+    symbols: &[Complex64],
+    sample_rate: usize,
+    symbol_rate: usize,
+    carrier_freq: f64,
+    enable_qpsk: bool,
+    enable_fsk: bool,
+) -> Vec<f32> {
+    if sample_rate == 0 || symbols.is_empty() {
+        return Vec::new();
+    }
+    
+    let samples_per_symbol = sample_rate / symbol_rate;
+    let samples_per_fsk_bit = sample_rate; // FSK at 1 bit/second
+    let num_samples = symbols.len() * samples_per_symbol;
+    let mut audio = Vec::with_capacity(num_samples);
+    
+    // Pre-compute QPSK phases for all symbols
+    let mut qpsk_phases = Vec::with_capacity(symbols.len());
+    for symbol in symbols {
+        let phase = symbol.arg();
+        qpsk_phases.push(phase);
+    }
+    
+    // Apply low-pass filter to QPSK phases (~20 Hz bandwidth)
+    let filter_window = (sample_rate as f64 / 40.0) as usize;
+    let mut filtered_phases = vec![0.0; qpsk_phases.len()];
+    for i in 0..qpsk_phases.len() {
+        let start = i.saturating_sub(filter_window / 2);
+        let end = (i + filter_window / 2 + 1).min(qpsk_phases.len());
+        let sum: f64 = qpsk_phases[start..end].iter().sum();
+        filtered_phases[i] = sum / (end - start) as f64;
+    }
+    
+    // Generate FSK bit pattern
+    let num_fsk_bits = (num_samples + samples_per_fsk_bit - 1) / samples_per_fsk_bit;
+    let mut fsk_bits = Vec::with_capacity(num_fsk_bits);
+    for i in 0..num_fsk_bits {
+        fsk_bits.push((i % 2) as u8);
+    }
+    
+    // Phase accumulator for carrier
+    let mut carrier_phase = 0.0f64;
+    
+    // Generate audio samples
+    for sample_idx in 0..num_samples {
+        // FSK frequency (if enabled)
+        let fsk_bit_idx = sample_idx / samples_per_fsk_bit;
+        let fsk_freq = if enable_fsk && fsk_bit_idx < fsk_bits.len() && fsk_bits[fsk_bit_idx] == 1 {
+            12001.0
+        } else if enable_fsk {
+            11999.0
+        } else {
+            carrier_freq
+        };
+        
+        carrier_phase += TAU * fsk_freq / sample_rate as f64;
+        
+        // QPSK phase (if enabled)
+        let symbol_idx = sample_idx / samples_per_symbol;
+        let qpsk_phase = if enable_qpsk && symbol_idx < filtered_phases.len() {
+            filtered_phases[symbol_idx]
+        } else {
+            0.0
+        };
+        
+        let total_phase = carrier_phase + qpsk_phase;
+        audio.push(total_phase.sin() as f32);
+        
+        if carrier_phase > TAU {
+            carrier_phase -= TAU;
+        }
+    }
+    
+    normalize_audio(&mut audio);
+    audio
+}
+
 fn iq_to_audio(iq: &[f64], sample_rate: usize, carrier_freq_hz: f64) -> Vec<f32> {
     if sample_rate == 0 || iq.len() < 2 {
         return Vec::new();
