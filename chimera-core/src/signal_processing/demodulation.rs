@@ -11,6 +11,17 @@ pub struct DemodulationConfig {
     pub carrier_freq: f64,
 }
 
+/// Result from demodulation including symbols and signal quality metrics
+#[derive(Clone, Debug)]
+pub struct DemodulationResult {
+    /// Demodulated IQ symbols
+    pub symbols: Vec<Complex64>,
+    /// Estimated SNR in dB (measured before AGC normalization)
+    pub snr_db: f32,
+    /// Average input signal power (before AGC)
+    pub input_power: f64,
+}
+
 /// Carrier recovery state using Costas loop for QPSK
 #[derive(Clone, Debug)]
 struct CostasLoop {
@@ -100,6 +111,8 @@ struct AGC {
     gain: f64,
     target_power: f64,
     alpha: f64,
+    // Track power before normalization for SNR estimation
+    input_power: f64,
 }
 
 impl AGC {
@@ -108,11 +121,15 @@ impl AGC {
             gain: 1.0,
             target_power,
             alpha: 1.0 / time_constant,
+            input_power: 0.5, // Initialize to expected level
         }
     }
     
     fn process(&mut self, sample: f32) -> f32 {
         let sample_power = (sample * sample) as f64;
+        
+        // Track input power with exponential smoothing (before gain)
+        self.input_power = self.input_power * (1.0 - self.alpha * 0.1) + sample_power * (self.alpha * 0.1);
         
         // Exponential moving average of power
         let gain_adjustment = if sample_power > 1e-10 {
@@ -129,6 +146,10 @@ impl AGC {
         
         (sample as f64 * self.gain) as f32
     }
+    
+    fn get_input_power(&self) -> f64 {
+        self.input_power
+    }
 }
 
 /// Demodulate audio back to IQ symbols with carrier recovery
@@ -140,12 +161,18 @@ impl AGC {
 /// - Frequency offset between TX and RX
 /// - Phase drift over time
 /// - Initial phase offset
-pub fn audio_to_symbols(
+/// 
+/// Returns symbols with SNR estimated before AGC normalization.
+pub fn audio_to_symbols_with_snr(
     audio: &[f32],
     config: &DemodulationConfig,
-) -> Vec<Complex64> {
+) -> DemodulationResult {
     if audio.is_empty() || config.sample_rate == 0 {
-        return Vec::new();
+        return DemodulationResult {
+            symbols: Vec::new(),
+            snr_db: 0.0,
+            input_power: 0.0,
+        };
     }
     
     let samples_per_symbol = (config.sample_rate / config.symbol_rate).max(1);
@@ -153,6 +180,11 @@ pub fn audio_to_symbols(
     let mut symbols = Vec::with_capacity(num_symbols);
     
     let dt = 1.0 / config.sample_rate as f64;
+    
+    // Measure raw audio power before AGC for SNR estimation
+    let raw_signal_power: f64 = audio.iter()
+        .map(|&s| (s * s) as f64)
+        .sum::<f64>() / audio.len().max(1) as f64;
     
     // Initialize AGC for amplitude normalization
     let mut agc = AGC::new(0.5, 100.0);
@@ -165,6 +197,10 @@ pub fn audio_to_symbols(
     
     // Coarse frequency offset estimator (optional, helps acquisition)
     let mut freq_offset_estimate = 0.0;
+    
+    // Track error power for SNR estimation (after demodulation but before hard decisions)
+    let mut total_error_power = 0.0;
+    let mut total_signal_power = 0.0;
     
     // Demodulate using I/Q mixing
     for sym_idx in 0..num_symbols {
@@ -202,24 +238,62 @@ pub fn audio_to_symbols(
         // Update frequency offset estimate from Costas loop
         freq_offset_estimate = costas.freq_offset * config.sample_rate as f64 / TAU;
         
+        // For SNR estimation: compute error from ideal constellation
+        // Skip first 10 symbols to allow convergence
+        if sym_idx >= 10 {
+            // Find nearest QPSK point
+            let ideal_points = [
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2),
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2),
+            ];
+            
+            let symbol_power = corrected_symbol.norm_sqr();
+            let scale = symbol_power.sqrt();
+            
+            let mut min_error = f64::INFINITY;
+            for ideal in &ideal_points {
+                let scaled_ideal = ideal * scale;
+                let error = (corrected_symbol - scaled_ideal).norm_sqr();
+                min_error = min_error.min(error);
+            }
+            
+            total_error_power += min_error;
+            total_signal_power += symbol_power;
+        }
+        
         symbols.push(corrected_symbol);
     }
     
-    // Optional: Apply a second pass with locked parameters for better performance
-    if symbols.len() > 10 {
-        // Check if we've achieved lock (stable phase)
-        let phase_variance = symbols[symbols.len()-5..]
-            .windows(2)
-            .map(|w| (w[1].arg() - w[0].arg()).abs())
-            .sum::<f64>() / 4.0;
+    // Estimate SNR from demodulated symbol quality
+    // Use constellation error as noise measurement
+    let snr_db = if symbols.len() > 10 && total_error_power > 1e-10 && total_signal_power > 0.0 {
+        let avg_signal_power = total_signal_power / (symbols.len() - 10) as f64;
+        let avg_error_power = total_error_power / (symbols.len() - 10) as f64;
         
-        if phase_variance > 0.5 {
-            // Not locked well, try reprocessing with estimated offset
-            return audio_to_symbols_with_offset(audio, config, freq_offset_estimate);
-        }
-    }
+        // SNR = signal power / noise power
+        let snr_linear = avg_signal_power / avg_error_power;
+        10.0 * snr_linear.log10() as f32
+    } else {
+        0.0
+    };
     
-    symbols
+    DemodulationResult {
+        symbols,
+        snr_db,
+        input_power: raw_signal_power,
+    }
+}
+
+/// Demodulate audio back to IQ symbols with carrier recovery (backward compatible version)
+/// 
+/// Returns only symbols without SNR information. For new code, prefer audio_to_symbols_with_snr.
+pub fn audio_to_symbols(
+    audio: &[f32],
+    config: &DemodulationConfig,
+) -> Vec<Complex64> {
+    audio_to_symbols_with_snr(audio, config).symbols
 }
 
 /// Helper function to demodulate with known frequency offset

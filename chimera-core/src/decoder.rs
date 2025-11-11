@@ -246,8 +246,10 @@ impl StreamingSymbolDecoder {
                 }
             }
             
-            // Accept sync if correlation is above threshold (70%)
-            let sync_threshold = 0.70;
+            // Accept sync if correlation is above threshold
+            // Lowered to 0.50 for streaming symbol processing where symbols arrive incrementally
+            // Note: Batch processing at very low SNR (-3 dB) may still have issues
+            let sync_threshold = 0.50;
             if best_correlation >= sync_threshold {
                 if let Some(idx) = best_match_index {
                     self.sync_index = Some(idx);
