@@ -37,11 +37,11 @@ Main processor implementing:
    - `set_modulation_depth(depth)`: Adjust idle/active modulation (0.0-1.0)
    - `set_mixing_coefficient(coeff)`: Control mixing strength
 
-### Integration with Streaming Pipeline
+### Integration with Real-time Pipeline
 
-**File:** `src/streaming.rs`
+**File:** `src/pipeline.rs`
 
-Added to `StreamingPipeline`:
+Added to `RealtimePipeline`:
 - `thz_processor: ThzCarrierProcessor` - THz carrier simulation engine
 - `is_active_mode: bool` - Track modulation mode
 
@@ -133,10 +133,10 @@ Integration tests:
 
 ### Rust API
 ```rust
-use chimera_core::streaming::StreamingPipeline;
+use chimera_core::pipeline::RealtimePipeline;
 use chimera_core::config::*;
 
-let mut pipeline = StreamingPipeline::new(
+let mut pipeline = RealtimePipeline::new(
     SimulationConfig::default(),
     ProtocolConfig::default(),
     LDPCConfig::default(),
