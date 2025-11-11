@@ -14,7 +14,7 @@ use crate::signal_processing::{
 };
 use crate::channel::apply_audio_noise;
 use crate::diagnostics::{
-    metrics::{compute_evm, estimate_snr},
+    metrics::{compute_constellation_evm, estimate_snr},
     constellation::normalize_constellation,
 };
 use num_complex::Complex;
@@ -484,10 +484,13 @@ impl RealtimePipeline {
             },
         };
         
-        // Calculate EVM and SNR from current chunk (ensure equal lengths)
-        let min_len = tx_symbols.len().min(rx_symbols.len());
-        let evm_percent = if min_len > 0 {
-            compute_evm(&tx_symbols[..min_len], &rx_symbols[..min_len])
+        // Calculate EVM and SNR from current chunk
+        // Use constellation-based EVM since TX/RX symbols may not be perfectly aligned
+        // Skip first 10 symbols to allow demodulator to stabilize
+        let evm_percent = if rx_symbols.len() > 10 {
+            compute_constellation_evm(&rx_symbols[10..])
+        } else if !rx_symbols.is_empty() {
+            compute_constellation_evm(&rx_symbols)
         } else {
             0.0
         };

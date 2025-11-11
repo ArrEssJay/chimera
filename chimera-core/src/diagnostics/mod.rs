@@ -9,7 +9,7 @@ pub mod metrics;
 pub mod constellation;
 
 // Re-export commonly used items
-pub use metrics::{compute_evm, estimate_snr, compute_ber};
+pub use metrics::{compute_evm, compute_constellation_evm, estimate_snr, compute_ber};
 pub use constellation::normalize_constellation;
 
 // Existing diagnostic data structures

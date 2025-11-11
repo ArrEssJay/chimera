@@ -16,10 +16,12 @@ fn test_awgn_power_accuracy() {
     let config = fixtures::get_test_modulation_config(false, false);
     let signal = symbols_to_carrier_signal(&symbols, &config);
     
+    // Measure actual signal power in the audio domain
+    let signal_power = signal.iter().map(|&x| x * x).sum::<f32>() / signal.len() as f32;
+    
     // Add AWGN with known noise power
     let target_snr_db = 10.0;
-    let signal_power = 1.0; // Normalized
-    let noise_power = signal_power / 10.0f64.powf(target_snr_db / 10.0);
+    let noise_power = signal_power as f64 / 10.0f64.powf(target_snr_db / 10.0);
     let noise_std = noise_power.sqrt();
     
     let mut rng = StdRng::seed_from_u64(12345);
@@ -29,6 +31,8 @@ fn test_awgn_power_accuracy() {
     let measured_snr = signal_analysis::compute_snr_db(&signal, &noisy_signal);
     
     println!("AWGN Power Accuracy Test:");
+    println!("  Signal power: {:.4}", signal_power);
+    println!("  Noise std: {:.4}", noise_std);
     println!("  Target SNR: {} dB", target_snr_db);
     println!("  Measured SNR: {} dB", measured_snr);
     println!("  Error: {} dB", (measured_snr - target_snr_db as f32).abs());
