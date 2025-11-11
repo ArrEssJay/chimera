@@ -1,7 +1,10 @@
 //! External audio file loading and processing for intermodulation simulation
 //!
 //! Supports loading MP3, M4A, WAV, FLAC files and resampling to 48kHz
+//! Also supports generating test signals (pink noise, tones, sweeps)
 
+use crate::audio_generator::{generate_audio, GeneratorType};
+use crate::config::{AudioSource, GeneratorPreset};
 use crate::errors::{ChimeraError, Result};
 use std::fs::File;
 use std::path::Path;
@@ -12,6 +15,29 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 use rubato::{FastFixedIn, Resampler};
+
+/// Load or generate audio based on AudioSource configuration
+pub fn load_or_generate_audio(
+    audio_source: &AudioSource,
+    target_sample_rate: usize,
+) -> Result<Vec<f32>> {
+    match audio_source {
+        AudioSource::None => Ok(Vec::new()),
+        AudioSource::File { path, loop_audio: _ } => {
+            load_audio_file(Path::new(path), target_sample_rate)
+        }
+        AudioSource::Generator { preset, duration_secs } => {
+            let generator_type = match preset {
+                GeneratorPreset::PinkNoise => GeneratorType::PinkNoise,
+                GeneratorPreset::Tone1kHz => GeneratorType::Tone(1000.0),
+                GeneratorPreset::Tone(freq_hz) => GeneratorType::Tone(*freq_hz),
+                GeneratorPreset::SweepLinear => GeneratorType::SweepLinear,
+                GeneratorPreset::SweepLog => GeneratorType::SweepLog,
+            };
+            Ok(generate_audio(generator_type, *duration_secs, target_sample_rate))
+        }
+    }
+}
 
 /// Load audio file and resample to target sample rate
 pub fn load_audio_file(path: &Path, target_sample_rate: usize) -> Result<Vec<f32>> {

@@ -166,11 +166,58 @@ pub struct SimulationConfig {
     pub bypass_thz_simulation: bool,
 }
 
+/// Audio source type for intermodulation mixing
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum AudioSource {
+    /// No external audio
+    None,
+    /// Load from audio file (mp3, m4a, wav, flac)
+    File { 
+        path: String,
+        /// Loop audio if shorter than AID signal (default: true)
+        #[serde(default = "default_true")]
+        #[serde(rename = "loop")]
+        loop_audio: bool,
+    },
+    /// Generate test signal
+    Generator { 
+        preset: GeneratorPreset,
+        #[serde(default = "default_generator_duration")]
+        duration_secs: f64,
+    },
+}
+
+fn default_generator_duration() -> f64 { 5.0 }
+
+impl Default for AudioSource {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+/// Generator presets for audio testing
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum GeneratorPreset {
+    /// Pink noise (1/f spectrum) - good for general frequency response testing
+    PinkNoise,
+    /// Constant sine tone at 1kHz - standard reference tone
+    Tone1kHz,
+    /// Constant sine tone at specified frequency in Hz
+    Tone(f64),
+    /// Linear frequency sweep 100Hz to 20kHz
+    SweepLinear,
+    /// Logarithmic frequency sweep 100Hz to 20kHz (equal time per octave)
+    SweepLog,
+}
+
 /// Configuration for external audio intermodulation mixing
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AudioMixingConfig {
-    /// Path to external audio file (mp3, m4a, wav, flac)
-    pub audio_file_path: String,
+    /// Audio source configuration
+    #[serde(default)]
+    pub audio_source: AudioSource,
     
     /// Gain applied to external audio before mixing (0.0 to 1.0)
     #[serde(default = "default_external_audio_gain")]
@@ -199,10 +246,6 @@ pub struct AudioMixingConfig {
     /// Cortical integration coefficient - simulates perceptual blending (0.0 to 1.0)
     #[serde(default = "default_cortical_coeff")]
     pub cortical_coefficient: f32,
-    
-    /// Loop external audio if shorter than AID signal
-    #[serde(default = "default_true")]
-    pub loop_audio: bool,
 }
 
 fn default_external_audio_gain() -> f32 { 0.5 }
@@ -214,7 +257,7 @@ fn default_cortical_coeff() -> f32 { 0.4 }
 impl Default for AudioMixingConfig {
     fn default() -> Self {
         Self {
-            audio_file_path: String::new(),
+            audio_source: AudioSource::None,
             external_audio_gain: default_external_audio_gain(),
             aid_signal_gain: default_aid_signal_gain(),
             enable_second_order: true,
@@ -222,7 +265,6 @@ impl Default for AudioMixingConfig {
             second_order_coefficient: default_second_order_coeff(),
             third_order_coefficient: default_third_order_coeff(),
             cortical_coefficient: default_cortical_coeff(),
-            loop_audio: true,
         }
     }
 }

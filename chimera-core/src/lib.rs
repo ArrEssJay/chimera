@@ -5,6 +5,7 @@
 //! the former Python reference implementation, but expose a fully typed
 //! and testable API.
 
+pub mod audio_generator;
 pub mod channel;
 pub mod config;
 pub mod decoder;

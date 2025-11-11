@@ -2,15 +2,61 @@
 
 use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
 use color_eyre::eyre::{Context, Result};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value as JsonValue;
 use std::path::{Path, PathBuf};
+
+/// Deep merge JSON values - override takes precedence over base
+/// For objects, recursively merge; for arrays and primitives, override replaces base
+fn merge_json_values(base: &mut JsonValue, override_val: JsonValue) {
+    match (base, override_val) {
+        (JsonValue::Object(base_map), JsonValue::Object(override_map)) => {
+            // Recursively merge objects
+            for (key, value) in override_map {
+                if let Some(base_value) = base_map.get_mut(&key) {
+                    // Key exists in both - recursively merge
+                    merge_json_values(base_value, value);
+                } else {
+                    // Key only in override - insert it
+                    base_map.insert(key, value);
+                }
+            }
+        }
+        (base_val, override_val) => {
+            // For non-objects, override completely replaces base
+            *base_val = override_val;
+        }
+    }
+}
+
+/// Custom deserializer to handle both single string and array of strings for include
+fn deserialize_include_optional<'de, D>(deserializer: D) -> std::result::Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrVec {
+        String(String),
+        Vec(Vec<String>),
+    }
+    
+    let opt: Option<StringOrVec> = Option::deserialize(deserializer)?;
+    match opt {
+        None => Ok(Vec::new()),
+        Some(StringOrVec::String(s)) => Ok(vec![s]),
+        Some(StringOrVec::Vec(v)) => Ok(v),
+    }
+}
 
 /// Complete CLI configuration bundle
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CliConfig {
-    /// Optional path to another config file to include (relative to this config's directory)
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub include: Option<String>,
+    /// Optional path(s) to other config file(s) to include (relative to this config's directory)
+    /// Supports single string or array of strings
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_include_optional")]
+    pub include: Vec<String>,
     
     #[serde(default, skip_serializing_if = "is_default_protocol")]
     pub protocol: ProtocolConfig,
@@ -142,53 +188,73 @@ impl CliConfig {
         let content = std::fs::read_to_string(path)
             .wrap_err_with(|| format!("Failed to read config file: {}", path.display()))?;
         
-        let mut config: CliConfig = toml::from_str(&content)
+        // Parse as raw TOML value first to allow partial configs
+        let config_toml: toml::Value = toml::from_str(&content)
             .wrap_err("Failed to parse TOML configuration")?;
         
-        // Process include directive
-        if let Some(include_path) = &config.include {
-            let include_full_path = if Path::new(include_path).is_absolute() {
-                PathBuf::from(include_path)
-            } else {
-                // Resolve relative to config file's directory
-                path.parent()
-                    .unwrap_or_else(|| Path::new("."))
-                    .join(include_path)
-            };
-            
-            // Load base config
-            let base_config = Self::from_file(&include_full_path)
-                .wrap_err_with(|| format!("Failed to load included config: {}", include_full_path.display()))?;
-            
-            // Merge: current config overrides base config
-            // For simplicity, we'll do field-by-field merge
-            // Protocol, simulation, ldpc can be overridden entirely if present
-            // Terminal settings merge more carefully
-            config = Self::merge(base_config, config);
+        // Convert to JSON for easier manipulation
+        let mut config_json = serde_json::to_value(&config_toml)
+            .wrap_err("Failed to convert TOML to JSON")?;
+        
+        // Extract and process include directives
+        let includes = match config_json.get("include") {
+            Some(JsonValue::String(s)) => vec![s.clone()],
+            Some(JsonValue::Array(arr)) => {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            }
+            _ => Vec::new(),
+        };
+        
+        // Remove include from the config JSON
+        if let JsonValue::Object(ref mut map) = config_json {
+            map.remove("include");
         }
+        
+        // Always start with defaults as base to support partial configs
+        let mut base_json = serde_json::to_value(&Self::default())
+            .wrap_err("Failed to create default config")?;
+        
+        // Process includes in order if present
+        if !includes.is_empty() {
+            // Load and merge each included file in order
+            for include_path in &includes {
+                let include_full_path = if Path::new(include_path).is_absolute() {
+                    PathBuf::from(include_path)
+                } else {
+                    // Resolve relative to config file's directory
+                    path.parent()
+                        .unwrap_or_else(|| Path::new("."))
+                        .join(include_path)
+                };
+                
+                let included_config = Self::from_file(&include_full_path)
+                    .wrap_err_with(|| format!("Failed to load included config: {}", include_full_path.display()))?;
+                
+                let included_json = serde_json::to_value(&included_config)
+                    .wrap_err("Failed to convert included config to JSON")?;
+                
+                // Deep merge included config into accumulated config
+                merge_json_values(&mut base_json, included_json);
+            }
+        }
+        
+        // Finally merge current config on top (it has highest priority)
+        merge_json_values(&mut base_json, config_json);
+        let config_json = base_json;
+        
+        // Convert final merged JSON to typed CliConfig
+        let config: CliConfig = serde_json::from_value(config_json)
+            .wrap_err("Failed to parse final configuration")?;
         
         Ok(config)
-    }
-    
-    /// Merge two configs, with override taking precedence
-    fn merge(_base: Self, override_cfg: Self) -> Self {
-        // Simple merge: override_cfg values take precedence over base
-        // For nested structures, we'd need more sophisticated merging
-        // For now, entire sections are replaced if present in override
-        
-        Self {
-            include: None, // Don't propagate include directive
-            protocol: override_cfg.protocol,
-            simulation: override_cfg.simulation,
-            ldpc: override_cfg.ldpc,
-            terminal: override_cfg.terminal,
-        }
     }
     
     /// Create default configuration
     pub fn default() -> Self {
         Self {
-            include: None,
+            include: Vec::new(),
             protocol: ProtocolConfig::default(),
             simulation: SimulationConfig::default(),
             ldpc: LDPCConfig::default(),
