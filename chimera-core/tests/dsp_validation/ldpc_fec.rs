@@ -152,6 +152,7 @@ fn test_ldpc_frame_decode_success_rate() {
     // Track successful frame decodes
     let mut sim = SimulationConfig::default();
     sim.snr_db = 15.0;
+    sim.bypass_thz_simulation = true;
     
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();

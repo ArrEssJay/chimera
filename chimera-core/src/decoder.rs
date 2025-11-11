@@ -177,13 +177,33 @@ impl StreamingSymbolDecoder {
         let sync_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, sync_bit_len);
         
         if self.demodulated_bits.len() >= sync_bits.len() {
+            let mut best_match_index = None;
+            let mut best_match_errors = usize::MAX;
+            
             for idx in 0..=(self.demodulated_bits.len() - sync_bits.len()) {
-                if self.demodulated_bits[idx..idx + sync_bits.len()] == sync_bits {
-                    self.sync_index = Some(idx);
-                    self.sync_found = true;
-                    self.logger.log(format!("Frame sync found at bit index {}", idx));
-                    break;
+                // Count bit errors (Hamming distance)
+                let errors = self.demodulated_bits[idx..idx + sync_bits.len()]
+                    .iter()
+                    .zip(sync_bits.iter())
+                    .filter(|(&a, &b)| a != b)
+                    .count();
+                
+                // Accept sync if errors are below threshold (10% of sync length)
+                let max_errors = sync_bit_len / 10;
+                if errors <= max_errors && errors < best_match_errors {
+                    best_match_errors = errors;
+                    best_match_index = Some(idx);
                 }
+            }
+            
+            if let Some(idx) = best_match_index {
+                self.sync_index = Some(idx);
+                self.sync_found = true;
+                self.logger.log(format!(
+                    "Frame sync found at bit index {} with {} bit errors ({}%)",
+                    idx, best_match_errors, 
+                    (best_match_errors * 100) / sync_bit_len
+                ));
             }
         }
     }

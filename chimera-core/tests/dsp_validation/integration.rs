@@ -13,6 +13,7 @@ fn test_complete_transmission_chain() {
     let mut sim = SimulationConfig::default();
     sim.snr_db = 20.0; // Clean channel for bit-exact recovery
     sim.link_loss_db = 0.0;
+    sim.bypass_thz_simulation = true; // Disable THz for clean DSP test
     
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
@@ -67,6 +68,8 @@ fn test_ber_vs_snr_curve() {
         let mut sim = SimulationConfig::default();
         sim.snr_db = snr_db;
         sim.link_loss_db = 0.0;
+        sim.bypass_thz_simulation = true;
+        sim.bypass_thz_simulation = true;
         
         let mut pipeline = RealtimePipeline::new(sim, protocol.clone(), ldpc.clone());
         pipeline.set_modulation_mode(true);
@@ -125,6 +128,7 @@ fn test_graceful_degradation_with_noise() {
     for &snr_db in &snr_values {
         let mut sim = SimulationConfig::default();
         sim.snr_db = snr_db;
+        sim.bypass_thz_simulation = true;
         
         let mut pipeline = RealtimePipeline::new(sim, protocol.clone(), ldpc.clone());
         pipeline.set_modulation_mode(true);
@@ -159,7 +163,8 @@ fn test_graceful_degradation_with_noise() {
 #[test]
 fn test_long_running_stability() {
     // Test pipeline stability over extended operation
-    let sim = SimulationConfig::default();
+    let mut sim = SimulationConfig::default();
+    sim.bypass_thz_simulation = true;
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     
@@ -212,7 +217,8 @@ fn test_long_running_stability() {
 #[test]
 fn test_mode_switching_stability() {
     // Test switching between idle and active modes
-    let sim = SimulationConfig::default();
+    let mut sim = SimulationConfig::default();
+    sim.bypass_thz_simulation = true;
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     

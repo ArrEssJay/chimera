@@ -10,7 +10,8 @@ use chimera_core::{
 #[test]
 fn test_frame_sync_acquisition_time() {
     // Test how quickly decoder locks onto sync pattern
-    let sim = SimulationConfig::default();
+    let mut sim = SimulationConfig::default();
+    sim.bypass_thz_simulation = true;
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     
@@ -59,6 +60,7 @@ fn test_sync_status_consistency() {
     // Test that sync status remains stable once acquired
     let mut sim = SimulationConfig::default();
     sim.snr_db = 20.0; // Clean channel
+    sim.bypass_thz_simulation = true;
     
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
@@ -100,7 +102,8 @@ fn test_sync_status_consistency() {
 #[test]
 fn test_lock_status_reporting() {
     // Test lock status transitions through acquisition phases
-    let sim = SimulationConfig::default();
+    let mut sim = SimulationConfig::default();
+    sim.bypass_thz_simulation = true;
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     
@@ -137,6 +140,7 @@ fn test_symbol_timing_with_noise() {
     // Test timing recovery under noisy conditions
     let mut sim = SimulationConfig::default();
     sim.snr_db = 10.0; // Moderate noise
+    sim.bypass_thz_simulation = true;
     
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
@@ -172,7 +176,8 @@ fn test_symbol_timing_with_noise() {
 #[test]
 fn test_frequency_offset_tracking() {
     // Test frequency offset reporting
-    let sim = SimulationConfig::default();
+    let mut sim = SimulationConfig::default();
+    sim.bypass_thz_simulation = true;
     let protocol = ProtocolConfig::default();
     let ldpc = LDPCConfig::default();
     

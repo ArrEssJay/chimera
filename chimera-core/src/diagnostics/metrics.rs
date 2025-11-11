@@ -54,11 +54,12 @@ pub fn estimate_snr(rx_symbols: &[Complex64]) -> f32 {
     let mut noise_power = 0.0;
     
     for symbol in rx_symbols {
-        let magnitude = symbol.norm();
-        signal_power += magnitude;
+        let magnitude_sq = symbol.norm_sqr();
+        signal_power += magnitude_sq;
         
         // Estimate noise from deviation from ideal radius (1.0 for QPSK)
-        let deviation = (magnitude - 1.0).abs();
+        // For QPSK, ideal power is 1.0, so noise = actual - ideal
+        let deviation = magnitude_sq - 1.0;
         noise_power += deviation * deviation;
     }
     
@@ -66,7 +67,7 @@ pub fn estimate_snr(rx_symbols: &[Complex64]) -> f32 {
     noise_power /= rx_symbols.len() as f64;
     
     if noise_power > 0.0 {
-        10.0 * (signal_power.powi(2) / noise_power).log10() as f32
+        10.0 * (signal_power / noise_power).log10() as f32
     } else {
         40.0 // Very high SNR
     }

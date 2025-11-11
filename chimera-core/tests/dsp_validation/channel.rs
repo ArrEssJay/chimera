@@ -156,12 +156,20 @@ fn test_frequency_selective_fading() {
         .position(|&f| (f - config.carrier_freq as f32).abs() < 10.0)
         .unwrap_or(0);
     
-    let power_loss = 10.0 * (psd_filt[carrier_bin] / psd_orig[carrier_bin]).log10();
+    println!("  Carrier bin: {}, freq: {:.1} Hz", carrier_bin, freqs[carrier_bin]);
+    println!("  Original PSD at carrier: {:.6}", psd_orig[carrier_bin]);
+    println!("  Filtered PSD at carrier: {:.6}", psd_filt[carrier_bin]);
+    
+    let power_loss = if psd_filt[carrier_bin] > 0.0 && psd_orig[carrier_bin] > 0.0 {
+        10.0 * (psd_filt[carrier_bin] / psd_orig[carrier_bin]).log10()
+    } else {
+        -std::f32::INFINITY
+    };
     
     println!("  Power loss at carrier: {:.1} dB", power_loss);
     
     assert!(
-        power_loss < -0.1,
-        "Frequency selective fading should attenuate signal"
+        power_loss.is_finite() && power_loss < -0.1,
+        "Frequency selective fading should attenuate signal (power_loss = {:.1} dB)", power_loss
     );
 }

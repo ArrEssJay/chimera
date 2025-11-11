@@ -24,7 +24,7 @@ pub fn apply_audio_noise<R: Rng>(
     let mut noisy = audio.to_vec();
     
     for sample in noisy.iter_mut() {
-        let noise: f64 = rng.sample::<f64, _>(StandardNormal) * (noise_std * 0.1);
+        let noise: f64 = rng.sample::<f64, _>(StandardNormal) * noise_std;
         *sample += noise as f32;
     }
     

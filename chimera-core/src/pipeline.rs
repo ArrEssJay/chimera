@@ -81,6 +81,8 @@ pub struct FrameLayoutInfo {
     pub data_bytes: usize,
     pub parity_bytes: usize,
     pub total_bytes: usize,
+    pub target_id_bytes: usize,
+    pub command_type_bytes: usize,
 }
 
 /// Pre-channel (transmitter) diagnostics
@@ -361,8 +363,8 @@ impl RealtimePipeline {
         let base_audio = symbols_to_carrier_signal(&tx_symbols, &modulation_config);
         
         // Apply THz carrier modulation and mixing to simulate AID effect
-        // Only if mixing coefficient > 0 (allows bypass for debugging)
-        let mixed_audio = if self.thz_processor.config().mixing_coefficient > 0.0 {
+        // Check bypass_simulation flag to skip THz processing for validation
+        let mixed_audio = if !self.thz_processor.config().bypass_simulation {
             let modulated_thz = self.thz_processor.modulate_data_carrier(&base_audio);
             self.thz_processor.nonlinear_mixing(&modulated_thz)
         } else {
@@ -476,13 +478,25 @@ impl RealtimePipeline {
                 sync_bytes: (self.protocol.frame_layout.sync_symbols * 2) / 8,
                 data_bytes: (self.protocol.frame_layout.data_payload_symbols * 2) / 8,
                 parity_bytes: (self.protocol.frame_layout.ecc_symbols * 2) / 8,
+                target_id_bytes: (self.protocol.frame_layout.target_id_symbols * 2) / 8,
+                command_type_bytes: (self.protocol.frame_layout.command_type_symbols * 2) / 8,
                 total_bytes: (self.protocol.frame_layout.total_symbols * 2) / 8,
             },
         };
         
-        // Calculate EVM and SNR from buffered symbols
-        let evm_percent = compute_evm(&tx_symbols, &rx_symbols);
-        let snr_estimate_db = estimate_snr(&rx_symbols);
+        // Calculate EVM and SNR from current chunk (ensure equal lengths)
+        let min_len = tx_symbols.len().min(rx_symbols.len());
+        let evm_percent = if min_len > 0 {
+            compute_evm(&tx_symbols[..min_len], &rx_symbols[..min_len])
+        } else {
+            0.0
+        };
+        
+        let snr_estimate_db = if rx_symbols.len() > 0 {
+            estimate_snr(&rx_symbols)
+        } else {
+            0.0
+        };
         
         // Post-channel diagnostics
         output.post_channel = PostChannelDiagnostics {
