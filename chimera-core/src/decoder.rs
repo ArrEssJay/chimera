@@ -177,33 +177,86 @@ impl StreamingSymbolDecoder {
         let sync_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, sync_bit_len);
         
         if self.demodulated_bits.len() >= sync_bits.len() {
-            let mut best_match_index = None;
-            let mut best_match_errors = usize::MAX;
+            // Convert sync pattern to expected symbol sequence for correlation
+            let sync_symbols: Vec<Complex64> = sync_bits
+                .chunks(2)
+                .map(|pair| {
+                    let bits = [pair[0], pair.get(1).copied().unwrap_or(0)];
+                    match (bits[0], bits[1]) {
+                        (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                        (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                        (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                        (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                        _ => Complex64::new(0.0, 0.0),
+                    }
+                })
+                .collect();
             
-            for idx in 0..=(self.demodulated_bits.len() - sync_bits.len()) {
-                // Count bit errors (Hamming distance)
-                let errors = self.demodulated_bits[idx..idx + sync_bits.len()]
-                    .iter()
-                    .zip(sync_bits.iter())
-                    .filter(|(&a, &b)| a != b)
-                    .count();
+            // Convert demodulated bits back to symbols for correlation
+            let num_demod_symbols = self.demodulated_bits.len() / 2;
+            let demod_symbols: Vec<Complex64> = (0..num_demod_symbols)
+                .map(|i| {
+                    let b0 = self.demodulated_bits[i * 2];
+                    let b1 = self.demodulated_bits.get(i * 2 + 1).copied().unwrap_or(0);
+                    match (b0, b1) {
+                        (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                        (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+                        (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                        (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                        _ => Complex64::new(0.0, 0.0),
+                    }
+                })
+                .collect();
+            
+            // Find best correlation over all possible phase rotations and positions
+            let mut best_match_index = None;
+            let mut best_correlation = 0.0f64;
+            let mut best_phase_rotation = 0;
+            
+            // Try all 4 possible QPSK phase rotations (0°, 90°, 180°, 270°)
+            for phase_idx in 0..4 {
+                let phase_rotation = Complex64::from_polar(1.0, phase_idx as f64 * std::f64::consts::PI / 2.0);
                 
-                // Accept sync if errors are below threshold (10% of sync length)
-                let max_errors = sync_bit_len / 10;
-                if errors <= max_errors && errors < best_match_errors {
-                    best_match_errors = errors;
-                    best_match_index = Some(idx);
+                // Slide sync pattern across demodulated symbols
+                for idx in 0..=(demod_symbols.len().saturating_sub(sync_symbols.len())) {
+                    let window = &demod_symbols[idx..idx + sync_symbols.len()];
+                    
+                    // Compute correlation with phase rotation
+                    let mut correlation_sum = Complex64::new(0.0, 0.0);
+                    let mut energy_sum = 0.0f64;
+                    
+                    for (demod_sym, sync_sym) in window.iter().zip(sync_symbols.iter()) {
+                        let rotated_demod = demod_sym * phase_rotation;
+                        correlation_sum += rotated_demod * sync_sym.conj();
+                        energy_sum += rotated_demod.norm_sqr();
+                    }
+                    
+                    // Normalized correlation (0 to 1)
+                    let correlation = if energy_sum > 0.0 {
+                        correlation_sum.norm() / (energy_sum.sqrt() * (sync_symbols.len() as f64).sqrt())
+                    } else {
+                        0.0
+                    };
+                    
+                    if correlation > best_correlation {
+                        best_correlation = correlation;
+                        best_match_index = Some(idx * 2); // Convert back to bit index
+                        best_phase_rotation = phase_idx;
+                    }
                 }
             }
             
-            if let Some(idx) = best_match_index {
-                self.sync_index = Some(idx);
-                self.sync_found = true;
-                self.logger.log(format!(
-                    "Frame sync found at bit index {} with {} bit errors ({}%)",
-                    idx, best_match_errors, 
-                    (best_match_errors * 100) / sync_bit_len
-                ));
+            // Accept sync if correlation is above threshold (70%)
+            let sync_threshold = 0.70;
+            if best_correlation >= sync_threshold {
+                if let Some(idx) = best_match_index {
+                    self.sync_index = Some(idx);
+                    self.sync_found = true;
+                    self.logger.log(format!(
+                        "Frame sync found at bit index {} with correlation {:.2}% (phase rotation {})",
+                        idx, best_correlation * 100.0, best_phase_rotation * 90
+                    ));
+                }
             }
         }
     }

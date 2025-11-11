@@ -26,11 +26,16 @@ struct CostasLoop {
 
 impl CostasLoop {
     /// Create a new Costas loop with default parameters
-    fn new(loop_bandwidth: f64, damping_factor: f64) -> Self {
-        // Second-order loop filter gains
-        let denom = 1.0 + 2.0 * damping_factor * loop_bandwidth + loop_bandwidth * loop_bandwidth;
-        let alpha = (4.0 * damping_factor * loop_bandwidth) / denom;
-        let beta = (4.0 * loop_bandwidth * loop_bandwidth) / denom;
+    fn new(loop_bandwidth: f64, damping_factor: f64, sample_rate: f64) -> Self {
+        // Normalize loop bandwidth to rad/sample
+        let bn_t = loop_bandwidth / sample_rate;
+        
+        // Second-order loop filter gains (from Gardner's formula)
+        let theta = bn_t / (damping_factor + 0.25 / damping_factor);
+        let denom = 1.0 + 2.0 * damping_factor * theta + theta * theta;
+        
+        let alpha = (4.0 * damping_factor * theta / denom) / 1.0;
+        let beta = (4.0 * theta * theta / denom) / 1.0;
         
         Self {
             phase: 0.0,
@@ -40,17 +45,22 @@ impl CostasLoop {
         }
     }
     
-    /// Update the loop with a new symbol and return the phase correction
-    fn update(&mut self, symbol: Complex64) -> f64 {
-        // QPSK Costas loop error detector
-        // Error is proportional to Im(symbol^4) which is zero when locked to QPSK constellation
-        let error = (symbol.re * symbol.im).signum() * (symbol.re * symbol.im);
+    /// Process a demodulated symbol and return the corrected symbol
+    fn process(&mut self, raw_symbol: Complex64) -> Complex64 {
+        // Apply current phase correction to the symbol
+        let corrected = raw_symbol * Complex64::from_polar(1.0, -self.phase);
+        
+        // Compute phase error using the corrected symbol
+        let error = self.phase_detector(corrected);
         
         // Update frequency estimate (integral path)
         self.freq_offset += self.beta * error;
         
-        // Update phase estimate (proportional path)
-        self.phase += self.alpha * error + self.freq_offset;
+        // Limit frequency offset to prevent runaway
+        self.freq_offset = self.freq_offset.clamp(-0.01, 0.01); // Tighter limit
+        
+        // Update phase estimate for next symbol
+        self.phase += self.freq_offset + self.alpha * error;
         
         // Wrap phase to [-π, π]
         while self.phase > std::f64::consts::PI {
@@ -60,7 +70,75 @@ impl CostasLoop {
             self.phase += TAU;
         }
         
-        self.phase
+        corrected
+    }
+    
+    /// QPSK phase detector (improved)
+    fn phase_detector(&self, symbol: Complex64) -> f64 {
+        // Use tanh-based soft decision for better noise performance
+        let scale = 2.0; // Soft decision scaling factor
+        
+        // Compute soft decisions
+        let i_soft = (scale * symbol.re).tanh();
+        let q_soft = (scale * symbol.im).tanh();
+        
+        // Phase error for QPSK (4th power method)
+        // This is insensitive to data and locks to the closest 90° phase
+        let phase4 = (symbol.powi(4)).arg() / 4.0;
+        
+        // Alternative: Decision-directed with soft decisions
+        let dd_error = q_soft * symbol.re - i_soft * symbol.im;
+        
+        // Blend both methods for robustness
+        0.5 * phase4 + 0.5 * dd_error
+    }
+    
+    /// Decide the nearest QPSK constellation point
+    fn decide_qpsk(symbol: Complex64) -> Complex64 {
+        // QPSK constellation at 45°, 135°, 225°, 315°
+        let norm_factor = 1.0 / std::f64::consts::SQRT_2;
+        
+        let i_sign = if symbol.re >= 0.0 { 1.0 } else { -1.0 };
+        let q_sign = if symbol.im >= 0.0 { 1.0 } else { -1.0 };
+        
+        Complex64::new(i_sign * norm_factor, q_sign * norm_factor)
+    }
+}
+
+/// Automatic Gain Control state
+#[derive(Clone, Debug)]
+struct AGC {
+    gain: f64,
+    target_power: f64,
+    alpha: f64,
+}
+
+impl AGC {
+    fn new(target_power: f64, time_constant: f64) -> Self {
+        Self {
+            gain: 1.0,
+            target_power,
+            alpha: 1.0 / time_constant,
+        }
+    }
+    
+    fn process(&mut self, sample: f32) -> f32 {
+        let sample_power = (sample * sample) as f64;
+        
+        // Exponential moving average of power
+        let gain_adjustment = if sample_power > 1e-10 {
+            (self.target_power / sample_power).sqrt()
+        } else {
+            1.0
+        };
+        
+        // Smooth gain changes
+        self.gain = self.gain * (1.0 - self.alpha) + gain_adjustment * self.alpha;
+        
+        // Limit gain to prevent instability
+        self.gain = self.gain.clamp(0.1, 10.0);
+        
+        (sample as f64 * self.gain) as f32
     }
 }
 
@@ -87,13 +165,19 @@ pub fn audio_to_symbols(
     
     let dt = 1.0 / config.sample_rate as f64;
     
-    // Initialize Costas loop for carrier recovery
-    // Loop bandwidth: ~1% of symbol rate is typical
-    let loop_bw = config.symbol_rate as f64 * 0.01;
-    let damping = 0.707; // Critical damping
-    let mut costas = CostasLoop::new(loop_bw, damping);
+    // Initialize AGC for amplitude normalization
+    let mut agc = AGC::new(0.5, 100.0);
     
-    // Demodulate using I/Q mixing with carrier recovery
+    // Initialize Costas loop for carrier recovery
+    // Use narrower loop bandwidth for better noise performance
+    let loop_bw = 2.0 * config.symbol_rate as f64 * 0.01; // 1% of symbol rate, x2 for one-sided
+    let damping = 0.707; // Critically damped
+    let mut costas = CostasLoop::new(loop_bw, damping, config.sample_rate as f64);
+    
+    // Coarse frequency offset estimator (optional, helps acquisition)
+    let mut freq_offset_estimate = 0.0;
+    
+    // Demodulate using I/Q mixing
     for sym_idx in 0..num_symbols {
         let start = sym_idx * samples_per_symbol;
         let end = (start + samples_per_symbol).min(audio.len());
@@ -101,20 +185,18 @@ pub fn audio_to_symbols(
         let mut i_acc = 0.0f64;
         let mut q_acc = 0.0f64;
         
-        // Get current phase correction from Costas loop
-        let phase_correction = if sym_idx > 0 {
-            costas.phase
-        } else {
-            0.0
-        };
-        
         for (idx, &sample) in audio[start..end].iter().enumerate() {
-            let t = (start + idx) as f64 * dt;
-            let angle = TAU * config.carrier_freq * t + phase_correction;
+            // Apply AGC to normalize amplitude
+            let normalized_sample = agc.process(sample);
             
-            // I/Q demodulation with phase correction
-            i_acc += sample as f64 * angle.cos();
-            q_acc += -(sample as f64) * angle.sin(); // Note the negative for Q
+            let t = (start + idx) as f64 * dt;
+            
+            // Use current frequency offset estimate
+            let angle = TAU * (config.carrier_freq + freq_offset_estimate) * t;
+            
+            // I/Q demodulation (no phase correction here - done after)
+            i_acc += normalized_sample as f64 * angle.cos();
+            q_acc += normalized_sample as f64 * angle.sin();
         }
         
         // Average over the symbol period
@@ -122,13 +204,74 @@ pub fn audio_to_symbols(
         i_acc /= count;
         q_acc /= count;
         
-        // Scale by 2 to compensate for mixing (standard I/Q demod scaling)
-        let symbol = Complex64::new(i_acc * 2.0, q_acc * 2.0);
+        // Scale by 2 to compensate for mixing
+        let raw_symbol = Complex64::new(i_acc * 2.0, q_acc * 2.0);
         
-        // Update Costas loop with this symbol
-        costas.update(symbol);
+        // Apply Costas loop correction
+        let corrected_symbol = costas.process(raw_symbol);
         
-        symbols.push(symbol);
+        // Update frequency offset estimate from Costas loop
+        freq_offset_estimate = costas.freq_offset * config.sample_rate as f64 / TAU;
+        
+        symbols.push(corrected_symbol);
+    }
+    
+    // Optional: Apply a second pass with locked parameters for better performance
+    if symbols.len() > 10 {
+        // Check if we've achieved lock (stable phase)
+        let phase_variance = symbols[symbols.len()-5..]
+            .windows(2)
+            .map(|w| (w[1].arg() - w[0].arg()).abs())
+            .sum::<f64>() / 4.0;
+        
+        if phase_variance > 0.5 {
+            // Not locked well, try reprocessing with estimated offset
+            return audio_to_symbols_with_offset(audio, config, freq_offset_estimate);
+        }
+    }
+    
+    symbols
+}
+
+/// Helper function to demodulate with known frequency offset
+fn audio_to_symbols_with_offset(
+    audio: &[f32],
+    config: &DemodulationConfig,
+    freq_offset: f64,
+) -> Vec<Complex64> {
+    let samples_per_symbol = (config.sample_rate / config.symbol_rate).max(1);
+    let num_symbols = audio.len() / samples_per_symbol;
+    let mut symbols = Vec::with_capacity(num_symbols);
+    
+    let dt = 1.0 / config.sample_rate as f64;
+    let mut agc = AGC::new(0.5, 100.0);
+    
+    // Use tighter loop with known offset
+    let loop_bw = config.symbol_rate as f64 * 0.005; // Even narrower
+    let damping = 0.707;
+    let mut costas = CostasLoop::new(loop_bw, damping, config.sample_rate as f64);
+    
+    for sym_idx in 0..num_symbols {
+        let start = sym_idx * samples_per_symbol;
+        let end = (start + samples_per_symbol).min(audio.len());
+        
+        let mut i_acc = 0.0f64;
+        let mut q_acc = 0.0f64;
+        
+        for (idx, &sample) in audio[start..end].iter().enumerate() {
+            let normalized_sample = agc.process(sample);
+            let t = (start + idx) as f64 * dt;
+            let angle = TAU * (config.carrier_freq + freq_offset) * t;
+            
+            i_acc += normalized_sample as f64 * angle.cos();
+            q_acc += normalized_sample as f64 * angle.sin();
+        }
+        
+        let count = (end - start) as f64;
+        let raw_symbol = Complex64::new(i_acc * 2.0 / count, q_acc * 2.0 / count);
+        let corrected_symbol = costas.process(raw_symbol);
+        
+        symbols.push(corrected_symbol);
     }
     
     symbols
