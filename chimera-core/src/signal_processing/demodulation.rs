@@ -92,17 +92,6 @@ impl CostasLoop {
         // Blend both methods for robustness
         0.5 * phase4 + 0.5 * dd_error
     }
-    
-    /// Decide the nearest QPSK constellation point
-    fn decide_qpsk(symbol: Complex64) -> Complex64 {
-        // QPSK constellation at 45°, 135°, 225°, 315°
-        let norm_factor = 1.0 / std::f64::consts::SQRT_2;
-        
-        let i_sign = if symbol.re >= 0.0 { 1.0 } else { -1.0 };
-        let q_sign = if symbol.im >= 0.0 { 1.0 } else { -1.0 };
-        
-        Complex64::new(i_sign * norm_factor, q_sign * norm_factor)
-    }
 }
 
 /// Automatic Gain Control state
