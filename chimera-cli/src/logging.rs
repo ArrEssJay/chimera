@@ -1,6 +1,6 @@
 //! Structured logging for telemetry and frame analysis.
 
-use crate::config::{LogFormat, LogLevel, LogTarget, LoggingConfig};
+use crate::config::{LogFormat, LogTarget, LoggingConfig};
 use chrono::{DateTime, Utc};
 use color_eyre::eyre::Result;
 use serde::{Deserialize, Serialize};

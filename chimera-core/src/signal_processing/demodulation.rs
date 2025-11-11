@@ -146,10 +146,6 @@ impl AGC {
         
         (sample as f64 * self.gain) as f32
     }
-    
-    fn get_input_power(&self) -> f64 {
-        self.input_power
-    }
 }
 
 /// Demodulate audio back to IQ symbols with carrier recovery
@@ -294,50 +290,6 @@ pub fn audio_to_symbols(
     config: &DemodulationConfig,
 ) -> Vec<Complex64> {
     audio_to_symbols_with_snr(audio, config).symbols
-}
-
-/// Helper function to demodulate with known frequency offset
-fn audio_to_symbols_with_offset(
-    audio: &[f32],
-    config: &DemodulationConfig,
-    freq_offset: f64,
-) -> Vec<Complex64> {
-    let samples_per_symbol = (config.sample_rate / config.symbol_rate).max(1);
-    let num_symbols = audio.len() / samples_per_symbol;
-    let mut symbols = Vec::with_capacity(num_symbols);
-    
-    let dt = 1.0 / config.sample_rate as f64;
-    let mut agc = AGC::new(0.5, 100.0);
-    
-    // Use tighter loop with known offset
-    let loop_bw = config.symbol_rate as f64 * 0.005; // Even narrower
-    let damping = 0.707;
-    let mut costas = CostasLoop::new(loop_bw, damping, config.sample_rate as f64);
-    
-    for sym_idx in 0..num_symbols {
-        let start = sym_idx * samples_per_symbol;
-        let end = (start + samples_per_symbol).min(audio.len());
-        
-        let mut i_acc = 0.0f64;
-        let mut q_acc = 0.0f64;
-        
-        for (idx, &sample) in audio[start..end].iter().enumerate() {
-            let normalized_sample = agc.process(sample);
-            let t = (start + idx) as f64 * dt;
-            let angle = TAU * (config.carrier_freq + freq_offset) * t;
-            
-            i_acc += normalized_sample as f64 * angle.cos();
-            q_acc += normalized_sample as f64 * angle.sin();
-        }
-        
-        let count = (end - start) as f64;
-        let raw_symbol = Complex64::new(i_acc * 2.0 / count, q_acc * 2.0 / count);
-        let corrected_symbol = costas.process(raw_symbol);
-        
-        symbols.push(corrected_symbol);
-    }
-    
-    symbols
 }
 
 #[cfg(test)]
