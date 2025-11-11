@@ -5,13 +5,21 @@
 //! real-time audio applications and can also be used for offline batch processing.
 
 use crate::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
-use crate::ldpc::{LDPCSuite};
+use crate::ldpc::LDPCSuite;
 use crate::thz_carriers::{ThzCarrierProcessor, ThzCarrierConfig};
-use num_complex::{Complex, Complex64};
-use rustfft::{FftPlanner, num_complex::Complex32};
-use std::f64::consts::TAU;
+use crate::signal_processing::{
+    modulation::{ModulationConfig, symbols_to_carrier_signal},
+    demodulation::{DemodulationConfig, audio_to_symbols},
+    spectrum::compute_baseband_spectrum,
+};
+use crate::channel::apply_audio_noise;
+use crate::diagnostics::{
+    metrics::{compute_evm, estimate_snr},
+    constellation::normalize_constellation,
+};
+use num_complex::Complex;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 
 // Cross-platform timing abstraction
 #[cfg(not(target_arch = "wasm32"))]
@@ -28,6 +36,11 @@ extern "C" {
 }
 
 /// Cross-platform high-precision timing
+/// 
+/// Reserved for future rate-limiting implementation in real-time streaming mode.
+/// Currently unused but kept for when chunk-by-chunk processing with timing
+/// constraints is needed.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 struct PrecisionTimer {
     #[cfg(not(target_arch = "wasm32"))]
@@ -36,6 +49,7 @@ struct PrecisionTimer {
     start_ms: f64,
 }
 
+#[allow(dead_code)]
 impl PrecisionTimer {
     fn now() -> Self {
         #[cfg(not(target_arch = "wasm32"))]
@@ -335,16 +349,16 @@ impl RealtimePipeline {
             return RealtimeOutput::default();
         }
         
-        // Apply channel effects (attenuation + AWGN)
-        let channel = crate::utils::ChannelParams::from_db(
-            self.config.snr_db,
-            self.config.link_loss_db,
-            self.signal_power
-        );
-        
         // ===== END-TO-END AUDIO PATH =====
         // Generate audio from TX symbols with FSK+QPSK modulation
-        let base_audio = Self::symbols_to_carrier_signal(&tx_symbols, sample_rate, symbol_rate, carrier_freq, self.protocol.enable_qpsk, self.protocol.enable_fsk);
+        let modulation_config = ModulationConfig {
+            sample_rate,
+            symbol_rate,
+            carrier_freq,
+            enable_qpsk: self.protocol.enable_qpsk,
+            enable_fsk: self.protocol.enable_fsk,
+        };
+        let base_audio = symbols_to_carrier_signal(&tx_symbols, &modulation_config);
         
         // Apply THz carrier modulation and mixing to simulate AID effect
         // Only if mixing coefficient > 0 (allows bypass for debugging)
@@ -357,15 +371,15 @@ impl RealtimePipeline {
         };
         
         // Add noise to audio (simulating channel impairments)
-        let normal = rand_distr::StandardNormal;
-        let mut noisy_audio = mixed_audio.clone();
-        for sample in noisy_audio.iter_mut() {
-            let noise: f64 = self.rng.sample::<f64, _>(normal) * (self.noise_std * 0.1); // Scale noise for audio
-            *sample += noise as f32;
-        }
+        let noisy_audio = apply_audio_noise(&mixed_audio, self.noise_std, &mut self.rng);
         
         // Demodulate audio back to IQ symbols for decoding
-        let rx_symbols = Self::audio_to_symbols(&noisy_audio, sample_rate, symbol_rate, carrier_freq);
+        let demod_config = DemodulationConfig {
+            sample_rate,
+            symbol_rate,
+            carrier_freq,
+        };
+        let rx_symbols = audio_to_symbols(&noisy_audio, &demod_config);
         
         // Process through decoder
         let (decoded_bits, _frame_complete, _dec_frame, _symbols_in_dec_frame, diagnostics) = 
@@ -412,7 +426,7 @@ impl RealtimePipeline {
         let tx_spectrum = if self.tx_symbols_buffer.len() >= 32 {
             let symbols_to_use = self.tx_symbols_buffer.len().min(SPECTRUM_SYMBOLS);
             let start_idx = self.tx_symbols_buffer.len() - symbols_to_use;
-            Self::compute_baseband_spectrum(&self.tx_symbols_buffer[start_idx..])
+            compute_baseband_spectrum(&self.tx_symbols_buffer[start_idx..])
         } else {
             Vec::new()
         };
@@ -420,26 +434,13 @@ impl RealtimePipeline {
         let rx_spectrum = if self.rx_symbols_buffer.len() >= 32 {
             let symbols_to_use = self.rx_symbols_buffer.len().min(SPECTRUM_SYMBOLS);
             let start_idx = self.rx_symbols_buffer.len() - symbols_to_use;
-            Self::compute_baseband_spectrum(&self.rx_symbols_buffer[start_idx..])
+            compute_baseband_spectrum(&self.rx_symbols_buffer[start_idx..])
         } else {
             Vec::new()
         };
         
         // Build output
         let mut output = RealtimeOutput::default();
-        
-        // Normalize constellation points
-        let normalize_constellation = |symbols: &[Complex<f64>]| -> (Vec<f32>, Vec<f32>) {
-            if symbols.is_empty() {
-                return (Vec::new(), Vec::new());
-            }
-            
-            let scale = 1.0 / std::f64::consts::SQRT_2;
-            let i_vals: Vec<f32> = symbols.iter().map(|c| (c.re * scale) as f32).collect();
-            let q_vals: Vec<f32> = symbols.iter().map(|c| (c.im * scale) as f32).collect();
-            
-            (i_vals, q_vals)
-        };
         
         // For constellation display: use only recent 256 symbols for clarity
         let tx_constellation_symbols = if self.tx_symbols_buffer.len() > 256 {
@@ -598,337 +599,6 @@ impl RealtimePipeline {
         output
     }
     
-    /// Compute baseband spectrum directly from IQ symbols
-    /// Much more efficient than generating audio then computing FFT
-    fn compute_baseband_spectrum(symbols: &[Complex<f64>]) -> Vec<f32> {
-        if symbols.len() < 32 {
-            return Vec::new(); // Need at least 32 symbols for meaningful spectrum
-        }
-        
-        // Zero-pad to get better frequency resolution
-        // Even with 128 symbols, zero-pad to 512 for smoother spectrum
-        let fft_size = 512;
-        let mut planner = FftPlanner::new();
-        let fft = planner.plan_fft_forward(fft_size);
-        
-        // Create buffer with zero-padding
-        let mut buffer: Vec<Complex32> = Vec::with_capacity(fft_size);
-        
-        // Add actual symbols
-        for symbol in symbols.iter().take(fft_size) {
-            buffer.push(Complex32::new(symbol.re as f32, symbol.im as f32));
-        }
-        
-        // Zero pad to FFT size
-        while buffer.len() < fft_size {
-            buffer.push(Complex32::new(0.0, 0.0));
-        }
-        
-        // Apply Hamming window (better for continuous signals)
-        for i in 0..symbols.len().min(fft_size) {
-            let window_value = 0.54 - 0.46 * (2.0 * std::f32::consts::PI * i as f32 
-                / (symbols.len() as f32 - 1.0)).cos();
-            buffer[i] = buffer[i] * window_value;
-        }
-        
-        fft.process(&mut buffer);
-        
-        // Since we're zero-padding, adjust scaling
-        let actual_samples = symbols.len().min(fft_size) as f32;
-        let window_power: f32 = 0.397; // Hamming window power
-        let scale = 1.0 / (actual_samples * window_power.sqrt());
-        
-        // Convert to power spectrum in dB
-        let spectrum: Vec<f32> = buffer.iter()
-            .map(|c| {
-                let power = c.norm_sqr() * scale * scale;
-                if power > 1e-10 {
-                    10.0 * power.log10()
-                } else {
-                    -100.0
-                }
-            })
-            .collect();
-        
-        // Return the DC-centered portion
-        // FFT output: [0...fs/2, -fs/2...0]
-        // We want [-fs/2...fs/2] centered view
-        let half = spectrum.len() / 2;
-        let mut centered = Vec::with_capacity(spectrum.len());
-        centered.extend_from_slice(&spectrum[half..]);
-        centered.extend_from_slice(&spectrum[..half]);
-        
-        // Return middle portion showing ±16 Hz (covers our 32 Hz QPSK signal)
-        // With 512-point FFT at 16 sym/s: each bin = 16/512 = 0.03125 Hz
-        // For ±16 Hz span, we need 16/0.03125 = 512 bins each side = full spectrum
-        // So just return a useful portion around DC
-        let bins_for_64hz = (64.0 * fft_size as f32 / 16.0) as usize; // ±32 Hz span
-        let center = centered.len() / 2;
-        let start = center.saturating_sub(bins_for_64hz / 2);
-        let end = (center + bins_for_64hz / 2).min(centered.len());
-        
-        centered[start..end].to_vec()
-    }
-    
-    fn compute_evm(&self, tx_symbols: &[Complex<f64>], rx_i: &[f64], rx_q: &[f64]) -> f32 {
-        if rx_i.is_empty() || tx_symbols.is_empty() {
-            return 0.0;
-        }
-        
-        let count = rx_i.len().min(tx_symbols.len());
-        let mut error_sum = 0.0;
-        let mut ref_power = 0.0;
-        
-        for i in 0..count {
-            let tx = &tx_symbols[i];
-            let error = Complex::new(rx_i[i] - tx.re, rx_q[i] - tx.im);
-            error_sum += error.norm_sqr();
-            ref_power += tx.norm_sqr();
-        }
-        
-        if ref_power > 0.0 {
-            100.0 * (error_sum / ref_power).sqrt() as f32
-        } else {
-            0.0
-        }
-    }
-    
-    fn estimate_snr(&self, rx_i: &[f64], rx_q: &[f64]) -> f32 {
-        if rx_i.is_empty() {
-            return 0.0;
-        }
-        
-        let mut signal_power = 0.0;
-        let mut noise_power = 0.0;
-        
-        for i in 0..rx_i.len() {
-            let magnitude = (rx_i[i] * rx_i[i] + rx_q[i] * rx_q[i]).sqrt();
-            signal_power += magnitude;
-            
-            // Estimate noise from deviation from ideal radius (1.0 for QPSK)
-            let deviation = (magnitude - 1.0).abs();
-            noise_power += deviation * deviation;
-        }
-        
-        signal_power /= rx_i.len() as f64;
-        noise_power /= rx_i.len() as f64;
-        
-        if noise_power > 0.0 {
-            10.0 * (signal_power.powi(2) / noise_power).log10() as f32
-        } else {
-            40.0 // Very high SNR
-        }
-    }
-    
-    fn compute_ber(&self, tx_bits: &[u8], rx_bits: &[u8]) -> f32 {
-        if tx_bits.is_empty() || rx_bits.is_empty() {
-            return 0.0;
-        }
-        
-        let count = tx_bits.len().min(rx_bits.len());
-        let mut errors = 0;
-        
-        for i in 0..count {
-            if tx_bits[i] != rx_bits[i] {
-                errors += 1;
-            }
-        }
-        
-        errors as f32 / count as f32
-    }
-    
-    /// Convert I/Q samples to audio
-    fn iq_to_audio(&self, iq: &[f64]) -> Vec<f32> {
-        if iq.len() < 2 {
-            return Vec::new();
-        }
-        
-        let dt = 1.0 / SimulationConfig::SAMPLE_RATE as f64;
-        let carrier_freq = self.protocol.carrier_freq_hz;
-        let mut t = 0.0_f64;
-        let mut audio = Vec::with_capacity(iq.len() / 2);
-        
-        for chunk in iq.chunks_exact(2) {
-            let i = chunk[0];
-            let q = chunk[1];
-            let angle = TAU * carrier_freq * t;
-            let sample = i * angle.cos() - q * angle.sin();
-            audio.push(sample as f32);
-            t += dt;
-        }
-        
-        self.normalize_audio(&mut audio);
-        audio
-    }
-    
-    fn normalize_audio(&self, samples: &mut [f32]) {
-        let mut max_amp = 0.0_f32;
-        for &value in samples.iter() {
-            max_amp = max_amp.max(value.abs());
-        }
-        
-        if max_amp > 1.0 {
-            let scale = 1.0 / max_amp;
-            for value in samples.iter_mut() {
-                *value *= scale;
-            }
-        }
-    }
-    
-    /// Convert symbols to modulated carrier signal (static version)
-    /// This generates the actual 12 kHz QPSK+FSK modulated carrier for AUDIO PLAYBACK ONLY
-    /// 
-    /// Implements the Raman Whisper Modulation Protocol v4.2:
-    /// - FSK layer: ±1 Hz frequency dithering at 1 bit/second (11999/12001 Hz)
-    /// - QPSK layer: Phase modulation at 16 symbols/second with ~20 Hz bandwidth
-    /// - Combined signal: sin(fsk_phase + qpsk_phase)
-    /// 
-    /// Debug parameters allow disabling QPSK/FSK to isolate the pure carrier
-    fn symbols_to_carrier_signal(symbols: &[Complex<f64>], sample_rate: usize, symbol_rate: usize, carrier_freq: f64, enable_qpsk: bool, enable_fsk: bool) -> Vec<f32> {
-        if sample_rate == 0 || symbols.is_empty() {
-            return Vec::new();
-        }
-        
-        let samples_per_symbol = (sample_rate / symbol_rate).max(1);
-        let samples_per_fsk_bit = sample_rate; // FSK at 1 bit/second
-        let num_samples = symbols.len() * samples_per_symbol;
-        let mut audio = Vec::with_capacity(num_samples);
-        
-        // Pre-compute QPSK phases for all symbols (Gray-coded)
-        let mut qpsk_phases = Vec::with_capacity(symbols.len());
-        for symbol in symbols {
-            // Determine phase from constellation point
-            let phase = symbol.arg(); // atan2(im, re)
-            qpsk_phases.push(phase);
-        }
-        
-        // Apply low-pass filter to QPSK phases to limit bandwidth to ~20 Hz
-        // Simple moving average filter approximation
-        let filter_window = (sample_rate as f64 / 40.0) as usize; // ~40 Hz cutoff
-        let mut filtered_phases = vec![0.0; qpsk_phases.len()];
-        for i in 0..qpsk_phases.len() {
-            let start = i.saturating_sub(filter_window / 2);
-            let end = (i + filter_window / 2 + 1).min(qpsk_phases.len());
-            let sum: f64 = qpsk_phases[start..end].iter().sum();
-            filtered_phases[i] = sum / (end - start) as f64;
-        }
-        
-        // Generate FSK bit pattern (simple alternating pattern for demo)
-        // In real implementation, this would carry actual nested data
-        let num_fsk_bits = (num_samples + samples_per_fsk_bit - 1) / samples_per_fsk_bit;
-        let mut fsk_bits = Vec::with_capacity(num_fsk_bits);
-        for i in 0..num_fsk_bits {
-            // Alternate pattern: 10101010...
-            fsk_bits.push((i % 2) as u8);
-        }
-        
-        // Phase accumulator for FSK carrier
-        let mut carrier_phase = 0.0f64;
-        
-        // Generate audio samples with combined FSK+QPSK modulation
-        for sample_idx in 0..num_samples {
-            // Determine current FSK frequency (11999 or 12001 Hz)
-            // If FSK is disabled, use constant carrier frequency
-            let fsk_bit_idx = sample_idx / samples_per_fsk_bit;
-            let fsk_freq = if enable_fsk && fsk_bit_idx < fsk_bits.len() && fsk_bits[fsk_bit_idx] == 1 {
-                12001.0
-            } else if enable_fsk {
-                11999.0
-            } else {
-                carrier_freq  // Pure 12 kHz if FSK disabled
-            };
-            
-            // Accumulate carrier phase with FSK frequency
-            carrier_phase += TAU * fsk_freq / sample_rate as f64;
-            
-            // Get interpolated QPSK phase for this sample
-            let symbol_idx = sample_idx / samples_per_symbol;
-            let qpsk_phase = if enable_qpsk && symbol_idx < filtered_phases.len() {
-                filtered_phases[symbol_idx]
-            } else {
-                0.0  // No QPSK modulation when disabled
-            };
-            
-            // Combine FSK carrier phase with QPSK phase offset
-            let total_phase = carrier_phase + qpsk_phase;
-            
-            // Generate sample
-            audio.push(total_phase.sin() as f32);
-            
-            // Wrap phase to prevent overflow
-            if carrier_phase > TAU {
-                carrier_phase -= TAU;
-            }
-        }
-        
-        Self::normalize_audio_static(&mut audio);
-        audio
-    }
-    
-    /// Demodulate audio back to IQ symbols for decoding
-    /// This extracts QPSK symbols from the FSK+QPSK modulated audio
-    fn audio_to_symbols(audio: &[f32], sample_rate: usize, symbol_rate: usize, carrier_freq: f64) -> Vec<Complex64> {
-        if audio.is_empty() || sample_rate == 0 {
-            return Vec::new();
-        }
-        
-        let samples_per_symbol = (sample_rate / symbol_rate).max(1);
-        let num_symbols = audio.len() / samples_per_symbol;
-        let mut symbols = Vec::with_capacity(num_symbols);
-        
-        let dt = 1.0 / sample_rate as f64;
-        
-        // Demodulate using I/Q mixing
-        for sym_idx in 0..num_symbols {
-            let start = sym_idx * samples_per_symbol;
-            let end = (start + samples_per_symbol).min(audio.len());
-            
-            let mut i_acc = 0.0f64;
-            let mut q_acc = 0.0f64;
-            
-            for (idx, &sample) in audio[start..end].iter().enumerate() {
-                let t = (start + idx) as f64 * dt;
-                let angle = TAU * carrier_freq * t;
-                
-                // I/Q demodulation
-                i_acc += sample as f64 * angle.cos();
-                q_acc += -(sample as f64) * angle.sin(); // Note the negative for Q
-            }
-            
-            // Average over the symbol period
-            let count = (end - start) as f64;
-            i_acc /= count;
-            q_acc /= count;
-            
-            // Scale by 2 to compensate for mixing (standard I/Q demod scaling)
-            symbols.push(Complex64::new(i_acc * 2.0, q_acc * 2.0));
-        }
-        
-        symbols
-    }
-
-    
-    /// Static version of normalize_audio for use in static methods
-    fn normalize_audio_static(samples: &mut [f32]) {
-        let mut max_amp = 0.0_f32;
-        for &value in samples.iter() {
-            max_amp = max_amp.max(value.abs());
-        }
-        
-        if max_amp > 1.0 {
-            let scale = 1.0 / max_amp;
-            for value in samples.iter_mut() {
-                *value *= scale;
-            }
-        }
-    }
-    
-    /// Convert symbols to modulated carrier signal (instance method)
-    /// This generates audio for playback ONLY - spectrum is computed directly from IQ symbols
-    fn symbols_to_audio_incremental(&self, symbols: &[Complex<f64>]) -> Vec<f32> {
-        Self::symbols_to_carrier_signal(symbols, SimulationConfig::SAMPLE_RATE, self.protocol.qpsk_symbol_rate, self.protocol.carrier_freq_hz, self.protocol.enable_qpsk, self.protocol.enable_fsk)
-    }
-    
     /// Get current pipeline configuration
     pub fn get_config(&self) -> PipelineConfig {
         PipelineConfig {
@@ -995,53 +665,4 @@ pub struct PipelineConfig {
     pub protocol: ProtocolConfig,
 }
 
-/// Standalone EVM calculation for symbol pairs
-fn compute_evm(tx_symbols: &[Complex<f64>], rx_symbols: &[Complex<f64>]) -> f32 {
-    if rx_symbols.is_empty() || tx_symbols.is_empty() {
-        return 0.0;
-    }
-    
-    let count = rx_symbols.len().min(tx_symbols.len());
-    let mut error_sum = 0.0;
-    let mut ref_power = 0.0;
-    
-    for i in 0..count {
-        let error = rx_symbols[i] - tx_symbols[i];
-        error_sum += error.norm_sqr();
-        ref_power += tx_symbols[i].norm_sqr();
-    }
-    
-    if ref_power > 0.0 {
-        100.0 * (error_sum / ref_power).sqrt() as f32
-    } else {
-        0.0
-    }
-}
 
-/// Standalone SNR estimation from received symbols
-fn estimate_snr(rx_symbols: &[Complex<f64>]) -> f32 {
-    if rx_symbols.is_empty() {
-        return 0.0;
-    }
-    
-    let mut signal_power = 0.0;
-    let mut noise_power = 0.0;
-    
-    for symbol in rx_symbols {
-        let magnitude = symbol.norm();
-        signal_power += magnitude;
-        
-        // Estimate noise from deviation from ideal radius (1.0 for QPSK)
-        let deviation = (magnitude - 1.0).abs();
-        noise_power += deviation * deviation;
-    }
-    
-    signal_power /= rx_symbols.len() as f64;
-    noise_power /= rx_symbols.len() as f64;
-    
-    if noise_power > 0.0 {
-        10.0 * (signal_power.powi(2) / noise_power).log10() as f32
-    } else {
-        40.0 // Very high SNR
-    }
-}

@@ -1,4 +1,18 @@
+//! Diagnostic calculations for signal quality assessment
+//!
+//! This module provides functions to compute communication quality metrics
+//! including EVM (Error Vector Magnitude), SNR estimation, and BER calculation.
+
 use serde::{Deserialize, Serialize};
+
+pub mod metrics;
+pub mod constellation;
+
+// Re-export commonly used items
+pub use metrics::{compute_evm, estimate_snr, compute_ber};
+pub use constellation::normalize_constellation;
+
+// Existing diagnostic data structures
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct SymbolDecision {
