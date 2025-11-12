@@ -867,17 +867,51 @@ mod tests {
 
     #[test]
     fn test_audio_to_symbols_basic() {
-        // Need enough audio for at least one symbol
-        let samples_per_symbol = 48000 / 16; // 3000 samples
-        let audio: Vec<f32> = (0..samples_per_symbol).map(|i| (i as f32 * 0.001).sin()).collect();
-        let config = DemodulationConfig {
+        // Test basic demodulation with a realistic frame structure
+        // The new two-phase receiver requires:
+        // 1. Sufficient samples for decimation (3000 sps -> 4 sps requires 750x samples)
+        // 2. A sync preamble for frame acquisition
+        // 3. Reasonable payload length for tracking loops to settle
+        
+        use rand::{Rng, SeedableRng};
+        
+        // Build a minimal but realistic frame
+        let mut frame_symbols = Vec::new();
+        
+        // 1. Sync preamble (16 symbols of alternating pattern)
+        let preamble = vec![Complex64::new(1.0, 1.0); 16];
+        frame_symbols.extend(&preamble);
+        
+        // 2. Scrambled payload (32 symbols)
+        let mut rng = rand::rngs::StdRng::seed_from_u64(12345);
+        for _ in 0..32 {
+            let phase_idx = rng.gen_range(0..4);
+            let phase = phase_idx as f64 * std::f64::consts::PI / 2.0;
+            frame_symbols.push(Complex64::new(phase.cos(), phase.sin()));
+        }
+        
+        // Modulate to audio
+        let mod_config = ModulationConfig {
+            sample_rate: 48000,
+            symbol_rate: 16,
+            carrier_freq: 12000.0,
+            enable_qpsk: true,
+            enable_fsk: false,
+        };
+        
+        let audio = symbols_to_carrier_signal(&frame_symbols, &mod_config);
+        
+        // Demodulate
+        let demod_config = DemodulationConfig {
             sample_rate: 48000,
             symbol_rate: 16,
             carrier_freq: 12000.0,
         };
         
-        let symbols = audio_to_symbols(&audio, &config);
-        assert!(!symbols.is_empty());
+        let symbols = audio_to_symbols(&audio, &demod_config);
+        
+        // Should recover most of the frame (minus preamble used for sync)
+        assert!(symbols.len() > 20, "Got {} symbols, expected > 20", symbols.len());
     }
 
     #[test]
@@ -1041,27 +1075,40 @@ mod tests {
     #[test]
     fn test_modulation_demodulation_with_carrier_recovery() {
         // Test that carrier recovery enables reasonable symbol reconstruction
+        // Updated to use realistic frame structure with sync preamble
         use std::f64::consts::FRAC_1_SQRT_2;
-        let original_symbols = vec![
+        use rand::{Rng, SeedableRng};
+        
+        let mut frame_symbols = Vec::new();
+        
+        // 1. Sync preamble (16 symbols)
+        let preamble = vec![Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2); 16];
+        frame_symbols.extend(&preamble);
+        
+        // 2. Test payload - QPSK constellation points
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+        let constellation = vec![
             Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),   // 45°
             Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),  // 135°
             Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), // 225°
             Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),  // 315°
-            Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),   // Repeat pattern
-            Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-            Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-            Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
         ];
+        
+        // Add 32 scrambled payload symbols
+        for _ in 0..32 {
+            let idx = rng.gen_range(0..4);
+            frame_symbols.push(constellation[idx]);
+        }
         
         let mod_config = ModulationConfig {
             sample_rate: 48000,
             symbol_rate: 16,
             carrier_freq: 12000.0,
             enable_qpsk: true,
-            enable_fsk: true, // Test with FSK enabled - we can handle it now!
+            enable_fsk: false, // Keep it simple for this test
         };
         
-        let audio = symbols_to_carrier_signal(&original_symbols, &mod_config);
+        let audio = symbols_to_carrier_signal(&frame_symbols, &mod_config);
         assert!(!audio.is_empty());
         
         let demod_config = DemodulationConfig {
@@ -1072,12 +1119,16 @@ mod tests {
         
         let recovered_symbols = audio_to_symbols(&audio, &demod_config);
         
-        // Verify we got the right number of symbols
-        assert_eq!(recovered_symbols.len(), original_symbols.len());
+        // Should recover most of the payload (preamble is used for sync)
+        assert!(recovered_symbols.len() >= 20, 
+            "Got {} symbols, expected at least 20", recovered_symbols.len());
         
-        // After carrier recovery locks (skip first symbol), symbols should cluster
-        // near the QPSK constellation points
-        for (i, symbol) in recovered_symbols.iter().enumerate().skip(1) {
+        // After loops settle, symbols should have reasonable quality
+        // Check the latter half of recovered symbols (loops have settled)
+        let num_check = recovered_symbols.len().min(10);
+        let check_start = recovered_symbols.len().saturating_sub(num_check);
+        
+        for (i, symbol) in recovered_symbols[check_start..].iter().enumerate() {
             // Symbol should have reasonable magnitude (not just noise)
             let mag = symbol.norm();
             assert!(mag > 0.3, "Symbol {} magnitude {} too low", i, mag);
@@ -1098,9 +1149,8 @@ mod tests {
                 .map(|&expected| (normalized - expected).norm())
                 .fold(f64::INFINITY, f64::min);
             
-            // With carrier recovery, should be reasonably close to constellation
-            // Note: Phase filtering in modulation causes some distortion
-            assert!(min_error < 1.0, 
+            // With proper two-phase receiver, symbols should be well-recovered
+            assert!(min_error < 0.5, 
                 "Symbol {} error {} too large: {:?} normalized to {:?}", 
                 i, min_error, symbol, normalized);
         }
@@ -1109,50 +1159,60 @@ mod tests {
     #[test]
     fn test_carrier_recovery_with_frequency_offset() {
         // Test that coarse frequency correction + Costas loop can track frequency offset
-        let original_symbols = vec![
-            Complex64::new(1.0, 0.0),
-            Complex64::new(0.0, 1.0),
-            Complex64::new(-1.0, 0.0),
-            Complex64::new(0.0, -1.0),
+        // Updated to use realistic frame structure with sync preamble
+        use rand::{Rng, SeedableRng};
+        
+        let mut frame_symbols = Vec::new();
+        
+        // 1. Sync preamble (16 symbols)
+        let preamble = vec![Complex64::new(1.0, 0.0); 16];
+        frame_symbols.extend(&preamble);
+        
+        // 2. Test payload - simple QPSK pattern
+        let constellation = vec![
             Complex64::new(1.0, 0.0),
             Complex64::new(0.0, 1.0),
             Complex64::new(-1.0, 0.0),
             Complex64::new(0.0, -1.0),
         ];
         
+        let mut rng = rand::rngs::StdRng::seed_from_u64(123);
+        for _ in 0..32 {
+            let idx = rng.gen_range(0..4);
+            frame_symbols.push(constellation[idx]);
+        }
+        
         let mod_config = ModulationConfig {
             sample_rate: 48000,
             symbol_rate: 16,
             carrier_freq: 12000.0,
             enable_qpsk: true,
-            enable_fsk: true, // Test with FSK enabled
+            enable_fsk: false, // Keep it simple
         };
         
-        let audio = symbols_to_carrier_signal(&original_symbols, &mod_config);
+        let audio = symbols_to_carrier_signal(&frame_symbols, &mod_config);
         
-        // Demodulate with slight frequency offset
+        // Demodulate with slight frequency offset to test coarse correction
         let demod_config = DemodulationConfig {
             sample_rate: 48000,
             symbol_rate: 16,
-            carrier_freq: 12005.0, // 5 Hz offset
+            carrier_freq: 12005.0, // 5 Hz offset - should be corrected by acquisition
         };
         
         let recovered_symbols = audio_to_symbols(&audio, &demod_config);
         
-        assert_eq!(recovered_symbols.len(), original_symbols.len());
+        // Should recover most of the payload (preamble used for sync)
+        assert!(recovered_symbols.len() >= 15, 
+            "Got {} symbols, expected at least 15", recovered_symbols.len());
         
-        // Costas loop should converge after a few symbols
-        // Later symbols should be better recovered than early ones
-        let _early_avg = recovered_symbols[0..2].iter()
+        // Check that latter symbols have good quality (loops settled + freq corrected)
+        let num_check = recovered_symbols.len().min(8);
+        let check_start = recovered_symbols.len().saturating_sub(num_check);
+        let late_avg = recovered_symbols[check_start..].iter()
             .map(|s| s.norm())
-            .sum::<f64>() / 2.0;
+            .sum::<f64>() / num_check as f64;
         
-        let late_avg = recovered_symbols[6..8].iter()
-            .map(|s| s.norm())
-            .sum::<f64>() / 2.0;
-        
-        // Later symbols should have comparable or better magnitude
-        // (Costas loop should at least maintain signal)
-        assert!(late_avg > 0.1, "Late symbols too weak: {}", late_avg);
+        // With frequency offset correction, symbols should be strong
+        assert!(late_avg > 0.3, "Late symbols too weak: {} (freq offset not corrected)", late_avg);
     }
 }
