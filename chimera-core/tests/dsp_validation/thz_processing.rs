@@ -17,9 +17,9 @@ fn test_thz_modulation_depth_control() {
     
     let mut processor = ThzCarrierProcessor::new(config, sample_rate);
     
-    // Generate a test carrier signal
+    // Generate a test carrier signal with QPSK enabled to produce non-zero amplitude
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllZeros, 100);
-    let mod_config = fixtures::get_test_modulation_config(false, false);
+    let mod_config = fixtures::get_test_modulation_config(true, false);
     let carrier = symbols_to_carrier_signal(&symbols, &mod_config);
     
     // Test idle mode (5% depth - default)
@@ -93,9 +93,9 @@ fn test_thz_bypass_mode() {
     active_config.bypass_simulation = false;
     let mut active_processor = ThzCarrierProcessor::new(active_config, sample_rate);
     
-    // Generate test signal
+    // Generate test signal with QPSK enabled
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllZeros, 100);
-    let mod_config = fixtures::get_test_modulation_config(false, false);
+    let mod_config = fixtures::get_test_modulation_config(true, false);
     let carrier = symbols_to_carrier_signal(&symbols, &mod_config);
     
     // Process through both
@@ -168,7 +168,7 @@ fn test_thz_mixing_coefficient_effect() {
     let coefficients = [0.0, 0.3, 0.7, 1.0];
     
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllZeros, 100);
-    let mod_config = fixtures::get_test_modulation_config(false, false);
+    let mod_config = fixtures::get_test_modulation_config(true, false);
     let carrier = symbols_to_carrier_signal(&symbols, &mod_config);
     
     println!("THz Mixing Coefficient Effect Test:");

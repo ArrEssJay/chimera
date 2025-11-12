@@ -13,7 +13,7 @@ use rand::{SeedableRng, rngs::StdRng};
 fn test_awgn_power_accuracy() {
     // Generate clean signal with more samples for better statistical accuracy
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllZeros, 200);
-    let config = fixtures::get_test_modulation_config(false, false);
+    let config = fixtures::get_test_modulation_config(true, false); // Enable QPSK for carrier
     let signal = symbols_to_carrier_signal(&symbols, &config);
     
     // Measure actual signal power in the audio domain
@@ -73,7 +73,7 @@ fn test_awgn_gaussian_distribution() {
 fn test_attenuation_accuracy() {
     // Generate test signal
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllZeros, 100);
-    let config = fixtures::get_test_modulation_config(false, false);
+    let config = fixtures::get_test_modulation_config(true, false); // Enable QPSK for carrier
     let signal = symbols_to_carrier_signal(&symbols, &config);
     
     let original_power = signal_analysis::measure_power_db(&signal);
