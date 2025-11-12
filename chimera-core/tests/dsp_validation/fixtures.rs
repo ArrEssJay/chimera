@@ -44,19 +44,25 @@ pub fn generate_test_symbols(pattern: SymbolPattern, count: usize) -> Vec<Comple
             use rand::{Rng, SeedableRng};
             let mut rng = rand::rngs::StdRng::seed_from_u64(12345);
             
+            // QPSK constellation at ±45°, ±135° 
+            let qpsk_points = [
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),   // 45°
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),  // 135°
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2), // 225°
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2),  // 315°
+            ];
+            
             (0..count)
-                .map(|_| {
-                    let phase = rng.gen_range(0..4) as f64 * std::f64::consts::PI / 2.0;
-                    Complex64::new(phase.cos(), phase.sin())
-                })
+                .map(|_| qpsk_points[rng.gen_range(0..4)])
                 .collect()
         },
         SymbolPattern::AllFourPhases => {
+            // Standard QPSK constellation at ±45°, ±135°
             let phases = [
-                Complex64::new(1.0, 0.0),   // 0°
-                Complex64::new(0.0, 1.0),   // 90°
-                Complex64::new(-1.0, 0.0),  // 180°
-                Complex64::new(0.0, -1.0),  // 270°
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),   // 45° [0,1]
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, std::f64::consts::FRAC_1_SQRT_2),  // 135° [0,0]
+                Complex64::new(-std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2), // 225° [1,1]
+                Complex64::new(std::f64::consts::FRAC_1_SQRT_2, -std::f64::consts::FRAC_1_SQRT_2),  // 315° [1,0]
             ];
             
             (0..count)

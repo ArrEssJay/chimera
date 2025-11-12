@@ -11,8 +11,10 @@
 pub mod modulation;
 pub mod demodulation;
 pub mod spectrum;
+pub mod filters;
 
 // Re-export commonly used items
 pub use modulation::{ModulationConfig, symbols_to_carrier_signal, normalize_audio};
 pub use demodulation::{DemodulationConfig, audio_to_symbols};
 pub use spectrum::{compute_baseband_spectrum};
+pub use filters::apply_rrc_filter;

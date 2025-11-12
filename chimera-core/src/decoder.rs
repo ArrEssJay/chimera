@@ -8,12 +8,84 @@ use crate::diagnostics::{DemodulationDiagnostics, SymbolDecision};
 use crate::ldpc::{decode_ldpc, LDPCMatrices};
 use crate::utils::{hex_to_bitstream, LogCollector};
 
+/// Convert Gray-coded QPSK bits to phase index (0-3)
+/// Standard Gray-coded QPSK: 11→45°, 01→135°, 00→225°, 10→315°
+fn gray_to_phase(b0: u8, b1: u8) -> u8 {
+    match (b0, b1) {
+        (0, 0) => 2, // 225°
+        (0, 1) => 1, // 135°
+        (1, 0) => 3, // 315°
+        (1, 1) => 0, // 45°
+        _ => 0,
+    }
+}
+
+/// Convert phase index (0-3) to Gray-coded QPSK bits
+/// Inverse of gray_to_phase
+fn phase_to_gray(phase: u8) -> (u8, u8) {
+    match phase & 0x03 {
+        0 => (1, 1), // 45°
+        1 => (0, 1), // 135°
+        2 => (0, 0), // 225°
+        3 => (1, 0), // 315°
+        _ => (0, 0),
+    }
+}
+
+/// Apply differential decoding to bit pairs after QPSK demodulation
+/// 
+/// Decodes phase transitions back to original data.
+/// Reverses the differential encoding applied at the transmitter.
+/// Works with Gray-coded QPSK.
+/// 
+/// # Arguments
+/// * `bits` - Slice of differentially encoded bits (must be even length)
+/// 
+/// # Returns
+/// Vector of decoded bits (will be 2 bits shorter than input, as first symbol is reference)
+pub fn differential_decode_bits(bits: &[u8]) -> Vec<u8> {
+    if bits.len() < 4 {
+        // Need at least 2 symbols (4 bits) for differential decoding
+        return Vec::new();
+    }
+    
+    let mut decoded = Vec::with_capacity(bits.len() - 2);
+    
+    // Process pairs of bits (QPSK symbols)
+    let mut prev_phase = 0u8;
+    for i in (0..bits.len()).step_by(2) {
+        if i + 1 >= bits.len() {
+            break;
+        }
+        
+        // Convert Gray-coded bits to phase index
+        let curr_phase = gray_to_phase(bits[i], bits[i + 1]);
+        
+        // Skip first symbol (it's the reference)
+        if i > 0 {
+            // Differential decoding: data = (curr_phase - prev_phase) mod 4
+            let data_phase = (curr_phase + 4 - prev_phase) & 0x03;
+            
+            // Convert back to Gray-coded bits
+            let (dec_b0, dec_b1) = phase_to_gray(data_phase);
+            decoded.push(dec_b0);
+            decoded.push(dec_b1);
+        }
+        
+        prev_phase = curr_phase;
+    }
+    
+    decoded
+}
+
 pub fn qpsk_constellation() -> [(Complex64, [u8; 2]); 4] {
+    // Standard Gray-coded QPSK constellation matching encoder
+    // QPSK constellation at 45°, 135°, 225°, 315°
     [
-        (Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2), [0, 0]),
-        (Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2), [0, 1]),
-        (Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [1, 1]),
-        (Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [1, 0]),
+        (Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2), [1, 1]),     // 45° = [1,1]
+        (Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2), [0, 1]),    // 135° = [0,1]
+        (Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [0, 0]),   // 225° = [0,0]
+        (Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2), [1, 0]),    // 315° = [1,0]
     ]
 }
 
@@ -133,14 +205,20 @@ impl StreamingSymbolDecoder {
                 let frame_bit_end = frame_bit_start + frame_bits;
                 
                 if frame_bit_end <= self.demodulated_bits.len() {
-                    let frame_slice = &self.demodulated_bits[frame_bit_start..frame_bit_end];
+                    let frame_slice_encoded = &self.demodulated_bits[frame_bit_start..frame_bit_end];
+                    
+                    // Apply differential decoding to recover original bits
+                    // This reverses the differential encoding applied at TX
+                    let frame_slice = differential_decode_bits(frame_slice_encoded);
                     
                     // Extract and decode payload
                     let prefix_bits = (self.protocol.frame_layout.sync_symbols
                         + self.protocol.frame_layout.target_id_symbols
                         + self.protocol.frame_layout.command_type_symbols) * 2;
                     let codeword_bits = self.matrices.codeword_bits;
-                    let payload_start = prefix_bits;
+                    
+                    // Account for 2-bit loss from differential decoding
+                    let payload_start = if prefix_bits >= 2 { prefix_bits - 2 } else { 0 };
                     let payload_end = payload_start + codeword_bits;
                     
                     if frame_slice.len() >= payload_end {

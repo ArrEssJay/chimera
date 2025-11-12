@@ -5,6 +5,7 @@
 
 use num_complex::Complex;
 use std::f64::consts::TAU;
+use super::filters::apply_rrc_filter;
 
 /// Configuration for modulation
 #[derive(Clone, Debug)]
@@ -20,10 +21,10 @@ pub struct ModulationConfig {
 /// 
 /// Implements the Raman Whisper Modulation Protocol v4.2:
 /// - FSK layer: ±1 Hz frequency dithering at 1 bit/second (11999/12001 Hz)
-/// - QPSK layer: Phase modulation at symbol_rate with ~20 Hz bandwidth
-/// - Combined signal: sin(fsk_phase + qpsk_phase)
+/// - QPSK layer: Phase modulation at symbol_rate with ~20 Hz bandwidth via RRC filtering
+/// - Combined signal: I*cos(ωt) - Q*sin(ωt)
 /// 
-/// Debug parameters allow disabling QPSK/FSK to isolate the pure carrier
+/// Uses proper RRC pulse shaping at sample rate for bandwidth limiting and ISI reduction.
 pub fn symbols_to_carrier_signal(
     symbols: &[Complex<f64>],
     config: &ModulationConfig,
@@ -33,80 +34,81 @@ pub fn symbols_to_carrier_signal(
     }
     
     let samples_per_symbol = (config.sample_rate / config.symbol_rate).max(1);
-    let samples_per_fsk_bit = config.sample_rate; // FSK at 1 bit/second
     let num_samples = symbols.len() * samples_per_symbol;
+    
+    // Step 1: Upsample symbols to sample rate (zero-insertion for pulse shaping)
+    let mut i_upsampled = vec![0.0f32; num_samples];
+    let mut q_upsampled = vec![0.0f32; num_samples];
+    
+    if config.enable_qpsk {
+        for (idx, symbol) in symbols.iter().enumerate() {
+            let sample_idx = idx * samples_per_symbol;
+            i_upsampled[sample_idx] = symbol.re as f32;
+            q_upsampled[sample_idx] = symbol.im as f32;
+        }
+    }
+    
+    // Step 2: Apply RRC pulse shaping filter at sample rate
+    let i_filtered = if config.enable_qpsk {
+        let filtered = apply_rrc_filter(&i_upsampled, config.sample_rate, config.symbol_rate);
+        
+        // CRITICAL: Apply interpolation gain to compensate for upsampling.
+        // The RRC filter has unit ENERGY normalization. When we upsample by inserting
+        // zeros, we spread the symbol's energy over `sps` samples, reducing power by
+        // a factor of sps. Since power ∝ amplitude², we multiply by sqrt(sps) to
+        // restore the original power. This gain is sqrt(sps), not sps, because the
+        // filter's unit-energy property already provides the correct normalization.
+        // This ensures symbol magnitude ~1.0, matching receiver expectations.
+        let gain = (samples_per_symbol as f32).sqrt();
+        filtered.iter().map(|&x| x * gain).collect()
+    } else {
+        vec![0.0f32; num_samples]
+    };
+    
+    let q_filtered = if config.enable_qpsk {
+        let filtered = apply_rrc_filter(&q_upsampled, config.sample_rate, config.symbol_rate);
+        let gain = (samples_per_symbol as f32).sqrt();
+        filtered.iter().map(|&x| x * gain).collect()
+    } else {
+        vec![0.0f32; num_samples]
+    };
+    
+    // Step 3: Modulate onto carrier with optional FSK
     let mut audio = Vec::with_capacity(num_samples);
-    
-    // Pre-compute QPSK phases for all symbols
-    let qpsk_phases: Vec<f64> = symbols.iter()
-        .map(|symbol| symbol.arg())
-        .collect();
-    
-    // Apply low-pass filter to QPSK phases to limit bandwidth to ~20 Hz
-    let filtered_phases = lowpass_filter_phases(&qpsk_phases, config.sample_rate);
-    
-    // Generate FSK bit pattern (simple alternating pattern for demo)
+    let samples_per_fsk_bit = config.sample_rate; // 1 bit/second
     let num_fsk_bits = (num_samples + samples_per_fsk_bit - 1) / samples_per_fsk_bit;
-    let fsk_bits: Vec<u8> = (0..num_fsk_bits)
-        .map(|i| (i % 2) as u8)
-        .collect();
+    let fsk_bits: Vec<u8> = (0..num_fsk_bits).map(|i| (i % 2) as u8).collect();
     
-    // Phase accumulator for FSK carrier
-    let mut carrier_phase = 0.0f64;
-    
-    // Generate audio samples with combined FSK+QPSK modulation
     for sample_idx in 0..num_samples {
-        // Determine current FSK frequency (11999 or 12001 Hz)
+        // FSK frequency selection
         let fsk_bit_idx = sample_idx / samples_per_fsk_bit;
         let fsk_freq = if config.enable_fsk && fsk_bit_idx < fsk_bits.len() && fsk_bits[fsk_bit_idx] == 1 {
             12001.0
         } else if config.enable_fsk {
             11999.0
         } else {
-            config.carrier_freq  // Pure carrier if FSK disabled
+            config.carrier_freq
         };
         
-        // Accumulate carrier phase with FSK frequency
-        carrier_phase += TAU * fsk_freq / config.sample_rate as f64;
+        // Calculate instantaneous phase
+        let t = sample_idx as f64 / config.sample_rate as f64;
+        let carrier_phase = TAU * fsk_freq * t;
         
-        // Get interpolated QPSK phase for this sample
-        let symbol_idx = sample_idx / samples_per_symbol;
-        let qpsk_phase = if config.enable_qpsk && symbol_idx < filtered_phases.len() {
-            filtered_phases[symbol_idx]
-        } else {
-            0.0  // No QPSK modulation when disabled
-        };
+        // QPSK modulation: I*cos(ωt) - Q*sin(ωt)
+        let sample = i_filtered[sample_idx] * (carrier_phase.cos() as f32) -
+                    q_filtered[sample_idx] * (carrier_phase.sin() as f32);
         
-        // Combine FSK carrier phase with QPSK phase offset
-        let total_phase = carrier_phase + qpsk_phase;
-        
-        // Generate sample
-        audio.push(total_phase.sin() as f32);
-        
-        // Wrap phase to prevent overflow
-        if carrier_phase > TAU {
-            carrier_phase -= TAU;
-        }
+        audio.push(sample);
     }
     
-    normalize_audio(&mut audio);
+    // DO NOT peak-normalize! The power is now correctly set by the unit-energy RRC filter.
+    // Peak normalization destroys the careful power balance and creates "spiky" signals
+    // where energy is concentrated in a few samples, causing the Gardner loop to starve.
+    // Professional systems (MATLAB) rely on the filter's power-preserving properties
+    // to produce signals with predictable average power and natural PAPR.
+    // normalize_audio(&mut audio);  // REMOVED
+    
     audio
-}
-
-/// Apply low-pass filter to phase values to limit bandwidth
-fn lowpass_filter_phases(phases: &[f64], sample_rate: usize) -> Vec<f64> {
-    // Simple moving average filter approximation
-    let filter_window = (sample_rate as f64 / 40.0) as usize; // ~40 Hz cutoff
-    let mut filtered = vec![0.0; phases.len()];
-    
-    for i in 0..phases.len() {
-        let start = i.saturating_sub(filter_window / 2);
-        let end = (i + filter_window / 2 + 1).min(phases.len());
-        let sum: f64 = phases[start..end].iter().sum();
-        filtered[i] = sum / (end - start) as f64;
-    }
-    
-    filtered
 }
 
 /// Normalize audio samples to prevent clipping

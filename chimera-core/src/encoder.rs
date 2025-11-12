@@ -36,6 +36,74 @@ use crate::utils::{
     hex_to_bitstream, int_to_bitstream, LogCollector,
 };
 
+/// Convert Gray-coded QPSK bits to phase index (0-3)
+/// Standard Gray-coded QPSK: 11→45°, 01→135°, 00→225°, 10→315°
+fn gray_to_phase(b0: u8, b1: u8) -> u8 {
+    match (b0, b1) {
+        (0, 0) => 2, // 225°
+        (0, 1) => 1, // 135°
+        (1, 0) => 3, // 315°
+        (1, 1) => 0, // 45°
+        _ => 0,
+    }
+}
+
+/// Convert phase index (0-3) to Gray-coded QPSK bits
+/// Inverse of gray_to_phase
+fn phase_to_gray(phase: u8) -> (u8, u8) {
+    match phase & 0x03 {
+        0 => (1, 1), // 45°
+        1 => (0, 1), // 135°
+        2 => (0, 0), // 225°
+        3 => (1, 0), // 315°
+        _ => (0, 0),
+    }
+}
+
+/// Apply differential encoding to bit pairs before QPSK modulation
+/// 
+/// Encodes data in phase transitions rather than absolute phase.
+/// This eliminates QPSK's 4-fold phase ambiguity issue.
+/// Works with Gray-coded QPSK constellation.
+/// 
+/// # Arguments
+/// * `bits` - Slice of bits (must be even length for QPSK symbol pairs)
+/// 
+/// # Returns
+/// Vector of differentially encoded bits
+pub fn differential_encode_bits(bits: &[u8]) -> Vec<u8> {
+    if bits.is_empty() {
+        return Vec::new();
+    }
+    
+    let mut encoded = Vec::with_capacity(bits.len());
+    let mut prev_phase = 0u8; // Start with phase 0 (45°)
+    
+    // Process two bits at a time (each QPSK symbol)
+    for chunk in bits.chunks(2) {
+        if chunk.len() < 2 {
+            // Pad last incomplete symbol with 0
+            encoded.extend_from_slice(chunk);
+            break;
+        }
+        
+        // Convert Gray-coded bits to phase index (0-3)
+        let data_phase = gray_to_phase(chunk[0], chunk[1]);
+        
+        // Differential encoding: new_phase = (prev_phase + data_phase) mod 4
+        let new_phase = (prev_phase + data_phase) & 0x03;
+        
+        // Convert back to Gray-coded bits
+        let (enc_b0, enc_b1) = phase_to_gray(new_phase);
+        encoded.push(enc_b0);
+        encoded.push(enc_b1);
+        
+        prev_phase = new_phase;
+    }
+    
+    encoded
+}
+
 /// Incremental frame encoder for symbol-by-symbol streaming
 pub struct StreamingFrameEncoder {
     protocol: ProtocolConfig,
@@ -180,11 +248,12 @@ impl StreamingFrameEncoder {
                 let bit_index = self.current_symbol_in_frame * 2;
                 let bits = &self.current_frame_bitstream[bit_index..bit_index + 2];
                 
+                // Standard Gray-coded QPSK constellation
                 let symbol = match (bits[0], bits[1]) {
-                    (0, 0) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                    (0, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-                    (1, 1) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
-                    (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),
+                    (0, 0) => Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), // 225°
+                    (0, 1) => Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),  // 135°
+                    (1, 0) => Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),  // 315°
+                    (1, 1) => Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),   // 45°
                     _ => unreachable!("bits are constrained to 0/1"),
                 };
                 
@@ -240,12 +309,16 @@ impl StreamingFrameEncoder {
         let payload_section = &codeword[..message_bits];
         let ecc_section = &codeword[message_bits..];
         
-        self.current_frame_bitstream.clear();
-        self.current_frame_bitstream.extend_from_slice(&sync_bits);
-        self.current_frame_bitstream.extend_from_slice(&target_bits);
-        self.current_frame_bitstream.extend_from_slice(&command_bits);
-        self.current_frame_bitstream.extend_from_slice(payload_section);
-        self.current_frame_bitstream.extend_from_slice(ecc_section);
+        // Build frame bitstream
+        let mut frame_bits = Vec::new();
+        frame_bits.extend_from_slice(&sync_bits);
+        frame_bits.extend_from_slice(&target_bits);
+        frame_bits.extend_from_slice(&command_bits);
+        frame_bits.extend_from_slice(payload_section);
+        frame_bits.extend_from_slice(ecc_section);
+        
+        // Apply differential encoding to entire frame
+        self.current_frame_bitstream = differential_encode_bits(&frame_bits);
         
         if frame_idx < 3 {
             self.logger.log(format!(

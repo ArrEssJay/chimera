@@ -31,7 +31,13 @@ fn run_simulation_produces_valid_output() {
 
     let output = run_simulation(&sim, &protocol, &ldpc_cfg);
 
-    // Should have some output even if sync fails at low SNR
-    assert!(!output.diagnostics.encoding_logs.is_empty());
-    assert!(!output.diagnostics.decoding_logs.is_empty());
+    // Should produce TX symbols
+    assert!(!output.diagnostics.tx_symbols_i.is_empty(), "Should produce TX symbols (I component)");
+    assert!(!output.diagnostics.tx_symbols_q.is_empty(), "Should produce TX symbols (Q component)");
+    
+    // Should produce audio
+    assert!(output.diagnostics.modulation_audio.is_some(), "Should produce audio");
+    
+    // Should attempt to recover the message (even if imperfect at this SNR)
+    assert!(!output.report.recovered_message.is_empty(), "Should recover some message");
 }

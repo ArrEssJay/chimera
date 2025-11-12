@@ -6,8 +6,7 @@ mod telemetry;
 use clap::Parser;
 use color_eyre::eyre::{Context, Result};
 
-use chimera_core::config::SimulationConfig;
-use chimera_core::{generate_audio_batch, run_simulation};
+use chimera_core::run_simulation;
 use config::CliConfig;
 use frame_decoder::FrameDecoder;
 use logging::{LogEvent, StatisticsEvent, StructuredLogger};
@@ -63,63 +62,21 @@ fn main() -> Result<()> {
         message: format!("Chimera CLI starting with message: \"{}\"", config.simulation.plaintext_source),
     })?;
     
-    // If WAV output is requested, use batch audio generation
-    if let Some(wav_path) = &config.terminal.wav_output {
-        logger.log(LogEvent::Info {
-            message: format!("Generating audio to {}", wav_path.display()),
-        })?;
-        
-        let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.plaintext_source);
-        let bits_per_frame = config.protocol.frame_layout.data_payload_symbols * 2;
-        let total_frames = (payload_bits.len() + bits_per_frame - 1) / bits_per_frame;
-        
-        logger.log(LogEvent::Info {
-            message: format!(
-                "Encoding {} bytes ({} bits) into {} frames",
-                config.simulation.plaintext_source.len(),
-                payload_bits.len(),
-                total_frames
-            ),
-        })?;
-        
-        // Generate all audio at once using batch mode
-        let audio = generate_audio_batch(
-            &config.simulation.plaintext_source,
-            &config.protocol,
-            &config.ldpc,
-        );
-        
-        // Write to WAV file
-        let spec = hound::WavSpec {
-            channels: 1,
-            sample_rate: SimulationConfig::SAMPLE_RATE as u32,
-            bits_per_sample: 32,
-            sample_format: hound::SampleFormat::Float,
-        };
-        
-        let mut writer = hound::WavWriter::create(&wav_path, spec)?;
-        for &sample in &audio {
-            writer.write_sample(sample)?;
-        }
-        writer.finalize()?;
-        
-        logger.log(LogEvent::Info {
-            message: format!(
-                "Wrote {} samples ({:.2}s) to {}",
-                audio.len(),
-                audio.len() as f64 / SimulationConfig::SAMPLE_RATE as f64,
-                wav_path.display()
-            ),
-        })?;
-        
-        return Ok(());
-    }
-
-    // Otherwise, run standard batch simulation with telemetry
+    // Calculate frame count for logging
+    let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.plaintext_source);
+    let bits_per_frame = config.protocol.frame_layout.data_payload_symbols * 2;
+    let total_frames = (payload_bits.len() + bits_per_frame - 1) / bits_per_frame;
+    
     logger.log(LogEvent::Info {
-        message: "Starting simulation with telemetry logging".to_string(),
+        message: format!(
+            "Encoding {} bytes ({} bits) into {} frames",
+            config.simulation.plaintext_source.len(),
+            payload_bits.len(),
+            total_frames
+        ),
     })?;
     
+    // Always run the full simulation (which generates audio internally)
     let result = run_simulation(&config.simulation, &config.protocol, &config.ldpc);
     
     // Initialize telemetry aggregator
@@ -128,14 +85,14 @@ fn main() -> Result<()> {
     // Initialize frame decoder
     let frame_decoder = FrameDecoder::new(config.protocol.clone());
     
-    // Simulate telemetry sampling (in real streaming scenario, this would be periodic)
+    // Update telemetry with actual simulation results
     telemetry.update(
         result.report.pre_fec_ber,
         result.report.post_fec_ber,
-        12000.0, // FSK frequency placeholder
-        result.diagnostics.demodulation.symbol_decisions.len(),
-        result.diagnostics.frames.len(),
-        true, // Assume synced after successful decode
+        config.protocol.carrier_freq_hz,
+        result.diagnostics.tx_symbols_i.len(),
+        total_frames,
+        result.report.post_fec_errors == 0, // Synced if no errors
     );
     
     // Log telemetry sample
@@ -143,13 +100,23 @@ fn main() -> Result<()> {
         logger.log(LogEvent::Telemetry(telemetry_event))?;
     }
     
-    // Decode and log each frame
-    for (frame_idx, _frame_desc) in result.diagnostics.frames.iter().enumerate() {
-        // Reconstruct frame bits for hex dump
-        // In a real scenario, we'd have the actual frame bits from the decoder
-        // For now, we create a minimal frame decode event
-        let frame_event = frame_decoder.decode_frame(frame_idx, &result.diagnostics.tx_bits);
-        logger.log(LogEvent::FrameDecode(frame_event))?;
+    // Decode and log each frame if frame data is available
+    if !result.diagnostics.frames.is_empty() {
+        for (frame_idx, frame_desc) in result.diagnostics.frames.iter().enumerate() {
+            let frame_event = frame_decoder.decode_frame(frame_idx, &result.diagnostics.tx_bits);
+            logger.log(LogEvent::FrameDecode(frame_event))?;
+            
+            // Log frame metadata
+            logger.log(LogEvent::Info {
+                message: format!(
+                    "Frame {}/{}: {} - {}",
+                    frame_desc.frame_index + 1,
+                    frame_desc.total_frames,
+                    frame_desc.frame_label,
+                    frame_desc.payload_preview
+                ),
+            })?;
+        }
     }
     
     // Compute and log final statistics
@@ -167,15 +134,85 @@ fn main() -> Result<()> {
     
     logger.log(LogEvent::Statistics(stats_event))?;
     
-    if args.verbose {
-        logger.log(LogEvent::Info {
-            message: format!("Diagnostics: {:?}", result.diagnostics),
-        })?;
-    }
+    // Log summary metrics
+    logger.log(LogEvent::Info {
+        message: format!(
+            "Pre-FEC BER: {:.6}, Post-FEC BER: {:.6}, Errors corrected: {}",
+            result.report.pre_fec_ber,
+            result.report.post_fec_ber,
+            result.report.pre_fec_errors - result.report.post_fec_errors
+        ),
+    })?;
     
     logger.log(LogEvent::Info {
         message: format!("Recovered message: {}", result.report.recovered_message),
     })?;
+    
+    // If WAV output is requested, write the audio from the simulation
+    if let Some(wav_path) = &config.terminal.wav_output {
+        if let Some(audio_data) = &result.diagnostics.modulation_audio {
+            logger.log(LogEvent::Info {
+                message: format!("Writing audio to {}", wav_path.display()),
+            })?;
+            
+            let spec = hound::WavSpec {
+                channels: 1,
+                sample_rate: audio_data.sample_rate as u32,
+                bits_per_sample: 32,
+                sample_format: hound::SampleFormat::Float,
+            };
+            
+            let mut writer = hound::WavWriter::create(&wav_path, spec)?;
+            
+            // Write the noisy audio if available, otherwise clean
+            let audio_samples = if !audio_data.noisy.is_empty() {
+                &audio_data.noisy
+            } else {
+                &audio_data.clean
+            };
+            
+            for &sample in audio_samples {
+                writer.write_sample(sample)?;
+            }
+            writer.finalize()?;
+            
+            logger.log(LogEvent::Info {
+                message: format!(
+                    "Wrote {} samples ({:.2}s) to {}",
+                    audio_samples.len(),
+                    audio_samples.len() as f64 / audio_data.sample_rate as f64,
+                    wav_path.display()
+                ),
+            })?;
+        } else {
+            logger.log(LogEvent::Info {
+                message: "Warning: No audio data available to write".to_string(),
+            })?;
+        }
+    }
+    
+    // Only log detailed diagnostics if verbose flag is set
+    if args.verbose {
+        logger.log(LogEvent::Info {
+            message: format!(
+                "Diagnostic summary: {} TX symbols, {} encoding logs, {} decoding logs",
+                result.diagnostics.tx_symbols_i.len(),
+                result.diagnostics.encoding_logs.len(),
+                result.diagnostics.decoding_logs.len()
+            ),
+        })?;
+        
+        if let Some(audio) = &result.diagnostics.modulation_audio {
+            logger.log(LogEvent::Info {
+                message: format!(
+                    "Audio: {} samples at {} Hz, carrier at {:.1} Hz",
+                    audio.clean.len(),
+                    audio.sample_rate,
+                    audio.carrier_freq_hz
+                ),
+            })?;
+        }
+    }
 
     Ok(())
 }
