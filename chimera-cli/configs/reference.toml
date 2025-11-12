@@ -1,0 +1,202 @@
+# ============================================================================
+# Chimera Configuration Reference
+# ============================================================================
+# This file documents all available configuration parameters and their defaults.
+# Copy and modify sections as needed for your use case.
+
+# ============================================================================
+# PROTOCOL CONFIGURATION
+# ============================================================================
+# The protocol section configures user-controllable protocol parameters.
+# Most protocol parameters are hardcoded in the "whisper" preset and cannot
+# be changed (carrier frequency, symbol rates, etc.)
+
+[protocol]
+# Command to transmit (use string names, not hex opcodes)
+# Available commands: "send_data", "request_status", "set_parameter", 
+#                     "get_parameter", "reset", "data_transfer"
+# Example opcodes: send_data=0x0001, data_transfer=0x0006
+command = "send_data"
+
+# Target device identifier (hex string, 4 bytes = 8 hex chars)
+# Examples: "DEADBEEF" = Raman Whisper Station, "CAFEBABE" = Burst Telemetry Node
+target_id = "DEADBEEF"
+
+# ============================================================================
+# SIMULATION CONFIGURATION
+# ============================================================================
+# Parameters for running simulations and tests
+
+[simulation]
+# Message to encode and transmit (runtime adjustable - waits for current transmission to complete)
+message = "This is a test message for the Chimera protocol demonstration."
+
+# Bypass THz carrier simulation for validation testing
+# When true, skips the intermodulation/mixing step
+# Default: false
+bypass_thz_simulation = false
+
+# ============================================================================
+# AUDIO MIXING CONFIGURATION (Optional)
+# ============================================================================
+# Configure external audio source for intermodulation mixing
+# Uncomment to enable audio mixing
+
+# [simulation.audio_mixing]
+# # Audio source configuration
+# audio_source = { type = "generator", preset = { tone = 440.0 }, duration_secs = 5.0 }
+#
+# # Alternative: load from file
+# # audio_source = { type = "file", path = "path/to/audio.mp3" }
+#
+# # Gain applied to external audio before mixing (0.0 to 1.0)
+# external_audio_gain = 0.5
+#
+# # Gain applied to AID signal before mixing (0.0 to 1.0)
+# aid_signal_gain = 0.5
+#
+# # Enable second-order intermodulation (sum and difference products)
+# enable_second_order = true
+#
+# # Second-order intermodulation coefficient (0.0 to 1.0)
+# second_order_coefficient = 0.3
+#
+# # Enable third-order intermodulation (more complex products)
+# enable_third_order = true
+#
+# # Third-order intermodulation coefficient (0.0 to 1.0)
+# third_order_coefficient = 0.2
+#
+# # Cortical integration coefficient - simulates perceptual blending (0.0 to 1.0)
+# cortical_coefficient = 0.4
+
+# ============================================================================
+# RUNTIME ADJUSTABLE PARAMETERS
+# ============================================================================
+# All parameters below can be adjusted while the system is running
+
+[channel]
+# Signal-to-Noise Ratio in dB (runtime adjustable)
+# Higher values = cleaner signal, easier decoding
+# Typical range: -5 dB (very noisy) to 30 dB (very clean)
+snr_db = 20.0
+
+# Link loss/attenuation in dB (runtime adjustable)
+# Additional signal degradation beyond noise
+# Default: 0.0 (no additional loss)
+link_loss_db = 0.0
+
+[thz_modulation]
+# Enable/disable THz carrier modulation (runtime adjustable)
+enabled = true
+
+# Modulation depth (0.0 to 1.0) (runtime adjustable)
+# Typical values: idle = 0.01-0.05, active = 0.70-0.80
+modulation_depth = 0.5
+
+# Enable/disable second-order modulation (runtime adjustable)
+enable_second_order = true
+
+# Second-order modulation coefficient (0.0 to 1.0) (runtime adjustable)
+second_order_coefficient = 0.3
+
+# Enable/disable third-order modulation (runtime adjustable)
+enable_third_order = true
+
+# Third-order modulation coefficient (0.0 to 1.0) (runtime adjustable)
+third_order_coefficient = 0.2
+
+# Cortical processing coefficient (0.0 to 1.0) (runtime adjustable)
+cortical_coefficient = 0.4
+
+[signal_processing]
+# Enable/disable QPSK modulation (runtime adjustable)
+# WARNING: Disabling breaks protocol compatibility
+enable_qpsk = true
+
+# Enable/disable FSK modulation (runtime adjustable)
+# WARNING: Disabling breaks protocol compatibility
+enable_fsk = true
+
+# Transmit gain control (0.0 to 2.0) (runtime adjustable)
+tx_gain = 1.0
+
+# Receive gain control (0.0 to 2.0) (runtime adjustable)
+rx_gain = 1.0
+
+# NOTE: FEC is always enabled internally and not exposed in user API
+
+# ============================================================================
+# TERMINAL CONFIGURATION
+# ============================================================================
+# Configuration for CLI terminal interface and output
+
+[terminal]
+# Output WAV file path (optional)
+# Uncomment to save audio output to file
+# wav_output = "output.wav"
+
+# Telemetry sampling interval in seconds
+# How frequently to output diagnostic information
+telemetry_interval_secs = 1.0
+
+[terminal.logging]
+# Log output target: "stdout", "stderr", or "file"
+target = "stdout"
+
+# Log file path (required when target = "file")
+# file_path = "chimera.log"
+
+# Log format: "json", "logfmt", or "pretty"
+format = "json"
+
+# Log level: "debug", "info", "warn", or "error"
+level = "info"
+
+# ============================================================================
+# INTERNAL PROTOCOL PARAMETERS (NOT USER-CONFIGURABLE)
+# ============================================================================
+# The following parameters are hardcoded in the "whisper" protocol preset
+# and CANNOT be changed through configuration:
+#
+# - protocol = "whisper" (fixed)
+# - carrier_freq_hz = 12000.0 (12 kHz)
+# - qpsk_symbol_rate = 16 (symbols/second)
+# - qpsk_bandwidth_hz = 20.0
+# - fsk_bit_rate = 1.0 (bits/second)
+# - fsk_freq_zero_hz = 11999.0 (11.999 kHz)
+# - fsk_freq_one_hz = 12001.0 (12.001 kHz)
+# - sync_sequence_hex = "A5A5A5A5"
+# - frame_layout: 128 symbols total
+#   - sync_symbols = 16
+#   - target_id_symbols = 16
+#   - command_type_symbols = 16
+#   - data_payload_symbols = 64
+#   - ecc_symbols = 16
+# - current_frame_shift = 16
+# - total_frames_shift = 24
+# - max_frames = 256
+#
+# These parameters define the Whisper protocol and are fixed to ensure
+# interoperability between transmitters and receivers.
+#
+# NOTE: RNG seed is not exposed - system uses hardware entropy
+# NOTE: Multipath and Doppler simulation have been removed - not needed in real deployment
+# NOTE: FEC is always enabled - error correction is essential for reliable communication
+
+# ============================================================================
+# LDPC CONFIGURATION (ADVANCED)
+# ============================================================================
+# Low-Density Parity-Check code parameters
+# These define the error correction capability
+# WARNING: Changing these breaks protocol compatibility
+
+[ldpc]
+# Variable node degree (number of check nodes per variable node)
+dv = 2
+
+# Check node degree (number of variable nodes per check node)
+dc = 10
+
+# Random seed for LDPC matrix generation
+seed = 42

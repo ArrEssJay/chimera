@@ -1,0 +1,16 @@
+# Simple Chimera Configuration
+# Minimal configuration for basic operation
+
+[protocol]
+command = "send_data"
+target_id = "DEADBEEF"
+
+[simulation]
+message = "Hello from Chimera!"
+
+[channel]
+snr_db = 20.0
+link_loss_db = 0.0
+
+[terminal]
+telemetry_interval_secs = 1.0

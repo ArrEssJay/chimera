@@ -1,0 +1,38 @@
+# Noisy Channel Test Configuration
+# Challenging conditions to test error correction
+# All parameters are runtime adjustable
+
+[protocol]
+command = "send_data"
+target_id = "DEADBEEF"
+
+[simulation]
+message = "Testing error correction in noisy channel conditions"
+
+[channel]
+snr_db = 5.0  # Challenging SNR - adjustable at runtime
+link_loss_db = 3.0  # Additional attenuation - adjustable at runtime
+
+[thz_modulation]
+enabled = true
+modulation_depth = 0.6
+enable_second_order = true
+second_order_coefficient = 0.3
+enable_third_order = true
+third_order_coefficient = 0.2
+cortical_coefficient = 0.4
+
+[signal_processing]
+enable_qpsk = true
+enable_fsk = true
+tx_gain = 1.2  # Boost TX to compensate
+rx_gain = 1.1  # Boost RX gain
+# Note: FEC is always enabled internally
+
+[terminal]
+telemetry_interval_secs = 1.0
+
+[terminal.logging]
+target = "stdout"
+format = "pretty"
+level = "info"

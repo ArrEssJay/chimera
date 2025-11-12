@@ -1,29 +1,38 @@
-# Validation Configuration with THz Bypass
-# Bypasses THz carrier simulation for validation and testing
-# When bypass_thz_simulation is true, the audio signal passes through unchanged
-# This is useful for:
-# - Validating the modulation/demodulation chain without THz effects
-# - Baseline comparisons between bypassed and normal operation
-# - Testing signal processing without biological mixing simulation
+# Validation Configuration
+# Bypasses THz simulation for direct protocol testing
 
-# Include base protocol configuration
-include = "protocol/raman-whisper.toml"
+[protocol]
+command = "send_data"
+target_id = "DEADBEEF"
 
 [simulation]
-snr_db = 10.0
-link_loss_db = 0.0
-plaintext_source = "Validation test with THz simulation bypassed"
-rng_seed = 42
+message = "Validation test without THz carrier simulation"
+bypass_thz_simulation = true  # Skip THz mixing step
 
-# Bypass THz carrier simulation
-# When true, the signal passes through unchanged (no AM modulation, no non-linear mixing)
-# When false (default), full THz carrier simulation with biological demodulation
-bypass_thz_simulation = true
+[channel]
+snr_db = 20.0
+link_loss_db = 0.0
+
+[thz_modulation]
+enabled = false  # THz simulation disabled
+modulation_depth = 0.0
+enable_second_order = false
+second_order_coefficient = 0.0
+enable_third_order = false
+third_order_coefficient = 0.0
+cortical_coefficient = 0.0
+
+[signal_processing]
+enable_qpsk = true
+enable_fsk = true
+tx_gain = 1.0
+rx_gain = 1.0
+# Note: FEC is always enabled internally
 
 [terminal]
-telemetry_interval_secs = 0.5
+telemetry_interval_secs = 1.0
 
 [terminal.logging]
 target = "stdout"
-format = "json"
-level = "info"
+format = "pretty"
+level = "debug"

@@ -1,0 +1,42 @@
+# Audio Mixing Configuration Example
+# Demonstrates external audio intermodulation mixing
+
+[protocol]
+command = "send_data"
+target_id = "DEADBEEF"
+
+[simulation]
+message = "Testing audio intermodulation with 440Hz tone"
+
+[simulation.audio_mixing]
+# Generate a 440Hz tone (musical note A4)
+audio_source = { type = "generator", preset = { tone = 440.0 }, duration_secs = 5.0 }
+
+# Mix external audio at 50% volume
+external_audio_gain = 0.5
+
+# Mix AID signal at 50% volume
+aid_signal_gain = 0.5
+
+# Enable intermodulation products
+enable_second_order = true
+second_order_coefficient = 0.3
+
+enable_third_order = true
+third_order_coefficient = 0.2
+
+# Cortical integration coefficient
+cortical_coefficient = 0.4
+
+[channel]
+snr_db = 15.0
+link_loss_db = 0.0
+
+[terminal]
+telemetry_interval_secs = 0.5
+wav_output = "audio_mixing_output.wav"
+
+[terminal.logging]
+target = "stdout"
+format = "pretty"
+level = "info"
