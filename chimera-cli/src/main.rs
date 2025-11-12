@@ -52,25 +52,25 @@ fn main() -> Result<()> {
     }
     
     if let Some(message) = args.message {
-        config.simulation.plaintext_source = message;
+        config.simulation.message = message;
     }
     
     // Initialize structured logger
     let mut logger = StructuredLogger::new(config.terminal.logging.clone())?;
     
     logger.log(LogEvent::Info {
-        message: format!("Chimera CLI starting with message: \"{}\"", config.simulation.plaintext_source),
+        message: format!("Chimera CLI starting with message: \"{}\"", config.simulation.message),
     })?;
     
     // Calculate frame count for logging
-    let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.plaintext_source);
+    let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.message);
     let bits_per_frame = config.protocol.frame_layout.data_payload_symbols * 2;
     let total_frames = (payload_bits.len() + bits_per_frame - 1) / bits_per_frame;
     
     logger.log(LogEvent::Info {
         message: format!(
             "Encoding {} bytes ({} bits) into {} frames",
-            config.simulation.plaintext_source.len(),
+            config.simulation.message.len(),
             payload_bits.len(),
             total_frames
         ),

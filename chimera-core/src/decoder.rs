@@ -3,7 +3,7 @@ use std::f64::consts::FRAC_1_SQRT_2;
 
 use num_complex::Complex64;
 
-use crate::config::ProtocolConfig;
+use crate::config::InternalProtocolConfig;
 use crate::diagnostics::{DemodulationDiagnostics, SymbolDecision};
 use crate::ldpc::{decode_ldpc, LDPCMatrices};
 use crate::utils::{hex_to_bitstream, LogCollector};
@@ -108,7 +108,7 @@ pub fn demodulate_qpsk_symbol(symbol: Complex64) -> [u8; 2] {
 
 /// Incremental symbol-by-symbol decoder
 pub struct StreamingSymbolDecoder {
-    protocol: ProtocolConfig,
+    protocol: InternalProtocolConfig,
     matrices: LDPCMatrices,
     
     // Buffer for received symbols
@@ -136,7 +136,7 @@ pub struct StreamingSymbolDecoder {
 }
 
 impl StreamingSymbolDecoder {
-    pub fn new(protocol: ProtocolConfig, matrices: LDPCMatrices) -> Self {
+    pub fn new(protocol: InternalProtocolConfig, matrices: LDPCMatrices) -> Self {
         let mut logger = LogCollector::new();
         logger.log("Initializing streaming symbol decoder.".to_string());
         

@@ -23,9 +23,9 @@ impl SimulationInput {
     pub fn with_preset(preset: FramePreset) -> Self {
         let defaults = preset.simulation_config();
         Self {
-            plaintext: defaults.plaintext_source,
-            snr_db: defaults.snr_db,
-            link_loss_db: defaults.link_loss_db,
+            plaintext: defaults.message,
+            snr_db: 20.0, // Default SNR since it's no longer in simulation config
+            link_loss_db: 0.0, // Default link loss
             preset,
         }
     }
@@ -45,9 +45,9 @@ pub fn run_pipeline(input: SimulationInput) -> SimulationOutput {
     } = input.preset.bundle();
 
     let mut sim = simulation;
-    sim.plaintext_source = input.plaintext;
-    sim.snr_db = input.snr_db;
-    sim.link_loss_db = input.link_loss_db;
+    sim.message = input.plaintext;
+    // Note: SNR and link_loss are now runtime params, passed separately to pipeline
+    // For now, using the simulation directly which will use defaults
 
     let output = run_simulation(&sim, &protocol, &ldpc);
     SimulationOutput {

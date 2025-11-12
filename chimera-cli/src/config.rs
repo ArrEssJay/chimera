@@ -1,6 +1,9 @@
 //! CLI-specific configuration structures for TOML-based configuration.
 
-use chimera_core::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
+use chimera_core::config::{
+    LDPCConfig, InternalProtocolConfig, UserSimulationConfig,
+    ChannelParams, ThzModulationParams, SignalProcessingParams
+};
 use color_eyre::eyre::{Context, Result};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value as JsonValue;
@@ -58,24 +61,40 @@ pub struct CliConfig {
     #[serde(deserialize_with = "deserialize_include_optional")]
     pub include: Vec<String>,
     
+    /// Protocol configuration (internal, not directly user-configurable)
     #[serde(default, skip_serializing_if = "is_default_protocol")]
-    pub protocol: ProtocolConfig,
+    pub protocol: InternalProtocolConfig,
     
+    /// Simulation configuration
     #[serde(default, skip_serializing_if = "is_default_simulation")]
-    pub simulation: SimulationConfig,
+    pub simulation: UserSimulationConfig,
     
+    /// LDPC configuration
     #[serde(default, skip_serializing_if = "is_default_ldpc")]
     pub ldpc: LDPCConfig,
     
+    /// Channel parameters (runtime adjustable)
+    #[serde(default)]
+    pub channel: ChannelParams,
+    
+    /// THz modulation parameters (runtime adjustable)
+    #[serde(default)]
+    pub thz_modulation: ThzModulationParams,
+    
+    /// Signal processing parameters (runtime adjustable)
+    #[serde(default)]
+    pub signal_processing: SignalProcessingParams,
+    
+    /// Terminal interface configuration
     #[serde(default)]
     pub terminal: TerminalConfig,
 }
 
-fn is_default_protocol(_p: &ProtocolConfig) -> bool {
+fn is_default_protocol(_p: &InternalProtocolConfig) -> bool {
     false // Always serialize for now
 }
 
-fn is_default_simulation(_s: &SimulationConfig) -> bool {
+fn is_default_simulation(_s: &UserSimulationConfig) -> bool {
     false // Always serialize for now
 }
 
@@ -255,9 +274,12 @@ impl CliConfig {
     pub fn default() -> Self {
         Self {
             include: Vec::new(),
-            protocol: ProtocolConfig::default(),
-            simulation: SimulationConfig::default(),
+            protocol: InternalProtocolConfig::default(),
+            simulation: UserSimulationConfig::default(),
             ldpc: LDPCConfig::default(),
+            channel: ChannelParams::default(),
+            thz_modulation: ThzModulationParams::default(),
+            signal_processing: SignalProcessingParams::default(),
             terminal: TerminalConfig::default(),
         }
     }

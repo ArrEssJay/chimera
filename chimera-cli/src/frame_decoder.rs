@@ -1,7 +1,7 @@
 //! Frame decoder with hex dump and human-readable field interpretation.
 
 use crate::logging::{DecodedFrame, FrameDecodeEvent, FrameHexDump};
-use chimera_core::config::ProtocolConfig;
+use chimera_core::config::InternalProtocolConfig;
 use chrono::Utc;
 
 /// Command opcodes and their descriptions
@@ -37,11 +37,11 @@ impl TargetId {
 
 /// Decode a frame into hex dump and human-readable format
 pub struct FrameDecoder {
-    protocol: ProtocolConfig,
+    protocol: InternalProtocolConfig,
 }
 
 impl FrameDecoder {
-    pub fn new(protocol: ProtocolConfig) -> Self {
+    pub fn new(protocol: InternalProtocolConfig) -> Self {
         Self { protocol }
     }
     
@@ -96,12 +96,13 @@ impl FrameDecoder {
         };
         
         // Decode fields
-        let (opcode_name, opcode_desc) = CommandOpcode::describe(self.protocol.command_opcode);
+        let command_opcode = self.protocol.get_command_opcode();
+        let (opcode_name, opcode_desc) = CommandOpcode::describe(command_opcode);
         let target_name = TargetId::describe(&target_hex);
         
         let decoded = DecodedFrame {
             target_name: target_name.to_string(),
-            command_opcode: format!("0x{:04X} ({})", self.protocol.command_opcode, opcode_name),
+            command_opcode: format!("0x{:04X} ({})", command_opcode, opcode_name),
             command_description: opcode_desc.to_string(),
             frame_position: format!("{}/{}", current_frame + 1, total_frames),
             payload_preview,

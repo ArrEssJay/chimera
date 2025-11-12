@@ -30,7 +30,7 @@ use std::borrow::Cow;
 
 use num_complex::Complex64;
 
-use crate::config::ProtocolConfig;
+use crate::config::InternalProtocolConfig;
 use crate::ldpc::LDPCMatrices;
 use crate::utils::{
     hex_to_bitstream, int_to_bitstream, LogCollector,
@@ -106,7 +106,7 @@ pub fn differential_encode_bits(bits: &[u8]) -> Vec<u8> {
 
 /// Incremental frame encoder for symbol-by-symbol streaming
 pub struct StreamingFrameEncoder {
-    protocol: ProtocolConfig,
+    pub protocol: InternalProtocolConfig,
     matrices: LDPCMatrices,
     payload_bits: Vec<u8>,
     current_frame_index: usize,
@@ -123,7 +123,7 @@ pub struct StreamingFrameEncoder {
 impl StreamingFrameEncoder {
     pub fn new(
         payload_bits: &[u8],
-        protocol: ProtocolConfig,
+        protocol: InternalProtocolConfig,
         matrices: LDPCMatrices,
     ) -> Self {
         let message_bits = matrices.message_bits;
@@ -293,7 +293,7 @@ impl StreamingFrameEncoder {
         let command_bits_len = layout.command_type_symbols * 2;
         
         let frame_idx = self.current_frame_index;
-        let command_value = self.protocol.command_opcode
+        let command_value = self.protocol.get_command_opcode()
             | ((frame_idx as u32) << self.protocol.current_frame_shift)
             | ((self.total_frames as u32) << self.protocol.total_frames_shift);
         let command_bits = int_to_bitstream(command_value as u64, command_bits_len);

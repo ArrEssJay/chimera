@@ -4,7 +4,7 @@
 
 use wasm_bindgen::prelude::*;
 use chimera_core::pipeline::RealtimePipeline;
-use chimera_core::config::{SimulationConfig, ProtocolConfig, LDPCConfig};
+use chimera_core::config::{UserSimulationConfig, InternalProtocolConfig, LDPCConfig};
 use js_sys::Float32Array;
 use serde::{Deserialize, Serialize};
 
@@ -23,8 +23,8 @@ impl WASMStreamingDSP {
         console_error_panic_hook::set_once();
         
         // Use default configurations
-        let sim = SimulationConfig::default();
-        let protocol = ProtocolConfig::default();
+        let sim = UserSimulationConfig::default();
+        let protocol = InternalProtocolConfig::default();
         let ldpc = LDPCConfig::default();
         
         Ok(WASMStreamingDSP {
@@ -160,6 +160,39 @@ impl WASMStreamingDSP {
         self.pipeline.update_channel_params(snr_db, link_loss_db);
     }
     
+    /// Update SNR only
+    #[wasm_bindgen]
+    pub fn update_snr(&mut self, snr_db: f64) {
+        self.pipeline.update_channel_params(snr_db, self.pipeline.get_link_loss());
+    }
+    
+    /// Update link loss only
+    #[wasm_bindgen]
+    pub fn update_link_loss(&mut self, link_loss_db: f64) {
+        self.pipeline.update_channel_params(self.pipeline.get_snr(), link_loss_db);
+    }
+    
+    /// Update message (waits for current transmission to complete before applying)
+    #[wasm_bindgen]
+    pub fn update_message(&mut self, message: String) -> Result<(), JsValue> {
+        self.pipeline.update_message(message)
+            .map_err(|e| JsValue::from_str(&format!("Failed to update message: {}", e)))
+    }
+    
+    /// Update command by string name (e.g., "send_data", "data_transfer")
+    #[wasm_bindgen]
+    pub fn update_command(&mut self, command: String) -> Result<(), JsValue> {
+        self.pipeline.update_command(command)
+            .map_err(|e| JsValue::from_str(&format!("Failed to update command: {}", e)))
+    }
+    
+    /// Update target ID
+    #[wasm_bindgen]
+    pub fn update_target_id(&mut self, target_id: String) -> Result<(), JsValue> {
+        self.pipeline.update_target_id(target_id)
+            .map_err(|e| JsValue::from_str(&format!("Failed to update target ID: {}", e)))
+    }
+    
     /// Set THz modulation mode (false = idle <5%, true = active 70-80%)
     #[wasm_bindgen]
     pub fn set_modulation_mode(&mut self, active: bool) {
@@ -191,11 +224,23 @@ impl WASMStreamingDSP {
         self.pipeline.set_fsk_enabled(enabled);
     }
     
-    /// Enable/disable THz simulation bypass
+    /// Set TX and RX gains
     #[wasm_bindgen]
-    pub fn set_thz_bypass(&mut self, bypass: bool) {
-        // When bypass is true, mixing coefficient is set to 0
-        self.pipeline.set_mixing_coefficient(if bypass { 0.0 } else { 0.7 });
+    pub fn set_gains(&mut self, tx_gain: f64, rx_gain: f64) {
+        self.pipeline.set_tx_gain(tx_gain as f32);
+        self.pipeline.set_rx_gain(rx_gain as f32);
+    }
+    
+    /// Set TX gain only
+    #[wasm_bindgen]
+    pub fn set_tx_gain(&mut self, gain: f64) {
+        self.pipeline.set_tx_gain(gain as f32);
+    }
+    
+    /// Set RX gain only
+    #[wasm_bindgen]
+    pub fn set_rx_gain(&mut self, gain: f64) {
+        self.pipeline.set_rx_gain(gain as f32);
     }
 }
 
@@ -480,8 +525,8 @@ impl WASMStreamOutput {
 /// Configuration structure for WASM
 #[derive(Serialize, Deserialize)]
 struct StreamConfigWASM {
-    simulation: SimulationConfig,
-    protocol: ProtocolConfig,
+    simulation: UserSimulationConfig,
+    protocol: InternalProtocolConfig,
     ldpc: LDPCConfig,
 }
 

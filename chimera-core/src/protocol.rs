@@ -20,6 +20,87 @@
 
 use num_complex::Complex64;
 use std::f64::consts::FRAC_1_SQRT_2;
+use serde::{Deserialize, Serialize};
+use std::fmt;
+
+/// Command types for the protocol
+/// 
+/// These are the available command opcodes. Users reference these by string name
+/// in configuration files, not by hex value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CommandType {
+    /// Send data payload
+    SendData,
+    /// Request status information
+    RequestStatus,
+    /// Set a parameter value
+    SetParameter,
+    /// Get a parameter value
+    GetParameter,
+    /// Reset the system
+    Reset,
+    /// Data transfer operation
+    DataTransfer,
+}
+
+impl CommandType {
+    /// Convert command type to opcode
+    pub fn to_opcode(self) -> u32 {
+        match self {
+            CommandType::SendData => 0x0001,
+            CommandType::RequestStatus => 0x0002,
+            CommandType::SetParameter => 0x0003,
+            CommandType::GetParameter => 0x0004,
+            CommandType::Reset => 0x0005,
+            CommandType::DataTransfer => 0x0006,
+        }
+    }
+    
+    /// Convert opcode to command type
+    pub fn from_opcode(opcode: u32) -> Option<Self> {
+        match opcode {
+            0x0001 => Some(CommandType::SendData),
+            0x0002 => Some(CommandType::RequestStatus),
+            0x0003 => Some(CommandType::SetParameter),
+            0x0004 => Some(CommandType::GetParameter),
+            0x0005 => Some(CommandType::Reset),
+            0x0006 => Some(CommandType::DataTransfer),
+            _ => None,
+        }
+    }
+    
+    /// Get string representation for user-facing API
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CommandType::SendData => "send_data",
+            CommandType::RequestStatus => "request_status",
+            CommandType::SetParameter => "set_parameter",
+            CommandType::GetParameter => "get_parameter",
+            CommandType::Reset => "reset",
+            CommandType::DataTransfer => "data_transfer",
+        }
+    }
+    
+    /// Parse from string
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "send_data" => Some(CommandType::SendData),
+            "request_status" => Some(CommandType::RequestStatus),
+            "set_parameter" => Some(CommandType::SetParameter),
+            "get_parameter" => Some(CommandType::GetParameter),
+            "reset" => Some(CommandType::Reset),
+            "data_transfer" => Some(CommandType::DataTransfer),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for CommandType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
 
 /// Raman Whisper Protocol - Physical Layer Constants
 /// 

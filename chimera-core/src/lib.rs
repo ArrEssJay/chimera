@@ -20,7 +20,7 @@ pub mod signal_processing;
 pub mod thz_carriers;
 pub mod utils;
 
-use config::{LDPCConfig, ProtocolConfig, SimulationConfig};
+use config::{LDPCConfig, InternalProtocolConfig, UserSimulationConfig};
 use diagnostics::{DiagnosticsBundle, ModulationAudio, SimulationReport};
 use ldpc::LDPCSuite;
 
@@ -38,20 +38,20 @@ pub struct SimulationOutput {
 /// The pipeline handles all processing internally. This function runs
 /// the pipeline until all frames are processed and collects the results.
 pub fn run_simulation(
-    sim: &SimulationConfig,
-    protocol: &ProtocolConfig,
+    sim: &UserSimulationConfig,
+    protocol: &InternalProtocolConfig,
     ldpc: &LDPCConfig,
 ) -> SimulationOutput {
     use pipeline::RealtimePipeline;
     
     let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, ldpc);
     
-    // Create unified pipeline - it will use sim.plaintext_source internally
+    // Create unified pipeline - it will use sim.message internally
     let mut pipeline = RealtimePipeline::new(sim.clone(), protocol.clone(), ldpc.clone());
     pipeline.set_modulation_mode(true); // Active mode for data transmission
     
     // Calculate expected number of frames
-    let payload_bits = utils::string_to_bitstream(&sim.plaintext_source);
+    let payload_bits = utils::string_to_bitstream(&sim.message);
     let message_bits = ldpc_suite.matrices.message_bits;
     let total_frames = if payload_bits.is_empty() {
         1
@@ -89,7 +89,7 @@ pub fn run_simulation(
         // Check if we've decoded the complete message
         if let Some(ref out) = final_output {
             let decoded_len = out.decoded_text.trim_end_matches('\u{0}').len();
-            if decoded_len >= sim.plaintext_source.len() && i > total_frames {
+            if decoded_len >= sim.message.len() && i > total_frames {
                 break;
             }
         }
@@ -152,7 +152,7 @@ pub fn run_simulation(
 
     // Generate diagnostic data from pipeline output
     let modulation_audio = Some(ModulationAudio {
-        sample_rate: SimulationConfig::SAMPLE_RATE,
+        sample_rate: crate::config::SystemConfig::SAMPLE_RATE,
         carrier_freq_hz: protocol.carrier_freq_hz,
         clean: all_audio.clone(),
         noisy: all_audio.clone(),
@@ -190,7 +190,7 @@ pub fn run_simulation(
 /// Returns the complete audio waveform for the entire message
 pub fn generate_audio_batch(
     message: &str,
-    protocol: &ProtocolConfig,
+    protocol: &InternalProtocolConfig,
     ldpc: &LDPCConfig,
 ) -> Vec<f32> {
     use signal_processing::modulation::{ModulationConfig, symbols_to_carrier_signal};
@@ -211,7 +211,7 @@ pub fn generate_audio_batch(
     
     // Convert symbols to audio using modular signal processing
     let mod_config = ModulationConfig {
-        sample_rate: SimulationConfig::SAMPLE_RATE,
+        sample_rate: crate::config::SystemConfig::SAMPLE_RATE,
         symbol_rate: protocol.qpsk_symbol_rate,
         carrier_freq: protocol.carrier_freq_hz,
         enable_qpsk: protocol.enable_qpsk,

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use chimera_core::config::{FrameLayout, LDPCConfig, ProtocolConfig, SimulationConfig};
+use chimera_core::config::{FrameLayout, LDPCConfig, InternalProtocolConfig, UserSimulationConfig};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
@@ -15,8 +15,8 @@ pub enum FramePreset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PresetBundle {
-    pub protocol: ProtocolConfig,
-    pub simulation: SimulationConfig,
+    pub protocol: InternalProtocolConfig,
+    pub simulation: UserSimulationConfig,
     pub ldpc: LDPCConfig,
 }
 
@@ -69,14 +69,14 @@ impl FramePreset {
     }
 
     pub fn bundle(&self) -> PresetBundle {
-        let mut protocol = ProtocolConfig::default();
-        let mut simulation = SimulationConfig::default();
+        let mut protocol = InternalProtocolConfig::default();
+        let mut simulation = UserSimulationConfig::default();
         let mut ldpc = LDPCConfig::default();
 
         match self {
             FramePreset::RamanWhisper => {
-                // Keep defaults but ensure descriptive plaintext.
-                simulation.plaintext_source = "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into();
+                // Keep defaults but ensure descriptive message.
+                simulation.message = "This is a longer message demonstrating the protocol-compliant, rate-4/5 LDPC error correction.".into();
             }
             FramePreset::BurstTelemetry => {
                 protocol.qpsk_symbol_rate = 32;
@@ -91,13 +91,13 @@ impl FramePreset {
                 };
                 protocol.sync_sequence_hex = "7E7E7E7E".into();
                 protocol.target_id_hex = "CAFEBABE".into();
-                protocol.command_opcode = 0x00F1;
+                protocol.command = "send_data".into();
                 protocol.max_frames = 64;
                 protocol.current_frame_shift = 12;
                 protocol.total_frames_shift = 18;
 
-                simulation.snr_db = -2.0;
-                simulation.plaintext_source =
+                // Note: SNR/link_loss are runtime parameters now
+                simulation.message =
                     "Telemetry burst payload with accelerated downlink cadence.".into();
 
                 ldpc.dv = 3;
@@ -119,13 +119,13 @@ impl FramePreset {
                 };
                 protocol.sync_sequence_hex = "55AA55AA".into();
                 protocol.target_id_hex = "0D15EA5E".into();
-                protocol.command_opcode = 0x0D11;
+                protocol.command = "send_data".into(); // Changed from command_opcode to command string
                 protocol.max_frames = 32;
                 protocol.current_frame_shift = 20;
                 protocol.total_frames_shift = 28;
 
-                simulation.snr_db = -4.0;
-                simulation.plaintext_source =
+                // Note: SNR is now a runtime parameter, not in simulation config
+                simulation.message =
                     "Deep-space probe telemetry with reinforced parity blocks.".into();
 
                 ldpc.dv = 2;
@@ -141,11 +141,11 @@ impl FramePreset {
         }
     }
 
-    pub fn protocol_config(&self) -> ProtocolConfig {
+    pub fn protocol_config(&self) -> InternalProtocolConfig {
         self.bundle().protocol
     }
 
-    pub fn simulation_config(&self) -> SimulationConfig {
+    pub fn simulation_config(&self) -> UserSimulationConfig {
         self.bundle().simulation
     }
 

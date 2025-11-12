@@ -4,7 +4,7 @@
 //! and batch processing operations. It supports chunk-by-chunk processing for
 //! real-time audio applications and can also be used for offline batch processing.
 
-use crate::config::{LDPCConfig, ProtocolConfig, SimulationConfig};
+use crate::config::{LDPCConfig, InternalProtocolConfig, UserSimulationConfig};
 use crate::ldpc::LDPCSuite;
 use crate::thz_carriers::{ThzCarrierProcessor, ThzCarrierConfig};
 use crate::signal_processing::{
@@ -185,10 +185,14 @@ pub struct RealtimeOutput {
 /// Real-time capable DSP pipeline
 /// Supports both real-time chunk processing and batch mode operation
 pub struct RealtimePipeline {
-    config: SimulationConfig,
-    protocol: ProtocolConfig,
+    config: UserSimulationConfig,
+    protocol: InternalProtocolConfig,
     ldpc_config: LDPCConfig,
     ldpc_suite: LDPCSuite,
+    
+    // Runtime adjustable channel parameters
+    snr_db: f64,
+    link_loss_db: f64,
     
     // Streaming encoder/decoder
     encoder: Option<crate::encoder::StreamingFrameEncoder>,
@@ -219,10 +223,22 @@ pub struct RealtimePipeline {
 
 impl RealtimePipeline {
     /// Create a new real-time capable pipeline with the given configuration
+    /// Default SNR=20dB, link_loss=0dB - use update_channel_params to adjust at runtime
     pub fn new(
-        sim: SimulationConfig,
-        protocol: ProtocolConfig,
+        sim: UserSimulationConfig,
+        protocol: InternalProtocolConfig,
         ldpc: LDPCConfig,
+    ) -> Self {
+        Self::with_channel_params(sim, protocol, ldpc, 20.0, 0.0)
+    }
+    
+    /// Create pipeline with specific channel parameters
+    pub fn with_channel_params(
+        sim: UserSimulationConfig,
+        protocol: InternalProtocolConfig,
+        ldpc: LDPCConfig,
+        snr_db: f64,
+        link_loss_db: f64,
     ) -> Self {
         let ldpc_suite = LDPCSuite::new(&protocol.frame_layout, &ldpc);
         
@@ -230,27 +246,27 @@ impl RealtimePipeline {
         // At 16 sym/s, updating every 16 symbols = 1 second updates
         let symbols_per_update = 16;
         
-        let rng = match sim.rng_seed {
-            Some(seed) => StdRng::seed_from_u64(seed),
-            None => StdRng::from_entropy(),
-        };
+        // Use hardware entropy instead of RNG seed
+        let rng = StdRng::from_entropy();
         
         // Pre-calculate noise parameters
         // QPSK has signal power of 1.0 (normalized)
         let signal_power = 1.0;
-        let channel = crate::utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
+        let channel = crate::utils::ChannelParams::from_db(snr_db, link_loss_db, signal_power);
         let noise_std = channel.noise_std;
         
         // Initialize THz carrier processor
         let mut thz_config = ThzCarrierConfig::default();
         thz_config.bypass_simulation = sim.bypass_thz_simulation;
-        let thz_processor = ThzCarrierProcessor::new(thz_config, SimulationConfig::SAMPLE_RATE as f64);
+        let thz_processor = ThzCarrierProcessor::new(thz_config, crate::config::SystemConfig::SAMPLE_RATE as f64);
         
         Self {
             config: sim,
             protocol,
             ldpc_config: ldpc,
             ldpc_suite,
+            snr_db,
+            link_loss_db,
             encoder: None,
             decoder: None,
             thz_processor,
@@ -320,7 +336,7 @@ impl RealtimePipeline {
         
         // Initialize encoder on first call
         if self.encoder.is_none() {
-            let payload_bits = crate::utils::string_to_bitstream(&self.config.plaintext_source);
+            let payload_bits = crate::utils::string_to_bitstream(&self.config.message);
             let encoder = crate::encoder::StreamingFrameEncoder::new(
                 &payload_bits,
                 self.protocol.clone(),
@@ -343,7 +359,7 @@ impl RealtimePipeline {
         let decoder = self.decoder.as_mut().unwrap();
         
         // Cache values we'll need later (before mutable borrows)
-        let sample_rate = SimulationConfig::SAMPLE_RATE;
+        let sample_rate = crate::config::SystemConfig::SAMPLE_RATE;
         let symbol_rate = self.protocol.qpsk_symbol_rate;
         let carrier_freq = self.protocol.carrier_freq_hz;
         
@@ -661,16 +677,19 @@ impl RealtimePipeline {
     }
     
     /// Reconfigure the pipeline
-    pub fn reconfigure(&mut self, sim: SimulationConfig, protocol: ProtocolConfig, ldpc: LDPCConfig) {
+    /// Note: snr_db and link_loss_db should be passed separately or use update_channel_params
+    pub fn reconfigure(&mut self, sim: UserSimulationConfig, protocol: InternalProtocolConfig, ldpc: LDPCConfig) {
+        // Keep existing channel parameters
+        let snr_db = self.snr_db;
+        let link_loss_db = self.link_loss_db;
+        
         // Pre-calculate noise parameters
         let signal_power = 1.0;
-        let channel = crate::utils::ChannelParams::from_db(sim.snr_db, sim.link_loss_db, signal_power);
+        let channel = crate::utils::ChannelParams::from_db(snr_db, link_loss_db, signal_power);
         let noise_std = channel.noise_std;
         
-        let rng = match sim.rng_seed {
-            Some(seed) => StdRng::seed_from_u64(seed),
-            None => StdRng::from_entropy(),
-        };
+        // Use hardware entropy
+        let rng = StdRng::from_entropy();
         
         self.config = sim;
         self.protocol = protocol.clone();
@@ -694,9 +713,9 @@ impl RealtimePipeline {
     
     /// Update channel parameters (SNR and link loss) without resetting the pipeline
     pub fn update_channel_params(&mut self, snr_db: f64, link_loss_db: f64) {
-        // Update config
-        self.config.snr_db = snr_db;
-        self.config.link_loss_db = link_loss_db;
+        // Update stored channel params
+        self.snr_db = snr_db;
+        self.link_loss_db = link_loss_db;
         
         // Recalculate noise parameters
         let link_loss_linear = 10f64.powf(link_loss_db / 10.0);
@@ -709,13 +728,51 @@ impl RealtimePipeline {
         };
         self.noise_std = (noise_variance / 2.0).sqrt();
     }
+    
+    /// Get current SNR
+    pub fn get_snr(&self) -> f64 {
+        self.snr_db
+    }
+    
+    /// Get current link loss
+    pub fn get_link_loss(&self) -> f64 {
+        self.link_loss_db
+    }
+    
+    /// Update message (placeholder - needs proper implementation to wait for transmission)
+    pub fn update_message(&mut self, _message: String) -> Result<(), String> {
+        // TODO: Implement message queue that waits for current transmission to complete
+        Err("Message updates not yet implemented".to_string())
+    }
+    
+    /// Update command (placeholder)
+    pub fn update_command(&mut self, _command: String) -> Result<(), String> {
+        // TODO: Implement command updates
+        Err("Command updates not yet implemented".to_string())
+    }
+    
+    /// Update target ID (placeholder)
+    pub fn update_target_id(&mut self, _target_id: String) -> Result<(), String> {
+        // TODO: Implement target ID updates
+        Err("Target ID updates not yet implemented".to_string())
+    }
+    
+    /// Set TX gain (placeholder)
+    pub fn set_tx_gain(&mut self, _gain: f32) {
+        // TODO: Implement TX gain control
+    }
+    
+    /// Set RX gain (placeholder)
+    pub fn set_rx_gain(&mut self, _gain: f32) {
+        // TODO: Implement RX gain control
+    }
 }
 
 /// Configuration for real-time pipeline
 #[derive(Clone, Debug)]
 pub struct PipelineConfig {
-    pub simulation: SimulationConfig,
-    pub protocol: ProtocolConfig,
+    pub simulation: UserSimulationConfig,
+    pub protocol: InternalProtocolConfig,
 }
 
 
