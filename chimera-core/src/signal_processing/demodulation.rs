@@ -426,7 +426,8 @@ impl AGC {
 
 /// Convert QPSK bits to symbols using standard Gray-coded mapping
 /// MUST match the encoder's constellation exactly!
-fn bits_to_qpsk_symbols(bits: &[u8]) -> Vec<Complex64> {
+/// Convert bits to QPSK symbols (public for test utilities)
+pub fn bits_to_qpsk_symbols(bits: &[u8]) -> Vec<Complex64> {
     bits.chunks(2).map(|chunk| {
         let (b0, b1) = (chunk[0], chunk.get(1).copied().unwrap_or(0));
         QPSKConstellation::bits_to_symbol(b0, b1)
@@ -437,7 +438,8 @@ fn bits_to_qpsk_symbols(bits: &[u8]) -> Vec<Complex64> {
 /// 
 /// Applies the same differential encoding that the transmitter uses,
 /// so we search for the actual transmitted symbol pattern.
-fn generate_sync_template() -> Vec<Complex64> {
+/// Public for test utilities.
+pub fn generate_sync_template() -> Vec<Complex64> {
     // Get raw sync bits from protocol definition
     let sync_bit_len = FrameLayout::sync_bits();
     let sync_bits = hex_to_bitstream(FrameLayout::SYNC_SEQUENCE_HEX, sync_bit_len);
@@ -860,6 +862,40 @@ pub fn audio_to_symbols(
     audio_to_symbols_with_snr(audio, config).symbols
 }
 
+/// Helper: Generate realistic test frame with sync preamble + scrambled payload
+/// Uses the shared implementation to ensure consistency across all tests
+/// 
+/// This is public for use in both unit and integration tests. It provides the proven
+/// frame structure: sync preamble + differentially-encoded scrambled payload.
+/// 
+/// # Arguments
+/// * `payload_symbols` - Number of payload symbols to generate
+/// * `seed` - Random seed for reproducible scrambling
+pub fn generate_test_frame(payload_symbols: usize, seed: u64) -> Vec<Complex64> {
+    use crate::encoder::differential_encode_bits;
+    use rand::{Rng, SeedableRng, rngs::StdRng};
+    
+    let mut frame_symbols = Vec::new();
+    
+    // 1. Sync preamble (shared implementation)
+    let sync_template = generate_sync_template();
+    frame_symbols.extend_from_slice(&sync_template);
+    
+    // 2. Scrambled payload (random bits -> differential encode -> QPSK)
+    let mut rng = StdRng::seed_from_u64(seed);
+    let num_bits = payload_symbols * 2;
+    let mut payload_bits = Vec::with_capacity(num_bits);
+    for _ in 0..num_bits {
+        payload_bits.push(rng.gen_range(0..=1));
+    }
+    
+    let encoded_bits = differential_encode_bits(&payload_bits);
+    let payload_syms = bits_to_qpsk_symbols(&encoded_bits);
+    frame_symbols.extend(payload_syms);
+    
+    frame_symbols
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -868,27 +904,8 @@ mod tests {
     #[test]
     fn test_audio_to_symbols_basic() {
         // Test basic demodulation with a realistic frame structure
-        // The new two-phase receiver requires:
-        // 1. Sufficient samples for decimation (3000 sps -> 4 sps requires 750x samples)
-        // 2. A sync preamble for frame acquisition
-        // 3. Reasonable payload length for tracking loops to settle
-        
-        use rand::{Rng, SeedableRng};
-        
-        // Build a minimal but realistic frame
-        let mut frame_symbols = Vec::new();
-        
-        // 1. Sync preamble (16 symbols of alternating pattern)
-        let preamble = vec![Complex64::new(1.0, 1.0); 16];
-        frame_symbols.extend(&preamble);
-        
-        // 2. Scrambled payload (32 symbols)
-        let mut rng = rand::rngs::StdRng::seed_from_u64(12345);
-        for _ in 0..32 {
-            let phase_idx = rng.gen_range(0..4);
-            let phase = phase_idx as f64 * std::f64::consts::PI / 2.0;
-            frame_symbols.push(Complex64::new(phase.cos(), phase.sin()));
-        }
+        // Using shared frame generation for consistency
+        let frame_symbols = generate_test_frame(32, 12345);
         
         // Modulate to audio
         let mod_config = ModulationConfig {
@@ -1075,30 +1092,8 @@ mod tests {
     #[test]
     fn test_modulation_demodulation_with_carrier_recovery() {
         // Test that carrier recovery enables reasonable symbol reconstruction
-        // Updated to use realistic frame structure with sync preamble
-        use std::f64::consts::FRAC_1_SQRT_2;
-        use rand::{Rng, SeedableRng};
-        
-        let mut frame_symbols = Vec::new();
-        
-        // 1. Sync preamble (16 symbols)
-        let preamble = vec![Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2); 16];
-        frame_symbols.extend(&preamble);
-        
-        // 2. Test payload - QPSK constellation points
-        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
-        let constellation = vec![
-            Complex64::new(FRAC_1_SQRT_2, FRAC_1_SQRT_2),   // 45°
-            Complex64::new(-FRAC_1_SQRT_2, FRAC_1_SQRT_2),  // 135°
-            Complex64::new(-FRAC_1_SQRT_2, -FRAC_1_SQRT_2), // 225°
-            Complex64::new(FRAC_1_SQRT_2, -FRAC_1_SQRT_2),  // 315°
-        ];
-        
-        // Add 32 scrambled payload symbols
-        for _ in 0..32 {
-            let idx = rng.gen_range(0..4);
-            frame_symbols.push(constellation[idx]);
-        }
+        // Using shared frame generation for consistency
+        let frame_symbols = generate_test_frame(32, 42);
         
         let mod_config = ModulationConfig {
             sample_rate: 48000,
@@ -1127,6 +1122,8 @@ mod tests {
         // Check the latter half of recovered symbols (loops have settled)
         let num_check = recovered_symbols.len().min(10);
         let check_start = recovered_symbols.len().saturating_sub(num_check);
+        
+        use std::f64::consts::FRAC_1_SQRT_2;
         
         for (i, symbol) in recovered_symbols[check_start..].iter().enumerate() {
             // Symbol should have reasonable magnitude (not just noise)
@@ -1159,28 +1156,8 @@ mod tests {
     #[test]
     fn test_carrier_recovery_with_frequency_offset() {
         // Test that coarse frequency correction + Costas loop can track frequency offset
-        // Updated to use realistic frame structure with sync preamble
-        use rand::{Rng, SeedableRng};
-        
-        let mut frame_symbols = Vec::new();
-        
-        // 1. Sync preamble (16 symbols)
-        let preamble = vec![Complex64::new(1.0, 0.0); 16];
-        frame_symbols.extend(&preamble);
-        
-        // 2. Test payload - simple QPSK pattern
-        let constellation = vec![
-            Complex64::new(1.0, 0.0),
-            Complex64::new(0.0, 1.0),
-            Complex64::new(-1.0, 0.0),
-            Complex64::new(0.0, -1.0),
-        ];
-        
-        let mut rng = rand::rngs::StdRng::seed_from_u64(123);
-        for _ in 0..32 {
-            let idx = rng.gen_range(0..4);
-            frame_symbols.push(constellation[idx]);
-        }
+        // Using shared frame generation for consistency (64 payload symbols for margin)
+        let frame_symbols = generate_test_frame(64, 123);
         
         let mod_config = ModulationConfig {
             sample_rate: 48000,
@@ -1201,12 +1178,13 @@ mod tests {
         
         let recovered_symbols = audio_to_symbols(&audio, &demod_config);
         
-        // Should recover most of the payload (preamble used for sync)
-        assert!(recovered_symbols.len() >= 15, 
-            "Got {} symbols, expected at least 15", recovered_symbols.len());
+        // Should recover a good portion of the payload (preamble used for sync)
+        // With 64 payload symbols and sync at various positions, expect at least 30
+        assert!(recovered_symbols.len() >= 30, 
+            "Got {} symbols, expected at least 30", recovered_symbols.len());
         
         // Check that latter symbols have good quality (loops settled + freq corrected)
-        let num_check = recovered_symbols.len().min(8);
+        let num_check = recovered_symbols.len().min(10);
         let check_start = recovered_symbols.len().saturating_sub(num_check);
         let late_avg = recovered_symbols[check_start..].iter()
             .map(|s| s.norm())

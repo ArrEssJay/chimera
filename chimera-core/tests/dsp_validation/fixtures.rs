@@ -96,3 +96,10 @@ pub fn get_test_demodulation_config() -> DemodulationConfig {
         symbol_rate: 16,
     }
 }
+
+/// Generate a realistic frame with sync preamble + payload
+/// This uses the proven architecture from mod/demod unit tests via shared implementation
+pub fn generate_realistic_frame(payload_symbols: usize, seed: u64) -> Vec<Complex64> {
+    chimera_core::signal_processing::demodulation::generate_test_frame(payload_symbols, seed)
+}
+
