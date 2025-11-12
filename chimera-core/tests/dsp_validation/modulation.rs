@@ -261,6 +261,184 @@ fn test_combined_fsk_qpsk_interaction() {
 }
 
 #[test]
+#[ignore] // EXPECTED TO FAIL: Current implementation does not handle FSK+QPSK correctly
+fn test_combined_fsk_qpsk_symbol_recovery() {
+    // This test validates that we can actually recover QPSK symbols when FSK is also enabled
+    // This is the CRITICAL test that exposes the single-loop carrier recovery problem
+    
+    let symbol_count = 128; // 8 seconds at 16 sym/s = 8 FSK bits
+    let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::AllFourPhases, symbol_count);
+    let mod_config = fixtures::get_test_modulation_config(true, true); // Both enabled!
+    
+    let audio = symbols_to_carrier_signal(&symbols, &mod_config);
+    
+    println!("Combined FSK+QPSK Symbol Recovery Test:");
+    println!("  TX symbols: {}", symbols.len());
+    
+    // Demodulate to recover symbols
+    let demod_config = fixtures::get_test_demodulation_config();
+    let recovered = audio_to_symbols(&audio, &demod_config);
+    
+    println!("  RX symbols: {}", recovered.len());
+    
+    // With the current single-loop architecture, this will FAIL
+    // Expected: ~128 symbols recovered
+    // Actual: ~14-103 symbols (carrier recovery fails)
+    
+    let recovery_ratio = recovered.len() as f32 / symbols.len() as f32;
+    println!("  Recovery ratio: {:.1}%", recovery_ratio * 100.0);
+    
+    // We should recover most of the symbols
+    assert!(
+        recovery_ratio > 0.9,
+        "Failed to recover symbols with FSK+QPSK: only {:.1}% recovered (expected >90%)",
+        recovery_ratio * 100.0
+    );
+    
+    // Check constellation quality on recovered symbols
+    let mut valid_constellation_count = 0;
+    for (i, symbol) in recovered.iter().enumerate().skip(10).take(50) {
+        let phase_deg = symbol.arg().to_degrees();
+        let magnitude = symbol.norm();
+        
+        if magnitude < 0.3 || magnitude > 3.0 {
+            continue;
+        }
+        
+        let nearest_phase = ((phase_deg / 90.0).round() * 90.0) % 360.0;
+        let phase_error = (phase_deg - nearest_phase).abs().min((phase_deg - nearest_phase + 360.0).abs());
+        
+        if i < 15 {
+            println!("  Symbol {}: phase={:.1}°, mag={:.2}, error={:.1}°",
+                i, phase_deg, magnitude, phase_error);
+        }
+        
+        if phase_error < 45.0 {
+            valid_constellation_count += 1;
+        }
+    }
+    
+    let valid_ratio = valid_constellation_count as f32 / 50.0;
+    println!("  Valid constellation points: {:.1}%", valid_ratio * 100.0);
+    
+    assert!(
+        valid_ratio > 0.7,
+        "Poor constellation quality with FSK+QPSK: only {:.1}% valid (expected >70%)",
+        valid_ratio * 100.0
+    );
+}
+
+#[test]
+#[ignore] // EXPECTED TO FAIL: Demonstrates the phase ramp problem
+fn test_combined_fsk_qpsk_phase_stability() {
+    // This test specifically checks for the "phase ramp" problem described in the diagnosis
+    // When FSK shifts the carrier by ±1 Hz, a single-loop Costas loop will see a persistent
+    // frequency error that causes the phase to continuously rotate
+    
+    let symbol_count = 48; // 3 seconds = 3 FSK bits
+    let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::Alternating, symbol_count);
+    let mod_config = fixtures::get_test_modulation_config(true, true);
+    
+    let audio = symbols_to_carrier_signal(&symbols, &mod_config);
+    
+    println!("Combined FSK+QPSK Phase Stability Test:");
+    
+    let demod_config = fixtures::get_test_demodulation_config();
+    let recovered = audio_to_symbols(&audio, &demod_config);
+    
+    println!("  TX symbols: {}", symbols.len());
+    println!("  RX symbols: {}", recovered.len());
+    
+    if recovered.len() < 30 {
+        println!("  FAILED: Not enough symbols recovered to analyze phase stability");
+        panic!("Insufficient symbol recovery: {} symbols", recovered.len());
+    }
+    
+    // Analyze phase progression over time
+    // With FSK causing ±1 Hz offset for 1 second (16 symbols), we expect to see
+    // phase drift of ±360° over that period if the Costas loop cannot compensate
+    
+    let mut phase_drift_per_fsk_bit = Vec::new();
+    
+    // Look at each FSK bit period (16 symbols)
+    for bit_idx in 0..2 {
+        let start_sym = 10 + (bit_idx * 16); // Skip first 10 for lock acquisition
+        let end_sym = start_sym + 16;
+        
+        if end_sym > recovered.len() {
+            break;
+        }
+        
+        let start_phase = recovered[start_sym].arg();
+        let end_phase = recovered[end_sym - 1].arg();
+        
+        // Unwrap phase to handle wrapping
+        let mut phase_change = end_phase - start_phase;
+        if phase_change > std::f64::consts::PI {
+            phase_change -= 2.0 * std::f64::consts::PI;
+        } else if phase_change < -std::f64::consts::PI {
+            phase_change += 2.0 * std::f64::consts::PI;
+        }
+        
+        let drift_deg = phase_change.to_degrees();
+        phase_drift_per_fsk_bit.push(drift_deg);
+        
+        println!("  FSK bit {}: phase drift = {:.1}°", bit_idx, drift_deg);
+    }
+    
+    // With a broken single-loop system, we expect significant phase drift
+    // A working dual-loop system should have minimal drift (<45° per FSK bit)
+    
+    let max_drift = phase_drift_per_fsk_bit.iter()
+        .map(|d| d.abs())
+        .fold(0.0f64, f64::max);
+    
+    println!("  Max phase drift per FSK bit: {:.1}°", max_drift);
+    
+    assert!(
+        max_drift < 45.0,
+        "Excessive phase drift with FSK+QPSK: {:.1}° per FSK bit (expected <45°)",
+        max_drift
+    );
+}
+
+#[test]
+#[ignore] // EXPECTED TO FAIL: Tests FSK bit recovery alongside QPSK
+fn test_combined_fsk_bit_decoding() {
+    // This test validates that we can decode BOTH the FSK bits AND the QPSK symbols
+    // A proper dual-loop architecture should be able to extract both layers
+    
+    let symbol_count = 160; // 10 seconds = 10 FSK bits
+    let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::Random, symbol_count);
+    let mod_config = fixtures::get_test_modulation_config(true, true);
+    
+    let audio = symbols_to_carrier_signal(&symbols, &mod_config);
+    
+    println!("Combined FSK Bit Decoding Test:");
+    println!("  TX symbols: {}", symbols.len());
+    println!("  Expected FSK bits: 10 (1 bit/second)");
+    
+    let demod_config = fixtures::get_test_demodulation_config();
+    let recovered = audio_to_symbols(&audio, &demod_config);
+    
+    println!("  RX symbols: {}", recovered.len());
+    
+    // First check that we got reasonable symbol recovery
+    let recovery_ratio = recovered.len() as f32 / symbols.len() as f32;
+    assert!(
+        recovery_ratio > 0.8,
+        "Poor symbol recovery: {:.1}%", recovery_ratio * 100.0
+    );
+    
+    // NOTE: The current implementation doesn't actually decode FSK bits yet
+    // This test is a placeholder for when we implement the FskTrackingLoop
+    // that can output the demodulated FSK bit stream
+    
+    println!("  Note: FSK bit extraction not yet implemented");
+    println!("  This test will be completed after dual-loop architecture is added");
+}
+
+#[test]
 fn test_combined_spectrum_bandwidth() {
     // Test spectrum with both modulations active
     let symbols = fixtures::generate_test_symbols(fixtures::SymbolPattern::Random, 200);

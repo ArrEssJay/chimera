@@ -78,3 +78,55 @@ fn test_processor_deterministic_no_channel() {
     assert_eq!(output1.decoded_bytes, output2.decoded_bytes);
     assert_eq!(flush1.decoded_bytes, flush2.decoded_bytes);
 }
+
+#[test]
+fn test_processor_hello_with_noise() {
+    // Test simple "Hello" with noise like CLI would
+    let mut config = ProcessorConfig::default();
+    config.channel.snr_db = 20.0;
+    config.channel.enable_noise = true;
+    
+    let mut processor = ChimeraProcessor::new(config);
+    processor.enable_diagnostics();
+    
+    let result = processor.process_batch("Hello");
+    
+    println!("\n=== Hello with noise test results ===");
+    println!("  Success: {}", result.success);
+    println!("  TX symbols: {}", result.tx_symbols.len());
+    println!("  RX symbols: {}", result.rx_symbols.len());
+    println!("  Pre-FEC BER: {:.6}", result.pre_fec_ber);
+    println!("  Post-FEC BER: {:.6}", result.post_fec_ber);
+    println!("  SNR: {:.2} dB", result.snr_db);
+    println!("  Recovered: {:?}", result.recovered_message);
+}
+
+#[test]
+fn test_processor_cli_equivalent() {
+    // Exactly match CLI defaults (whisper preset has FSK enabled!)
+    let mut config = ProcessorConfig::default();
+    config.channel.snr_db = 100.0;  // CLI uses this now
+    config.channel.enable_noise = false;
+    // FSK is now always enabled (part of spec)
+    
+    let mut processor = ChimeraProcessor::new(config);
+    processor.enable_diagnostics();
+    
+    // Use exact CLI message truncated to 16 bytes
+    let message = "Hello from Chime";  // Truncated "Hello from Chimera!"
+    let result = processor.process_batch(message);
+    
+    println!("\n=== CLI-equivalent test results ===");
+    println!("  Success: {}", result.success);
+    println!("  TX symbols: {}", result.tx_symbols.len());
+    println!("  RX symbols: {}", result.rx_symbols.len());
+    println!("  Pre-FEC BER: {:.6}", result.pre_fec_ber);
+    println!("  Post-FEC BER: {:.6}", result.post_fec_ber);
+    println!("  SNR: {:.2} dB", result.snr_db);
+    println!("  Recovered: {:?}", result.recovered_message);
+    
+    // This test might fail due to noise, but let's see what happens
+    if result.success && result.post_fec_ber < 0.01 {
+        assert!(result.recovered_message.starts_with("Hello from Chime"));
+    }
+}

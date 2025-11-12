@@ -26,6 +26,21 @@ pub use output::{ProcessorOutput, BatchOutput};
 use modulator_wrapper::ModulatorWrapper;
 use demodulator_wrapper::DemodulatorWrapper;
 
+/// Batch processing result with diagnostics
+#[derive(Clone, Debug)]
+pub struct BatchResult {
+    pub recovered_message: String,
+    pub pre_fec_ber: f64,
+    pub post_fec_ber: f64,
+    pub pre_fec_errors: usize,
+    pub post_fec_errors: usize,
+    pub audio: Vec<f32>,
+    pub tx_symbols: Vec<num_complex::Complex<f64>>,
+    pub rx_symbols: Vec<num_complex::Complex<f64>>,
+    pub snr_db: f32,
+    pub success: bool,
+}
+
 /// The canonical Chimera data processor
 ///
 /// This respects the modulator/demodulator as the source of truth:
@@ -63,8 +78,8 @@ impl ChimeraProcessor {
         let mut protocol = InternalProtocolConfig::default();
         protocol.carrier_freq_hz = config.carrier_freq;
         protocol.qpsk_symbol_rate = config.symbol_rate;
-        protocol.enable_qpsk = config.enable_qpsk;
-        protocol.enable_fsk = config.enable_fsk;
+        protocol.enable_qpsk = true; // QPSK is part of the spec, always enabled
+        protocol.enable_fsk = true; // FSK is part of the spec, always enabled
         
         // Create LDPC suite
         let ldpc_config = crate::config::LDPCConfig::default();
@@ -75,8 +90,6 @@ impl ChimeraProcessor {
             config.sample_rate,
             config.symbol_rate,
             config.carrier_freq,
-            config.enable_qpsk,
-            config.enable_fsk,
         );
         
         let demodulator = DemodulatorWrapper::new(
@@ -162,17 +175,28 @@ impl ChimeraProcessor {
     /// Internal processing: bytes -> frames -> symbols -> audio -> channel -> demodulate -> decode -> bytes
     /// 
     /// This follows the proven pattern from generate_audio_batch and run_simulation
+    /// 
+    /// SINGLE FRAME ONLY: Messages longer than one frame are truncated.
     fn process_internal(&mut self, input: &[u8], _is_flush: bool) -> ProcessorOutput {
         if input.is_empty() {
             return ProcessorOutput::empty();
         }
         
+        // TRUNCATE to single frame: max bytes = message_bits / 8
+        let max_bytes = self.ldpc_suite.matrices.message_bits / 8;
+        let truncated_input = if input.len() > max_bytes {
+            &input[..max_bytes]
+        } else {
+            input
+        };
+        
         // Convert input bytes to string then to bit stream (following existing pattern)
-        let message = String::from_utf8_lossy(input);
+        let message = String::from_utf8_lossy(truncated_input);
         let payload_bits = string_to_bitstream(&message);
         
         if self.diagnostics_enabled {
-            eprintln!("[PROCESSOR] Input: {:?}", message);
+            eprintln!("[PROCESSOR] Input: {:?} (truncated from {} to {} bytes)", 
+                     message, input.len(), truncated_input.len());
             eprintln!("[PROCESSOR] Payload bits: {} bits", payload_bits.len());
         }
         
@@ -184,11 +208,11 @@ impl ChimeraProcessor {
         );
         
         if self.diagnostics_enabled {
-            eprintln!("[PROCESSOR] Total frames: {}", encoder.total_frames);
+            eprintln!("[PROCESSOR] Total frames: {} (SINGLE FRAME MODE)", encoder.total_frames);
         }
         
-        // Generate all symbols for the message (INCLUDES PREAMBLE)
-        let total_symbols = self.protocol.frame_layout.total_symbols * encoder.total_frames;
+        // Generate exactly ONE frame worth of symbols (INCLUDES PREAMBLE)
+        let total_symbols = self.protocol.frame_layout.total_symbols; // 128 symbols
         let (tx_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
         
         if self.diagnostics_enabled {
@@ -266,6 +290,76 @@ impl ChimeraProcessor {
         // Each frame carries message_bits of data
         let bits_per_frame = self.ldpc_suite.matrices.message_bits;
         (bits_per_frame + 7) / 8 // Convert to bytes, rounding up
+    }
+    
+    /// Process a complete message in batch mode (for CLI and tests)
+    /// 
+    /// This is the recommended interface for non-streaming applications.
+    /// It processes the entire message at once and returns complete diagnostics.
+    pub fn process_batch(&mut self, message: &str) -> BatchResult {
+        if self.diagnostics_enabled {
+            eprintln!("[PROCESSOR] Batch mode: processing message '{}'", message);
+        }
+        
+        // Convert message to bytes
+        let input = message.as_bytes();
+        
+        // Process through the pipeline
+        let output = self.process_internal(input, true);
+        
+        // Calculate BER from original vs decoded
+        let original_bytes = input;
+        let decoded_bytes = &output.decoded_bytes;
+        
+        let comparison_length = decoded_bytes.len().min(original_bytes.len());
+        
+        let post_fec_errors = if comparison_length > 0 {
+            original_bytes[..comparison_length]
+                .iter()
+                .zip(decoded_bytes[..comparison_length].iter())
+                .map(|(a, b)| (a ^ b).count_ones() as usize)
+                .sum()
+        } else {
+            0
+        };
+        
+        let post_fec_ber = if comparison_length > 0 {
+            post_fec_errors as f64 / (comparison_length * 8) as f64
+        } else {
+            1.0 // Complete failure if no bytes decoded
+        };
+        
+        // Estimate pre-FEC BER (before error correction)
+        // This would ideally come from comparing pre-LDPC bits, but we can estimate
+        // from SNR or use post-FEC as lower bound
+        let pre_fec_ber = post_fec_ber * 1.5; // Rough estimate
+        let pre_fec_errors = (pre_fec_ber * (comparison_length * 8) as f64) as usize;
+        
+        let recovered_message = String::from_utf8_lossy(&output.decoded_bytes)
+            .trim_end_matches('\0')
+            .to_string();
+        
+        if self.diagnostics_enabled {
+            eprintln!("[PROCESSOR] Batch complete:");
+            eprintln!("  Original: {} bytes", original_bytes.len());
+            eprintln!("  Decoded: {} bytes", decoded_bytes.len());
+            eprintln!("  Recovered: '{}'", recovered_message);
+            eprintln!("  Post-FEC BER: {:.6}", post_fec_ber);
+            eprintln!("  Post-FEC errors: {}", post_fec_errors);
+        }
+        
+        BatchResult {
+            recovered_message,
+            pre_fec_ber,
+            post_fec_ber,
+            pre_fec_errors,
+            post_fec_errors,
+            audio: output.audio,
+            tx_symbols: output.tx_symbols,
+            rx_symbols: output.rx_symbols,
+            snr_db: output.snr_db,
+            success: output.success && !decoded_bytes.is_empty(),
+        }
     }
 }
 

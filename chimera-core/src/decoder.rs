@@ -263,6 +263,8 @@ impl StreamingSymbolDecoder {
     /// 3. Extract payload from frame structure
     /// 4. Apply LDPC FEC decoding
     /// 5. Convert bits to bytes
+    /// 
+    /// SINGLE FRAME MODE: Only processes the first frame, ignores any additional symbols.
     pub fn process_synchronized_symbols(&mut self, symbols: &[Complex64]) -> Vec<u8> {
         // 1. Demodulate QPSK symbols to bits (2 bits per symbol)
         let mut bits = Vec::with_capacity(symbols.len() * 2);

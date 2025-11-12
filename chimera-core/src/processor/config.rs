@@ -6,8 +6,6 @@ pub struct ProcessorConfig {
     pub sample_rate: usize,
     pub symbol_rate: usize,
     pub carrier_freq: f64,
-    pub enable_fsk: bool,
-    pub enable_qpsk: bool,
     
     /// Channel configuration
     pub channel: ChannelConfig,
@@ -23,8 +21,6 @@ impl Default for ProcessorConfig {
             sample_rate: 48000,
             symbol_rate: 16,
             carrier_freq: 12000.0,
-            enable_fsk: false,
-            enable_qpsk: true,
             channel: ChannelConfig::default(),
             optimize_for_latency: true,
             min_chunk_size: None,

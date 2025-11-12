@@ -54,8 +54,6 @@ pub struct FrameHexDump {
     pub sync_sequence: String,
     pub target_id: String,
     pub command_type: String,
-    pub current_frame: u32,
-    pub total_frames: u32,
     pub payload: String,
     pub ecc: String,
 }
@@ -65,7 +63,6 @@ pub struct DecodedFrame {
     pub target_name: String,
     pub command_opcode: String,
     pub command_description: String,
-    pub frame_position: String,
     pub payload_preview: String,
 }
 
@@ -144,8 +141,8 @@ impl StructuredLogger {
             }
             LogEvent::FrameDecode(f) => {
                 format!(
-                    "ts=\"{}\" type=frame_decode frame={} target=\"{}\" opcode=\"{}\" position=\"{}\"",
-                    ts, f.frame_index, f.decoded.target_name, f.decoded.command_opcode, f.decoded.frame_position
+                    "ts=\"{}\" type=frame_decode frame={} target=\"{}\" opcode=\"{}\"",
+                    ts, f.frame_index, f.decoded.target_name, f.decoded.command_opcode
                 )
             }
             LogEvent::Statistics(s) => {
@@ -181,9 +178,9 @@ impl StructuredLogger {
             }
             LogEvent::FrameDecode(f) => {
                 format!(
-                    "[{}] FRAME[{}]: {} | {} ({}) | {}",
+                    "[{}] FRAME[{}]: {} | {} ({})",
                     ts, f.frame_index, f.decoded.target_name, f.decoded.command_opcode, 
-                    f.decoded.command_description, f.decoded.frame_position
+                    f.decoded.command_description
                 )
             }
             LogEvent::Statistics(s) => {

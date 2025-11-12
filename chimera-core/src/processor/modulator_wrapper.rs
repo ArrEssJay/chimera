@@ -16,16 +16,12 @@ impl ModulatorWrapper {
         sample_rate: usize,
         symbol_rate: usize,
         carrier_freq: f64,
-        enable_qpsk: bool,
-        enable_fsk: bool,
     ) -> Self {
         Self {
             config: ModulationConfig {
                 sample_rate,
                 symbol_rate,
                 carrier_freq,
-                enable_qpsk,
-                enable_fsk,
             },
         }
     }

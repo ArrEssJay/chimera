@@ -422,6 +422,7 @@ fn debug_full_pipeline_sync() {
         sample_rate,
         symbol_rate: protocol.qpsk_symbol_rate as usize,
         carrier_freq: protocol.carrier_freq_hz,
+        enable_fsk: false, // TODO: Get from protocol config
     };
     
     let rx_symbols = audio_to_symbols(&noisy_audio, &demodulation_config);

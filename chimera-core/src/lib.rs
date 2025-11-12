@@ -21,11 +21,18 @@ pub mod signal_processing;
 pub mod thz_carriers;
 pub mod utils;
 
+// Re-export the canonical processor interface
+pub use processor::{ChimeraProcessor, ProcessorConfig, BatchResult};
+
 use config::{LDPCConfig, InternalProtocolConfig, UserSimulationConfig};
 use diagnostics::{DiagnosticsBundle, ModulationAudio, SimulationReport};
 use ldpc::LDPCSuite;
 
 /// High-level handle returned by `run_simulation`.
+/// 
+/// DEPRECATED: Use ChimeraProcessor::process_batch() instead.
+/// This function is kept for backward compatibility with existing tests.
+#[deprecated(since = "0.2.0", note = "Use ChimeraProcessor::process_batch() instead")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct SimulationOutput {
     pub report: SimulationReport,
@@ -36,8 +43,9 @@ pub struct SimulationOutput {
 /// Execute an end-to-end simulation with the provided configuration set.
 /// Signal path: encode → modulate → channel → demodulate → decode
 /// 
-/// The pipeline handles all processing internally. This function runs
-/// the pipeline until all frames are processed and collects the results.
+/// DEPRECATED: Use ChimeraProcessor::process_batch() instead.
+/// This function is kept for backward compatibility with existing tests.
+#[deprecated(since = "0.2.0", note = "Use ChimeraProcessor::process_batch() instead")]
 pub fn run_simulation(
     sim: &UserSimulationConfig,
     protocol: &InternalProtocolConfig,
@@ -196,6 +204,9 @@ pub fn run_simulation(
 
 /// Generate audio for a message without real-time streaming delays
 /// Returns the complete audio waveform for the entire message
+/// 
+/// DEPRECATED: Use ChimeraProcessor::process_batch() instead and access the .audio field.
+#[deprecated(since = "0.2.0", note = "Use ChimeraProcessor::process_batch() instead")]
 pub fn generate_audio_batch(
     message: &str,
     protocol: &InternalProtocolConfig,
@@ -222,8 +233,6 @@ pub fn generate_audio_batch(
         sample_rate: crate::config::SystemConfig::SAMPLE_RATE,
         symbol_rate: protocol.qpsk_symbol_rate,
         carrier_freq: protocol.carrier_freq_hz,
-        enable_qpsk: protocol.enable_qpsk,
-        enable_fsk: protocol.enable_fsk,
     };
     
     symbols_to_carrier_signal(&tx_symbols, &mod_config)

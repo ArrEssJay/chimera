@@ -381,8 +381,6 @@ impl RealtimePipeline {
             sample_rate,
             symbol_rate,
             carrier_freq,
-            enable_qpsk: self.protocol.enable_qpsk,
-            enable_fsk: self.protocol.enable_fsk,
         };
         let base_audio = symbols_to_carrier_signal(&tx_symbols, &modulation_config);
         

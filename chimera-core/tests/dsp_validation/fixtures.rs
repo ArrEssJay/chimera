@@ -94,6 +94,7 @@ pub fn get_test_demodulation_config() -> DemodulationConfig {
         sample_rate: 48000,
         carrier_freq: 12000.0,
         symbol_rate: 16,
+        enable_fsk: false,
     }
 }
 

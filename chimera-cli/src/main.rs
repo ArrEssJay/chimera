@@ -6,9 +6,8 @@ mod telemetry;
 use clap::Parser;
 use color_eyre::eyre::{Context, Result};
 
-use chimera_core::run_simulation;
+use chimera_core::processor::{ChimeraProcessor, ProcessorConfig};
 use config::CliConfig;
-use frame_decoder::FrameDecoder;
 use logging::{LogEvent, StatisticsEvent, StructuredLogger};
 use std::path::PathBuf;
 use telemetry::TelemetryAggregator;
@@ -62,37 +61,55 @@ fn main() -> Result<()> {
         message: format!("Chimera CLI starting with message: \"{}\"", config.simulation.message),
     })?;
     
-    // Calculate frame count for logging
-    let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.message);
-    let bits_per_frame = config.protocol.frame_layout.data_payload_symbols * 2;
-    let total_frames = (payload_bits.len() + bits_per_frame - 1) / bits_per_frame;
+    // SINGLE FRAME MODE: Calculate max message size
+    let ldpc = chimera_core::ldpc::LDPCSuite::new(&config.protocol.frame_layout, &config.ldpc);
+    let max_bytes = ldpc.matrices.message_bits / 8;
+    let message_bytes = config.simulation.message.len().min(max_bytes);
+    let payload_bits = chimera_core::utils::string_to_bitstream(&config.simulation.message[..message_bytes]);
     
     logger.log(LogEvent::Info {
         message: format!(
-            "Encoding {} bytes ({} bits) into {} frames",
-            config.simulation.message.len(),
+            "Encoding {} bytes ({} bits) into 1 frame (max {} bytes)",
+            message_bytes,
             payload_bits.len(),
-            total_frames
+            max_bytes
         ),
     })?;
     
-    // Always run the full simulation (which generates audio internally)
-    let result = run_simulation(&config.simulation, &config.protocol, &config.ldpc);
+    // Create processor with configuration from config file
+    let processor_config = ProcessorConfig {
+        sample_rate: chimera_core::config::SystemConfig::SAMPLE_RATE,
+        symbol_rate: config.protocol.qpsk_symbol_rate,
+        carrier_freq: config.protocol.carrier_freq_hz,
+        channel: chimera_core::processor::ChannelConfig {
+            snr_db: 100.0, // Use very high SNR for clean channel
+            enable_noise: false, // Disable noise completely
+            enable_fading: false, // Not implemented yet
+            attenuation: config.channel.link_loss_db,
+        },
+        optimize_for_latency: false, // Batch mode
+        min_chunk_size: None,
+    };
+    
+    let mut processor = ChimeraProcessor::new(processor_config);
+    if args.verbose {
+        processor.enable_diagnostics();
+    }
+    
+    // Run the batch processing
+    let result = processor.process_batch(&config.simulation.message);
     
     // Initialize telemetry aggregator
     let mut telemetry = TelemetryAggregator::new(config.terminal.telemetry_interval_secs);
     
-    // Initialize frame decoder
-    let frame_decoder = FrameDecoder::new(config.protocol.clone());
-    
     // Update telemetry with actual simulation results
     telemetry.update(
-        result.report.pre_fec_ber,
-        result.report.post_fec_ber,
+        result.pre_fec_ber,
+        result.post_fec_ber,
         config.protocol.carrier_freq_hz,
-        result.diagnostics.tx_symbols_i.len(),
-        total_frames,
-        result.report.post_fec_errors == 0, // Synced if no errors
+        result.tx_symbols.len(),
+        1, // Single frame mode
+        result.post_fec_errors == 0, // Synced if no errors
     );
     
     // Log telemetry sample
@@ -100,24 +117,9 @@ fn main() -> Result<()> {
         logger.log(LogEvent::Telemetry(telemetry_event))?;
     }
     
-    // Decode and log each frame if frame data is available
-    if !result.diagnostics.frames.is_empty() {
-        for (frame_idx, frame_desc) in result.diagnostics.frames.iter().enumerate() {
-            let frame_event = frame_decoder.decode_frame(frame_idx, &result.diagnostics.tx_bits);
-            logger.log(LogEvent::FrameDecode(frame_event))?;
-            
-            // Log frame metadata
-            logger.log(LogEvent::Info {
-                message: format!(
-                    "Frame {}/{}: {} - {}",
-                    frame_desc.frame_index + 1,
-                    frame_desc.total_frames,
-                    frame_desc.frame_label,
-                    frame_desc.payload_preview
-                ),
-            })?;
-        }
-    }
+    // Decode and log frames (processor doesn't expose frame-by-frame data yet)
+    // TODO: Add frame diagnostics to processor if needed
+    // For now, we'll skip frame-by-frame logging
     
     // Compute and log final statistics
     let (pre_fec_stats, post_fec_stats, fsk_stats) = telemetry.compute_statistics();
@@ -135,43 +137,44 @@ fn main() -> Result<()> {
     logger.log(LogEvent::Statistics(stats_event))?;
     
     // Log summary metrics
+    let errors_corrected = if result.pre_fec_errors > result.post_fec_errors {
+        result.pre_fec_errors - result.post_fec_errors
+    } else {
+        0
+    };
+    
     logger.log(LogEvent::Info {
         message: format!(
             "Pre-FEC BER: {:.6}, Post-FEC BER: {:.6}, Errors corrected: {}",
-            result.report.pre_fec_ber,
-            result.report.post_fec_ber,
-            result.report.pre_fec_errors - result.report.post_fec_errors
+            result.pre_fec_ber,
+            result.post_fec_ber,
+            errors_corrected
         ),
     })?;
     
     logger.log(LogEvent::Info {
-        message: format!("Recovered message: {}", result.report.recovered_message),
+        message: format!("Recovered message: {}", result.recovered_message),
     })?;
     
     // If WAV output is requested, write the audio from the simulation
     if let Some(wav_path) = &config.terminal.wav_output {
-        if let Some(audio_data) = &result.diagnostics.modulation_audio {
+        if !result.audio.is_empty() {
             logger.log(LogEvent::Info {
                 message: format!("Writing audio to {}", wav_path.display()),
             })?;
             
+            let sample_rate = chimera_core::config::SystemConfig::SAMPLE_RATE;
+            
             let spec = hound::WavSpec {
                 channels: 1,
-                sample_rate: audio_data.sample_rate as u32,
+                sample_rate: sample_rate as u32,
                 bits_per_sample: 32,
                 sample_format: hound::SampleFormat::Float,
             };
             
             let mut writer = hound::WavWriter::create(&wav_path, spec)?;
             
-            // Write the noisy audio if available, otherwise clean
-            let audio_samples = if !audio_data.noisy.is_empty() {
-                &audio_data.noisy
-            } else {
-                &audio_data.clean
-            };
-            
-            for &sample in audio_samples {
+            for &sample in &result.audio {
                 writer.write_sample(sample)?;
             }
             writer.finalize()?;
@@ -179,8 +182,8 @@ fn main() -> Result<()> {
             logger.log(LogEvent::Info {
                 message: format!(
                     "Wrote {} samples ({:.2}s) to {}",
-                    audio_samples.len(),
-                    audio_samples.len() as f64 / audio_data.sample_rate as f64,
+                    result.audio.len(),
+                    result.audio.len() as f64 / sample_rate as f64,
                     wav_path.display()
                 ),
             })?;
@@ -195,23 +198,22 @@ fn main() -> Result<()> {
     if args.verbose {
         logger.log(LogEvent::Info {
             message: format!(
-                "Diagnostic summary: {} TX symbols, {} encoding logs, {} decoding logs",
-                result.diagnostics.tx_symbols_i.len(),
-                result.diagnostics.encoding_logs.len(),
-                result.diagnostics.decoding_logs.len()
+                "Diagnostic summary: {} TX symbols, {} RX symbols, {} audio samples",
+                result.tx_symbols.len(),
+                result.rx_symbols.len(),
+                result.audio.len()
             ),
         })?;
         
-        if let Some(audio) = &result.diagnostics.modulation_audio {
-            logger.log(LogEvent::Info {
-                message: format!(
-                    "Audio: {} samples at {} Hz, carrier at {:.1} Hz",
-                    audio.clean.len(),
-                    audio.sample_rate,
-                    audio.carrier_freq_hz
-                ),
-            })?;
-        }
+        logger.log(LogEvent::Info {
+            message: format!(
+                "Audio: {} samples at {} Hz, carrier at {:.1} Hz, SNR: {:.1} dB",
+                result.audio.len(),
+                chimera_core::config::SystemConfig::SAMPLE_RATE,
+                config.protocol.carrier_freq_hz,
+                result.snr_db
+            ),
+        })?;
     }
 
     Ok(())

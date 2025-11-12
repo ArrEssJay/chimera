@@ -65,14 +65,7 @@ impl FrameDecoder {
         // Command type
         let command_bits = &frame_bits[bit_offset..bit_offset + layout.command_type_symbols * 2];
         let command_hex = bits_to_hex(command_bits);
-        let command_value = bits_to_u32(command_bits);
         bit_offset += layout.command_type_symbols * 2;
-        
-        // Extract frame counters from command field
-        let current_frame = (command_value >> self.protocol.current_frame_shift) 
-            & ((1 << (self.protocol.total_frames_shift - self.protocol.current_frame_shift)) - 1);
-        let total_frames = (command_value >> self.protocol.total_frames_shift) 
-            & ((1 << (32 - self.protocol.total_frames_shift)) - 1);
         
         // Data payload
         let payload_bits = &frame_bits[bit_offset..bit_offset + layout.data_payload_symbols * 2];
@@ -89,8 +82,6 @@ impl FrameDecoder {
             sync_sequence: format_hex_field(&sync_hex),
             target_id: format_hex_field(&target_hex),
             command_type: format_hex_field(&command_hex),
-            current_frame,
-            total_frames,
             payload: format_hex_field(&payload_hex),
             ecc: format_hex_field(&ecc_hex),
         };
@@ -104,7 +95,6 @@ impl FrameDecoder {
             target_name: target_name.to_string(),
             command_opcode: format!("0x{:04X} ({})", command_opcode, opcode_name),
             command_description: opcode_desc.to_string(),
-            frame_position: format!("{}/{}", current_frame + 1, total_frames),
             payload_preview,
         };
         
