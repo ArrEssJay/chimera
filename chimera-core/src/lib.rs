@@ -15,6 +15,7 @@ pub mod errors;
 pub mod external_audio;
 pub mod ldpc;
 pub mod pipeline;
+pub mod processor;
 pub mod protocol;
 pub mod signal_processing;
 pub mod thz_carriers;
@@ -104,18 +105,25 @@ pub fn run_simulation(
         .to_string();
     
     // Calculate BER - compare original bits to decoded bits
-    let comparison_length = decoded_payload.len().min(payload_bits.len() / 8);
+    // Use the actual payload length (bytes), not the bit array length
+    let original_bytes = sim.message.as_bytes();
+    let comparison_length = decoded_payload.len().min(original_bytes.len());
+    
     let post_fec_errors = if comparison_length > 0 {
-        let decoded_bits: Vec<u8> = decoded_payload.iter()
+        let decoded_bits: Vec<u8> = decoded_payload[..comparison_length].iter()
             .flat_map(|byte| {
                 (0..8).map(move |i| ((byte >> (7 - i)) & 1) as u8)
             })
             .collect();
         
-        let bit_comparison_length = comparison_length * 8;
-        decoded_bits[..bit_comparison_length.min(decoded_bits.len())]
-            .iter()
-            .zip(&payload_bits[..bit_comparison_length])
+        let original_bits: Vec<u8> = original_bytes[..comparison_length].iter()
+            .flat_map(|byte| {
+                (0..8).map(move |i| ((byte >> (7 - i)) & 1) as u8)
+            })
+            .collect();
+        
+        decoded_bits.iter()
+            .zip(original_bits.iter())
             .filter(|(rx, tx)| rx != tx)
             .count()
     } else {

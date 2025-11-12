@@ -250,6 +250,129 @@ impl StreamingSymbolDecoder {
         (new_decoded_bits, frame_complete, self.current_frame_index, self.symbols_in_current_frame, diagnostics)
     }
     
+    /// Process symbols that are already synchronized (preamble stripped by demodulator)
+    /// 
+    /// The demodulator has already:
+    /// - Found frame sync using preamble correlation
+    /// - Stripped the preamble from the symbol stream
+    /// - Applied timing and carrier recovery
+    /// 
+    /// This method only needs to:
+    /// 1. Demodulate QPSK symbols to bits
+    /// 2. Apply differential decoding
+    /// 3. Extract payload from frame structure
+    /// 4. Apply LDPC FEC decoding
+    /// 5. Convert bits to bytes
+    pub fn process_synchronized_symbols(&mut self, symbols: &[Complex64]) -> Vec<u8> {
+        // 1. Demodulate QPSK symbols to bits (2 bits per symbol)
+        let mut bits = Vec::with_capacity(symbols.len() * 2);
+        for symbol in symbols {
+            let symbol_bits = demodulate_qpsk_symbol(*symbol);
+            bits.push(symbol_bits[0]);
+            bits.push(symbol_bits[1]);
+        }
+        
+        if bits.is_empty() {
+            self.logger.log("No bits demodulated from symbols".to_string());
+            return Vec::new();
+        }
+        
+        // 2. Apply differential decoding (reverses the differential encoding from TX)
+        // NOTE: Differential decoding loses 2 bits (the reference symbol)
+        let decoded_bits = differential_decode_bits(&bits);
+        
+        if decoded_bits.is_empty() {
+            self.logger.log(format!(
+                "Differential decoding produced no output from {} bits",
+                bits.len()
+            ));
+            return Vec::new();
+        }
+        
+        // 3. Frame structure AFTER preamble stripped by demodulator:
+        //    Preamble (16 symbols, 32 bits) - ALREADY REMOVED BY DEMOD
+        //    Target ID (16 symbols, 32 bits) - starts here
+        //    Command (16 symbols, 32 bits)
+        //    Payload Section (64 symbols, 128 bits) - FIRST PART of LDPC codeword
+        //    ECC Section (16 symbols, 32 bits) - SECOND PART of LDPC codeword
+        //
+        // NOTE: The encoder creates a 160-bit LDPC codeword (128 message + 32 parity),
+        // then splits it into payload_section (128 bits) and ecc_section (32 bits).
+        // We need to reconstruct the full codeword by concatenating these two parts.
+        //
+        // The demodulator returns (128-16) = 112 symbols, but differential decoding
+        // loses one symbol (2 bits) for the reference, so we get 111 symbols = 222 bits.
+        // Then differential decode loses another 2 bits, giving us 220 bits total.
+        //
+        // Expected after diff decode: Target ID (30 bits) + Command (32 bits) + Payload (128 bits) + ECC (30 bits) = 220 bits
+        
+        let target_id_bits = self.protocol.frame_layout.target_id_symbols * 2; // 32
+        let command_type_bits = self.protocol.frame_layout.command_type_symbols * 2; // 32
+        let payload_section_bits = self.protocol.frame_layout.data_payload_symbols * 2; // 128
+        let _ecc_section_bits = self.protocol.frame_layout.ecc_symbols * 2; // 32 (expected, but may be truncated)
+        
+        // We lose 2 bits at the start and 2 bits at the end
+        // Start: 30 bits (target_id) + 32 bits (command) = 62 bits header
+        // Then: 128 bits (payload section)
+        // Then: 30 bits (ecc section, truncated by 2)
+        // Total: 62 + 128 + 30 = 220 bits ✓
+        
+        let header_bits = (target_id_bits - 2) + command_type_bits; // 30 + 32 = 62
+        let payload_section_start = header_bits; // 62
+        let payload_section_end = payload_section_start + payload_section_bits; // 62 + 128 = 190
+        let ecc_section_start = payload_section_end; // 190
+        let ecc_section_end = decoded_bits.len(); // 220 (take whatever remains)
+        
+        if decoded_bits.len() < payload_section_end {
+            self.logger.log(format!(
+                "Insufficient bits: have {}, need {}",
+                decoded_bits.len(),
+                payload_section_end
+            ));
+            return Vec::new();
+        }
+        
+        // 4. Reconstruct the full LDPC codeword by concatenating payload + ecc sections
+        let payload_section = &decoded_bits[payload_section_start..payload_section_end];
+        let ecc_section = &decoded_bits[ecc_section_start..ecc_section_end];
+        
+        // ECC section is truncated to 30 bits, but LDPC expects 32-bit parity
+        // We need to pad it with 2 zero bits
+        let mut codeword = Vec::with_capacity(self.matrices.codeword_bits);
+        codeword.extend_from_slice(payload_section);
+        codeword.extend_from_slice(ecc_section);
+        // Pad to reach expected codeword size
+        while codeword.len() < self.matrices.codeword_bits {
+            codeword.push(0);
+        }
+        
+        if codeword.len() != self.matrices.codeword_bits {
+            self.logger.log(format!(
+                "Codeword size mismatch: have {}, expected {}",
+                codeword.len(),
+                self.matrices.codeword_bits
+            ));
+            return Vec::new();
+        }
+        
+        // 5. Apply LDPC decoding to extract the actual message bits
+        let decoded_payload_bits = decode_ldpc(&self.matrices, &codeword, 0.0);
+        
+        // 6. Convert bits to bytes
+        let bytes = crate::utils::pack_bits(&decoded_payload_bits);
+        
+        self.logger.log(format!(
+            "SUCCESS: {} symbols → {} bits → {} diff decoded → {} payload bits → {} bytes",
+            symbols.len(),
+            bits.len(),
+            decoded_bits.len(),
+            decoded_payload_bits.len(),
+            bytes.len()
+        ));
+        
+        bytes
+    }
+    
     fn search_for_sync(&mut self) {
         let sync_bit_len = self.protocol.frame_layout.sync_symbols * 2;
         let sync_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, sync_bit_len);
