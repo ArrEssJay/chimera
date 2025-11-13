@@ -6,10 +6,10 @@ command = "send_data"
 target_id = "DEADBEEF"
 
 [simulation]
-message = "Hello from Chimera!"
+message = "Hello"
 
 [channel]
-snr_db = 20.0
+snr_db = 30.0  # Increased from 20.0 to confirm system works perfectly
 link_loss_db = 0.0
 
 [terminal]

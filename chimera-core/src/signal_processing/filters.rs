@@ -5,23 +5,63 @@
 
 use std::f64::consts::PI;
 
+/// Generate Root-Raised-Cosine (RRC) filter kernel coefficients
+/// 
+/// Returns just the filter taps without any convolution.
+/// This is used for direct pulse shaping in the modulator.
+/// 
+/// The filter is normalized to have UNIT ENERGY (not unit gain), which is the
+/// standard for pulse-shaping filters in professional systems (MATLAB, GNU Radio).
+pub fn generate_rrc_kernel(sample_rate: usize, symbol_rate: usize) -> Vec<f32> {
+    let rolloff = 0.25;
+    let samples_per_symbol = sample_rate / symbol_rate;
+    let filter_span_symbols = 8;
+    let filter_len = (filter_span_symbols * samples_per_symbol + 1).min(401);
+    
+    let mut h = vec![0.0f64; filter_len];
+    let ts = 1.0 / symbol_rate as f64;
+    
+    for i in 0..filter_len {
+        let t = (i as f64 - (filter_len / 2) as f64) / sample_rate as f64;
+        let t_norm = t / ts;
+        
+        if t_norm.abs() < 1e-9 {
+            h[i] = 1.0 - rolloff + 4.0 * rolloff / PI;
+        } else if ((4.0 * rolloff * t_norm).abs() - 1.0).abs() < 1e-9 {
+            let term1 = (1.0 + 2.0 / PI) * (PI / (4.0 * rolloff)).sin();
+            let term2 = (1.0 - 2.0 / PI) * (PI / (4.0 * rolloff)).cos();
+            h[i] = (rolloff / 2.0_f64.sqrt()) * (term1 + term2);
+        } else {
+            let pi_t = PI * t_norm;
+            let four_alpha_t = 4.0 * rolloff * t_norm;
+            let numerator = pi_t.cos() * rolloff + (pi_t * (1.0 - rolloff)).sin() / four_alpha_t;
+            let denominator = 1.0 - four_alpha_t * four_alpha_t;
+            h[i] = numerator / denominator;
+        }
+    }
+    
+    // Normalize for unit energy
+    let energy: f64 = h.iter().map(|&x| x * x).sum();
+    if energy.abs() > 1e-10 {
+        let scale = 1.0 / energy.sqrt();
+        for coeff in &mut h {
+            *coeff *= scale;
+        }
+    }
+    
+    h.iter().map(|&x| x as f32).collect()
+}
+
 /// Apply Root-Raised-Cosine (RRC) pulse shaping filter at sample rate
 /// 
 /// RRC filter provides:
-/// - ~24 Hz bandwidth with moderate rolloff (rolloff = 0.5)
+/// - ~24 Hz bandwidth with moderate rolloff (rolloff = 0.25)
 /// - Zero inter-symbol interference (ISI) when matched with RX filter
 /// - Proper spectral containment for QPSK
-/// 
-/// For 16 sym/s with rolloff = 0.5:
-/// Bandwidth = symbol_rate * (1 + rolloff) = 16 * 1.5 = 24 Hz
 /// 
 /// The filter is normalized to have UNIT ENERGY (not unit gain), which is the
 /// standard for pulse-shaping filters in professional systems (MATLAB, GNU Radio).
 /// This ensures predictable, stable output power that enables proper AGC operation.
-/// 
-/// A rolloff of 0.5 (vs 0.25) creates a faster-decaying time-domain pulse that is
-/// much more robust to truncation by an 8-symbol filter span, dramatically reducing
-/// ISI. This is the standard trade-off in robust communications systems.
 pub fn apply_rrc_filter(samples: &[f32], sample_rate: usize, symbol_rate: usize) -> Vec<f32> {
     // Use the spec-default rolloff of 0.25 for optimal spectral efficiency.
     // The 8-symbol filter span provides sufficient time-domain support for
@@ -82,32 +122,46 @@ pub fn apply_rrc_filter(samples: &[f32], sample_rate: usize, symbol_rate: usize)
         }
     }
     
-    // Apply convolution with zero-padding at boundaries
-    convolve(samples, &h.iter().map(|&x| x as f32).collect::<Vec<_>>())
+    // Use full convolution to avoid truncating filter response
+    let kernel_f32: Vec<f32> = h.iter().map(|&x| x as f32).collect();
+    let filtered = convolve_full(samples, &kernel_f32);
+    
+    // The output is now longer (N + M - 1). We need to account for the filter's 
+    // group delay and return a slice that is aligned with the input.
+    // The group delay of a symmetric FIR filter is (M-1)/2 samples.
+    let half_len = kernel_f32.len() / 2;
+    let output_len = samples.len();
+    
+    // Return the 'same' part of the convolution, aligned with the input
+    filtered[half_len .. half_len + output_len].to_vec()
 }
 
-/// Convolution helper with proper boundary handling
+/// Performs a 'full' convolution, returning an output of length N + M - 1.
+/// This is essential for FIR filtering to avoid truncating the filter's response.
 /// 
 /// For matched filtering, the receiver filter should be the time-reversed
 /// conjugate of the transmitter filter. Since the RRC filter is real-valued
-/// and symmetric (h[i] = h[-i]), it is its own matched filter - no time
-/// reversal needed. This implementation correctly handles the symmetric RRC
-/// kernel for both TX pulse shaping and RX matched filtering.
+/// and symmetric (h[i] = h[-i]), it is its own matched filter.
 /// 
-/// Standard convolution: y[n] = Σ x[n-k] * h[k] = Σ x[k] * h[n-k]
-fn convolve(signal: &[f32], kernel: &[f32]) -> Vec<f32> {
-    let mut output = vec![0.0; signal.len()];
-    let half_len = kernel.len() / 2;
+/// Standard convolution: y[n] = Σ x[k] * h[n-k]
+pub fn convolve_full(signal: &[f32], kernel: &[f32]) -> Vec<f32> {
+    if signal.is_empty() || kernel.is_empty() {
+        return Vec::new();
+    }
     
-    for i in 0..signal.len() {
+    let n = signal.len();
+    let m = kernel.len();
+    let output_len = n + m - 1;
+    let mut output = vec![0.0; output_len];
+
+    for i in 0..output_len {
         let mut acc = 0.0;
-        // Standard convolution: output[i] = Σ signal[i+j-half_len] * kernel[j]
-        // The kernel is centered at half_len, so j=half_len corresponds to t=0
-        for (j, &k) in kernel.iter().enumerate() {
-            let signal_idx = i as i32 + j as i32 - half_len as i32;
-            if signal_idx >= 0 && (signal_idx as usize) < signal.len() {
-                acc += signal[signal_idx as usize] * k;
-            }
+        // For output[i], we sum over all k where both signal[i-k] and kernel[k] are valid
+        let k_min = if i >= n { (i - (n - 1)) as i32 } else { 0 };
+        let k_max = if i < m { i as i32 } else { (m - 1) as i32 };
+
+        for k in k_min..=k_max {
+            acc += signal[(i as i32 - k) as usize] * kernel[k as usize];
         }
         output[i] = acc;
     }

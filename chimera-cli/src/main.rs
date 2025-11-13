@@ -81,12 +81,7 @@ fn main() -> Result<()> {
         sample_rate: chimera_core::config::SystemConfig::SAMPLE_RATE,
         symbol_rate: config.protocol.qpsk_symbol_rate,
         carrier_freq: config.protocol.carrier_freq_hz,
-        channel: chimera_core::processor::ChannelConfig {
-            snr_db: 100.0, // Use very high SNR for clean channel
-            enable_noise: false, // Disable noise completely
-            enable_fading: false, // Not implemented yet
-            attenuation: config.channel.link_loss_db,
-        },
+        logging: config.terminal.logging.to_core_log_config(),
         optimize_for_latency: false, // Batch mode
         min_chunk_size: None,
     };

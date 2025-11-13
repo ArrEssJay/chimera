@@ -175,6 +175,29 @@ impl Default for LoggingConfig {
     }
 }
 
+impl LoggingConfig {
+    /// Convert CLI logging config to core logging config
+    pub fn to_core_log_config(&self) -> chimera_core::logging::LogConfig {
+        use chimera_core::logging::{LogConfig as CoreLogConfig, LogLevel as CoreLogLevel};
+        
+        let level = match self.level {
+            LogLevel::Debug => CoreLogLevel::Debug,
+            LogLevel::Info => CoreLogLevel::Info,
+            LogLevel::Warn => CoreLogLevel::Warn,
+            LogLevel::Error => CoreLogLevel::Error,
+        };
+        
+        CoreLogConfig {
+            level,
+            enable_timing: true,
+            enable_carrier: true,
+            enable_framing: true,
+            enable_fec: true,
+            max_entries: 1000,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LogTarget {

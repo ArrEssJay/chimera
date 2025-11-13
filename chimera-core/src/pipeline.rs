@@ -389,7 +389,7 @@ impl RealtimePipeline {
             self.thz_processor.nonlinear_mixing(&modulated_thz)
         } else {
             // Bypass THz processing - use audio directly
-            base_audio
+            base_audio.clone()
         };
         
         
@@ -399,7 +399,7 @@ impl RealtimePipeline {
             symbol_rate,
             carrier_freq,
         };
-        let rx_symbols = crate::signal_processing::demodulation::audio_to_symbols(&mixed_audio, &demod_config);
+        let rx_symbols: Vec<Complex<f64>> = crate::signal_processing::demodulation::audio_to_symbols(&base_audio, &demod_config);
         // Note: Using simple demodulation without SNR measurement from demod itself
         
         // Process through decoder

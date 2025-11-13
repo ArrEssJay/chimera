@@ -688,8 +688,9 @@ pub fn audio_to_symbols_with_snr(
     // ========== PHASE 1: BLIND SYNCHRONIZATION ==========
     
     // --- STAGE 1: Pre-processing ---
-    // Apply matched RRC filter (identical to TX filter for proper pulse shaping)
-    let filtered_audio = apply_rrc_filter(audio, config.sample_rate, config.symbol_rate);
+    // TEMPORARY: Skip RRC filter since transmitter now uses simple lowpass filtering
+    // let filtered_audio = apply_rrc_filter(audio, config.sample_rate, config.symbol_rate);
+    let filtered_audio = audio.to_vec(); // Use unfiltered audio for now
     
     // ========== LOOP HIERARCHY: AGC (FASTEST) ==========
     // Apply AGC to real-valued signal (standard practice before downconversion).
@@ -1013,7 +1014,7 @@ pub fn audio_to_symbols_with_snr(
             
             total_error_power += min_error;
             total_signal_power += symbol_power;
-        }
+           }
     }
     
     // Calculate SNR

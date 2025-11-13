@@ -4,8 +4,7 @@
 //! FSK frequency dithering, following the Raman Whisper protocol v4.2.
 
 use num_complex::Complex;
-use std::f64::consts::TAU;
-use super::filters::apply_rrc_filter;
+use std::f64::consts::{PI, TAU};
 
 /// Configuration for modulation
 #[derive(Clone, Debug)]
@@ -19,10 +18,14 @@ pub struct ModulationConfig {
 /// 
 /// Implements the Raman Whisper Modulation Protocol v4.2:
 /// - FSK layer: ±1 Hz frequency dithering at 1 bit/second (11999/12001 Hz)
-/// - QPSK layer: Phase modulation at symbol_rate with ~20 Hz bandwidth via RRC filtering
-/// - Combined signal: I*cos(ωt) - Q*sin(ωt)
+/// - QPSK layer: Phase modulation at symbol_rate with simple lowpass filtering
+/// - Combined signal: sin(carrier_phase + qpsk_phase)
 /// 
-/// Uses proper RRC pulse shaping at sample rate for bandwidth limiting and ISI reduction.
+/// Phase-based approach (matches Python reference implementation):
+/// 1. Map symbols to phase values
+/// 2. Repeat phases at full sample rate (no zero-insertion)
+/// 3. Apply simple lowpass filter for bandwidth limiting
+/// 4. Modulate onto FSK-dithered carrier
 pub fn symbols_to_carrier_signal(
     symbols: &[Complex<f64>],
     config: &ModulationConfig,
@@ -34,61 +37,59 @@ pub fn symbols_to_carrier_signal(
     let samples_per_symbol = (config.sample_rate / config.symbol_rate).max(1);
     let num_samples = symbols.len() * samples_per_symbol;
     
-    // Step 1: Upsample symbols to sample rate (zero-insertion for pulse shaping)
-    let mut i_upsampled = vec![0.0f32; num_samples];
-    let mut q_upsampled = vec![0.0f32; num_samples];
+    // --- Step 1: Convert symbols to phase values ---
+    // QPSK constellation: map to phases (π/4, 3π/4, 5π/4, 7π/4)
+    let symbol_phases: Vec<f64> = symbols.iter().map(|s| {
+        // Calculate phase from complex symbol
+        s.im.atan2(s.re)
+    }).collect();
     
-    for (idx, symbol) in symbols.iter().enumerate() {
-        let sample_idx = idx * samples_per_symbol;
-        i_upsampled[sample_idx] = symbol.re as f32;
-        q_upsampled[sample_idx] = symbol.im as f32;
+    // --- Step 2: Repeat each phase for samples_per_symbol (no zero-insertion!) ---
+    let mut phase_raw = Vec::with_capacity(num_samples);
+    for &phase in &symbol_phases {
+        for _ in 0..samples_per_symbol {
+            phase_raw.push(phase);
+        }
     }
     
-    // Step 2: Apply RRC pulse shaping filter at sample rate
-    let filtered = apply_rrc_filter(&i_upsampled, config.sample_rate, config.symbol_rate);
+    // --- Step 3: Simple lowpass filter for bandwidth limiting (~20 Hz) ---
+    // Using a simple moving average filter (much faster than Butterworth)
+    let bandwidth_hz = 20.0;
+    let filter_len = ((config.sample_rate as f64 / bandwidth_hz) as usize).max(3) | 1; // Make odd
+    let mut phase_smoothed = vec![0.0; num_samples];
     
-    // CRITICAL: Apply interpolation gain to compensate for upsampling.
-    // The RRC filter has unit ENERGY normalization. When we upsample by inserting
-    // zeros, we spread the symbol's energy over `sps` samples, reducing power by
-    // a factor of sps. Since power ∝ amplitude², we multiply by sqrt(sps) to
-    // restore the original power. This gain is sqrt(sps), not sps, because the
-    // filter's unit-energy property already provides the correct normalization.
-    // This ensures symbol magnitude ~1.0, matching receiver expectations.
-    let gain = (samples_per_symbol as f32).sqrt();
-    let i_filtered: Vec<f32> = filtered.iter().map(|&x| x * gain).collect();
+    for i in 0..num_samples {
+        let start = i.saturating_sub(filter_len / 2);
+        let end = (i + filter_len / 2 + 1).min(num_samples);
+        let mut sum_sin = 0.0;
+        let mut sum_cos = 0.0;
+        
+        for j in start..end {
+            sum_sin += phase_raw[j].sin();
+            sum_cos += phase_raw[j].cos();
+        }
+        
+        // Preserve phase continuity by converting through sin/cos
+        phase_smoothed[i] = sum_sin.atan2(sum_cos);
+    }
     
-    let filtered = apply_rrc_filter(&q_upsampled, config.sample_rate, config.symbol_rate);
-    let gain = (samples_per_symbol as f32).sqrt();
-    let q_filtered: Vec<f32> = filtered.iter().map(|&x| x * gain).collect();
-    
-    // Step 3: Modulate onto carrier with FSK (phase-continuous)
+    // --- Step 4: Modulate onto FSK-dithered carrier ---
     let mut audio = Vec::with_capacity(num_samples);
-    let samples_per_fsk_bit = config.sample_rate; // 1 bit/second
-    let num_fsk_bits = (num_samples + samples_per_fsk_bit - 1) / samples_per_fsk_bit;
-    let fsk_bits: Vec<u8> = (0..num_fsk_bits).map(|i| (i % 2) as u8).collect();
-    
-    // CRITICAL: Maintain phase continuity across FSK bit transitions!
-    // Professional FSK modulation accumulates phase incrementally, not from absolute time.
-    // Phase discontinuities destroy the Costas loop.
     let mut carrier_phase = 0.0;
     let dt = 1.0 / config.sample_rate as f64;
     
-    for sample_idx in 0..num_samples {
-        // FSK frequency selection (always enabled - part of spec)
-        let fsk_bit_idx = sample_idx / samples_per_fsk_bit;
-        let fsk_freq = if fsk_bit_idx < fsk_bits.len() && fsk_bits[fsk_bit_idx] == 1 {
-            12001.0 // Bit 1: +1 Hz
-        } else {
-            11999.0 // Bit 0: -1 Hz
-        };
+    for i in 0..num_samples {
+        // FSK bit selection (alternates every second)
+        let fsk_bit_idx = i / config.sample_rate;
+        let fsk_freq = if fsk_bit_idx % 2 == 1 { 12001.0 } else { 11999.0 };
         
-        // Accumulate phase incrementally (phase-continuous FSK)
+        // Update carrier phase (phase-continuous FSK)
         carrier_phase += TAU * fsk_freq * dt;
-        carrier_phase = carrier_phase % TAU; // Keep in range [0, 2π]
+        carrier_phase = carrier_phase % TAU;
         
-        // QPSK modulation: I*cos(ωt) - Q*sin(ωt)
-        let sample = i_filtered[sample_idx] * (carrier_phase.cos() as f32) -
-                    q_filtered[sample_idx] * (carrier_phase.sin() as f32);
+        // Combined phase modulation
+        let total_phase = carrier_phase + phase_smoothed[i];
+        let sample = total_phase.sin() as f32;
         
         audio.push(sample);
     }
