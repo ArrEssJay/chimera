@@ -78,13 +78,12 @@ pub fn generate_test_symbols(pattern: SymbolPattern, count: usize) -> Vec<Comple
 }
 
 /// Get standard test configuration for specific test type
-pub fn get_test_modulation_config(enable_qpsk: bool, enable_fsk: bool) -> ModulationConfig {
+pub fn get_test_modulation_config(_enable_qpsk: bool, _enable_fsk: bool) -> ModulationConfig {
+    // Note: FSK and QPSK are always enabled per spec, parameters kept for API compatibility
     ModulationConfig {
-        sample_rate: 48000,
-        carrier_freq: 12000.0,
-        symbol_rate: 16,
-        enable_qpsk,
-        enable_fsk,
+        sample_rate: TEST_SAMPLE_RATE,
+        symbol_rate: TEST_SYMBOL_RATE,
+        carrier_freq: TEST_CARRIER_FREQ,
     }
 }
 
@@ -94,7 +93,6 @@ pub fn get_test_demodulation_config() -> DemodulationConfig {
         sample_rate: 48000,
         carrier_freq: 12000.0,
         symbol_rate: 16,
-        enable_fsk: false,
     }
 }
 

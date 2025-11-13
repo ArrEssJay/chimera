@@ -178,8 +178,7 @@ fn test_load_high_noise_config() {
     assert_eq!(config.channel.snr_db, 8.0);
     assert_eq!(config.channel.link_loss_db, 2.0);
     
-    assert!(config.signal_processing.enable_qpsk);
-    assert!(config.signal_processing.enable_fsk);
+    // FSK and QPSK are always enabled per spec
 }
 
 #[test]
@@ -338,8 +337,7 @@ fn test_audio_generation_with_simulation() {
 #[test]
 fn test_qpsk_modulation_flow() {
     let (mut protocol, ldpc) = default_configs();
-    protocol.enable_qpsk = true;
-    protocol.enable_fsk = false;
+    // FSK and QPSK are always enabled per spec
     
     let mut sim = UserSimulationConfig::default();
     sim.message = "QPSK test".to_string();
@@ -356,8 +354,7 @@ fn test_qpsk_modulation_flow() {
 #[test]
 fn test_combined_qpsk_fsk_flow() {
     let (mut protocol, ldpc) = default_configs();
-    protocol.enable_qpsk = true;
-    protocol.enable_fsk = true;
+    // FSK and QPSK are always enabled per spec
     
     let mut sim = UserSimulationConfig::default();
     sim.message = "QPSK+FSK test".to_string();

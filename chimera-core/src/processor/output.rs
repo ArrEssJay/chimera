@@ -28,6 +28,9 @@ pub struct ProcessorOutput {
     
     /// Error message if any
     pub error: Option<String>,
+    
+    /// Signal processing logs
+    pub logs: Vec<String>,
 }
 
 impl ProcessorOutput {
@@ -41,6 +44,7 @@ impl ProcessorOutput {
             snr_db: 0.0,
             success: false,
             error: None,
+            logs: Vec::new(),
         }
     }
     
@@ -60,4 +64,5 @@ pub struct BatchOutput {
     pub rx_symbols: Vec<Complex64>,
     pub snr_db: f32,
     pub success: bool,
+    pub logs: Vec<String>,
 }

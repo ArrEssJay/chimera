@@ -93,6 +93,32 @@ pub fn symbols_to_carrier_signal(
         audio.push(sample);
     }
     
+    // --- CRITICAL FIX: Zero-padding for filter tail processing ---
+    // The RRC filter has a span of 8 symbols, meaning each symbol's energy is spread
+    // across 8 symbol periods (4 before and 4 after the symbol center). This is the
+    // filter's "group delay" - energy takes time to propagate through the filter.
+    //
+    // When we abruptly end the transmission, the last symbol's energy is still "ringing"
+    // in the filter tails. The receiver's Gardner timing recovery loop needs enough
+    // samples to see this energy and correctly interpolate the final symbol.
+    //
+    // Without padding, the loop's condition `while idx < len - sps` terminates before
+    // it can process the last symbol, because it runs out of samples. This is why we
+    // consistently get 127 symbols instead of 128.
+    //
+    // Solution: Add zero-padding to give the receiver sufficient "look-ahead" buffer.
+    // The receiver needs enough samples after the preamble to extract a full 128-symbol frame.
+    // Since we transmit 2 frames (256 symbols) and the correlator may lock on the second
+    // preamble (at ~symbol 128), we need at least 128 additional symbols of padding to
+    // ensure a complete frame can be extracted.
+    //
+    // This is the standard solution in professional DSP systems (MATLAB, GNU Radio, etc.)
+    // and simulates what would happen in a continuous transmission where more signal
+    // (or at least more time) always follows the current block.
+    let padding_symbols = 128; // Full frame worth of padding for look-ahead
+    let padding_samples = padding_symbols * samples_per_symbol;
+    audio.extend(vec![0.0f32; padding_samples]);
+    
     // DO NOT peak-normalize! The power is now correctly set by the unit-energy RRC filter.
     // Peak normalization destroys the careful power balance and creates "spiky" signals
     // where energy is concentrated in a few samples, causing the Gardner loop to starve.

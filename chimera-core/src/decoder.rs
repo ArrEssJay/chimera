@@ -8,21 +8,21 @@ use crate::diagnostics::{DemodulationDiagnostics, SymbolDecision};
 use crate::ldpc::{decode_ldpc, LDPCMatrices};
 use crate::utils::{hex_to_bitstream, LogCollector};
 
-/// Convert Gray-coded QPSK bits to phase index (0-3)
-/// Standard Gray-coded QPSK: 11→45°, 01→135°, 00→225°, 10→315°
-fn gray_to_phase(b0: u8, b1: u8) -> u8 {
+/// Convert Gray-coded bits to phase index (0-3)
+/// Made public for ambiguity resolution logic
+pub fn gray_to_phase(b0: u8, b1: u8) -> u8 {
     match (b0, b1) {
-        (0, 0) => 2, // 225°
-        (0, 1) => 1, // 135°
-        (1, 0) => 3, // 315°
         (1, 1) => 0, // 45°
+        (0, 1) => 1, // 135°
+        (0, 0) => 2, // 225°
+        (1, 0) => 3, // 315°
         _ => 0,
     }
 }
 
-/// Convert phase index (0-3) to Gray-coded QPSK bits
-/// Inverse of gray_to_phase
-fn phase_to_gray(phase: u8) -> (u8, u8) {
+/// Convert phase index (0-3) to Gray-coded bits
+/// Made public for ambiguity resolution logic
+pub fn phase_to_gray(phase: u8) -> (u8, u8) {
     match phase & 0x03 {
         0 => (1, 1), // 45°
         1 => (0, 1), // 135°
@@ -32,46 +32,60 @@ fn phase_to_gray(phase: u8) -> (u8, u8) {
     }
 }
 
-/// Apply differential decoding to bit pairs after QPSK demodulation
+/// Differential decoder: reverses the differential encoding applied at TX
 /// 
-/// Decodes phase transitions back to original data.
-/// Reverses the differential encoding applied at the transmitter.
-/// Works with Gray-coded QPSK.
+/// This is a one-to-one mapping: N bits in → N bits out.
+/// No bits are lost in the process (unlike the previous buggy implementation).
 /// 
 /// # Arguments
 /// * `bits` - Slice of differentially encoded bits (must be even length)
 /// 
 /// # Returns
-/// Vector of decoded bits (will be 2 bits shorter than input, as first symbol is reference)
+/// Vector of decoded bits (same length as input - no bits are lost)
 pub fn differential_decode_bits(bits: &[u8]) -> Vec<u8> {
-    if bits.len() < 4 {
-        // Need at least 2 symbols (4 bits) for differential decoding
+    differential_decode_with_reference(bits, 0)
+}
+
+/// Differential decoder with explicit starting reference phase
+/// 
+/// This version allows specifying the initial phase reference, which is essential
+/// for resolving the phase ambiguity that results from Costas loop carrier recovery.
+/// 
+/// The Costas loop can lock with a 0°/90°/180°/270° rotation. This function allows
+/// trying all four possibilities and using the known preamble to determine which
+/// rotation produced the correct decoding.
+/// 
+/// # Arguments
+/// * `bits` - Slice of differentially encoded bits (must be even length)
+/// * `starting_prev_phase` - Initial reference phase (0-3 corresponding to 0°/90°/180°/270°)
+/// 
+/// # Returns
+/// Vector of decoded bits (same length as input - no bits are lost)
+fn differential_decode_with_reference(bits: &[u8], starting_prev_phase: u8) -> Vec<u8> {
+    if bits.len() < 2 {
         return Vec::new();
     }
     
-    let mut decoded = Vec::with_capacity(bits.len() - 2);
+    let mut decoded = Vec::with_capacity(bits.len());
+    let mut prev_phase = starting_prev_phase & 0x03;
     
-    // Process pairs of bits (QPSK symbols)
-    let mut prev_phase = 0u8;
-    for i in (0..bits.len()).step_by(2) {
-        if i + 1 >= bits.len() {
-            break;
+    for chunk in bits.chunks(2) {
+        if chunk.len() < 2 {
+            break; // Stop if we have an incomplete pair at the end
         }
         
-        // Convert Gray-coded bits to phase index
-        let curr_phase = gray_to_phase(bits[i], bits[i + 1]);
+        // Convert the received Gray-coded bits to a phase index
+        let curr_phase = gray_to_phase(chunk[0], chunk[1]);
         
-        // Skip first symbol (it's the reference)
-        if i > 0 {
-            // Differential decoding: data = (curr_phase - prev_phase) mod 4
-            let data_phase = (curr_phase + 4 - prev_phase) & 0x03;
-            
-            // Convert back to Gray-coded bits
-            let (dec_b0, dec_b1) = phase_to_gray(data_phase);
-            decoded.push(dec_b0);
-            decoded.push(dec_b1);
-        }
+        // Differential decoding: data = (current_phase - previous_phase) mod 4
+        let data_phase = (curr_phase + 4 - prev_phase) & 0x03;
         
+        // Convert the resulting data phase back to Gray-coded bits
+        let (dec_b0, dec_b1) = phase_to_gray(data_phase);
+        decoded.push(dec_b0);
+        decoded.push(dec_b1);
+        
+        // The current phase becomes the reference for the next symbol
         prev_phase = curr_phase;
     }
     
@@ -250,11 +264,11 @@ impl StreamingSymbolDecoder {
         (new_decoded_bits, frame_complete, self.current_frame_index, self.symbols_in_current_frame, diagnostics)
     }
     
-    /// Process symbols that are already synchronized (preamble stripped by demodulator)
+    /// Process symbols that are already synchronized (full frame including preamble)
     /// 
     /// The demodulator has already:
     /// - Found frame sync using preamble correlation
-    /// - Stripped the preamble from the symbol stream
+    /// - Returned the full frame including preamble
     /// - Applied timing and carrier recovery
     /// 
     /// This method only needs to:
@@ -266,12 +280,49 @@ impl StreamingSymbolDecoder {
     /// 
     /// SINGLE FRAME MODE: Only processes the first frame, ignores any additional symbols.
     pub fn process_synchronized_symbols(&mut self, symbols: &[Complex64]) -> Vec<u8> {
+        // The demodulator now returns the FULL FRAME including the sync preamble.
+        // This preserves the differential encoding chain, so we can decode properly.
+        //
+        // NOTE: Due to zero-padding in the modulator (to handle filter tail processing),
+        // the demodulator may return slightly more than 128 symbols. We only process
+        // the first 128 to match the frame structure.
+        let frame_symbols = self.protocol.frame_layout.total_symbols;
+        let symbols_to_decode = if symbols.len() > frame_symbols {
+            &symbols[..frame_symbols]
+        } else {
+            symbols
+        };
+        
         // 1. Demodulate QPSK symbols to bits (2 bits per symbol)
-        let mut bits = Vec::with_capacity(symbols.len() * 2);
-        for symbol in symbols {
-            let symbol_bits = demodulate_qpsk_symbol(*symbol);
-            bits.push(symbol_bits[0]);
-            bits.push(symbol_bits[1]);
+        let mut bits = Vec::with_capacity(symbols_to_decode.len() * 2);
+        
+        // DEBUG: Show first few symbols and their demodulation
+        if symbols_to_decode.len() >= 10 {
+            eprintln!("[DECODER] First 10 symbols:");
+            for (i, symbol) in symbols_to_decode.iter().take(10).enumerate() {
+                let symbol_bits = demodulate_qpsk_symbol(*symbol);
+                eprintln!("  [{}]: ({:.3}, {:.3}) phase={:.1}° → bits=[{}, {}]",
+                    i, symbol.re, symbol.im, symbol.arg().to_degrees(), symbol_bits[0], symbol_bits[1]);
+                bits.push(symbol_bits[0]);
+                bits.push(symbol_bits[1]);
+            }
+            // Process remaining symbols
+            for symbol in symbols_to_decode.iter().skip(10) {
+                let symbol_bits = demodulate_qpsk_symbol(*symbol);
+                bits.push(symbol_bits[0]);
+                bits.push(symbol_bits[1]);
+            }
+        } else {
+            for symbol in symbols_to_decode {
+                let symbol_bits = demodulate_qpsk_symbol(*symbol);
+                bits.push(symbol_bits[0]);
+                bits.push(symbol_bits[1]);
+            }
+        }
+        
+        // DEBUG: Show first few demodulated bits
+        if bits.len() >= 32 {
+            eprintln!("[DECODER] First 32 demodulated bits: {:?}", &bits[0..32]);
         }
         
         if bits.is_empty() {
@@ -279,9 +330,60 @@ impl StreamingSymbolDecoder {
             return Vec::new();
         }
         
-        // 2. Apply differential decoding (reverses the differential encoding from TX)
-        // NOTE: Differential decoding loses 2 bits (the reference symbol)
-        let decoded_bits = differential_decode_bits(&bits);
+        // 2. ===== PHASE AMBIGUITY RESOLUTION =====
+        // The Costas loop can lock with a 0°/90°/180°/270° phase ambiguity.
+        // We use the known preamble pattern to determine which rotation occurred,
+        // then decode the entire frame with the correct starting reference phase.
+        
+        let sync_bit_len = self.protocol.frame_layout.sync_symbols * 2;
+        if bits.len() < sync_bit_len {
+            self.logger.log(format!(
+                "Insufficient bits for preamble detection: have {}, need {}",
+                bits.len(), sync_bit_len
+            ));
+            return Vec::new();
+        }
+        
+        let preamble_bits = &bits[..sync_bit_len];
+        
+        // The true preamble is the RAW, un-encoded bit pattern (e.g., A5A5A5A5)
+        // We compare the differentially DECODED received preamble against this raw pattern
+        let true_preamble_bits = hex_to_bitstream(&self.protocol.sync_sequence_hex, sync_bit_len);
+        
+        let mut best_rotation = 0;
+        let mut min_errors = usize::MAX;
+        
+        // Try all 4 possible starting phase references (0°, 90°, 180°, 270°)
+        eprintln!("[DECODER] Testing phase ambiguity (preamble should be: {:?})", &true_preamble_bits[0..16]);
+        for rot_idx in 0..4 {
+            // Decode the received preamble bits with this rotation
+            let decoded_preamble = differential_decode_with_reference(preamble_bits, rot_idx);
+            
+            // Count errors compared to the known raw preamble pattern
+            let errors = decoded_preamble.iter()
+                .zip(true_preamble_bits.iter())
+                .filter(|(a, b)| a != b)
+                .count();
+            
+            eprintln!("  Rotation {}: errors={}/{}, decoded={:?}", 
+                rot_idx, errors, sync_bit_len, &decoded_preamble[0..16]);
+            
+            if errors < min_errors {
+                min_errors = errors;
+                best_rotation = rot_idx;
+            }
+        }
+        
+        eprintln!("[DECODER] Phase ambiguity resolved: rotation_index={}, preamble_errors={}/{}", 
+            best_rotation, min_errors, sync_bit_len);
+        
+        // 3. Decode the ENTIRE frame using the resolved starting reference phase
+        let decoded_bits = differential_decode_with_reference(&bits, best_rotation);
+        
+        // DEBUG: Show first few differentially decoded bits (should now be correct)
+        if decoded_bits.len() >= 20 {
+            eprintln!("[DECODER] First 20 diff-decoded bits: {:?}", &decoded_bits[0..20]);
+        }
         
         if decoded_bits.is_empty() {
             self.logger.log(format!(
@@ -291,39 +393,29 @@ impl StreamingSymbolDecoder {
             return Vec::new();
         }
         
-        // 3. Frame structure AFTER preamble stripped by demodulator:
-        //    Preamble (16 symbols, 32 bits) - ALREADY REMOVED BY DEMOD
-        //    Target ID (16 symbols, 32 bits) - starts here
+        // 3. Frame structure with FULL FRAME including preamble:
+        //    Preamble/Sync (16 symbols, 32 bits)
+        //    Target ID (16 symbols, 32 bits)
         //    Command (16 symbols, 32 bits)
         //    Payload Section (64 symbols, 128 bits) - FIRST PART of LDPC codeword
         //    ECC Section (16 symbols, 32 bits) - SECOND PART of LDPC codeword
         //
-        // NOTE: The encoder creates a 160-bit LDPC codeword (128 message + 32 parity),
-        // then splits it into payload_section (128 bits) and ecc_section (32 bits).
-        // We need to reconstruct the full codeword by concatenating these two parts.
-        //
-        // The demodulator returns (128-16) = 112 symbols, but differential decoding
-        // loses one symbol (2 bits) for the reference, so we get 111 symbols = 222 bits.
-        // Then differential decode loses another 2 bits, giving us 220 bits total.
-        //
-        // Expected after diff decode: Target ID (30 bits) + Command (32 bits) + Payload (128 bits) + ECC (30 bits) = 220 bits
+        // With the corrected differential decoder, we now have a perfect 1-to-1 mapping:
+        // 128 symbols = 256 bits in, 256 bits out (no bits lost).
         
+        let sync_bits = self.protocol.frame_layout.sync_symbols * 2; // 32
         let target_id_bits = self.protocol.frame_layout.target_id_symbols * 2; // 32
         let command_type_bits = self.protocol.frame_layout.command_type_symbols * 2; // 32
         let payload_section_bits = self.protocol.frame_layout.data_payload_symbols * 2; // 128
-        let _ecc_section_bits = self.protocol.frame_layout.ecc_symbols * 2; // 32 (expected, but may be truncated)
+        let _ecc_section_bits = self.protocol.frame_layout.ecc_symbols * 2; // 32
         
-        // We lose 2 bits at the start and 2 bits at the end
-        // Start: 30 bits (target_id) + 32 bits (command) = 62 bits header
-        // Then: 128 bits (payload section)
-        // Then: 30 bits (ecc section, truncated by 2)
-        // Total: 62 + 128 + 30 = 220 bits ✓
-        
-        let header_bits = (target_id_bits - 2) + command_type_bits; // 30 + 32 = 62
-        let payload_section_start = header_bits; // 62
-        let payload_section_end = payload_section_start + payload_section_bits; // 62 + 128 = 190
-        let ecc_section_start = payload_section_end; // 190
-        let ecc_section_end = decoded_bits.len(); // 220 (take whatever remains)
+        // Frame structure is now simple and aligned:
+        // Header: sync + target_id + command = 32 + 32 + 32 = 96 bits
+        let header_bits = sync_bits + target_id_bits + command_type_bits; // 96
+        let payload_section_start = header_bits; // 96
+        let payload_section_end = payload_section_start + payload_section_bits; // 96 + 128 = 224
+        let ecc_section_start = payload_section_end; // 224
+        let ecc_section_end = decoded_bits.len(); // 256 (or whatever we received)
         
         if decoded_bits.len() < payload_section_end {
             self.logger.log(format!(
@@ -338,12 +430,12 @@ impl StreamingSymbolDecoder {
         let payload_section = &decoded_bits[payload_section_start..payload_section_end];
         let ecc_section = &decoded_bits[ecc_section_start..ecc_section_end];
         
-        // ECC section is truncated to 30 bits, but LDPC expects 32-bit parity
-        // We need to pad it with 2 zero bits
+        // Reconstruct the full LDPC codeword
         let mut codeword = Vec::with_capacity(self.matrices.codeword_bits);
         codeword.extend_from_slice(payload_section);
         codeword.extend_from_slice(ecc_section);
-        // Pad to reach expected codeword size
+        
+        // Pad if needed (shouldn't be necessary with full frame)
         while codeword.len() < self.matrices.codeword_bits {
             codeword.push(0);
         }

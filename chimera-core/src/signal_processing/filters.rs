@@ -23,11 +23,11 @@ use std::f64::consts::PI;
 /// much more robust to truncation by an 8-symbol filter span, dramatically reducing
 /// ISI. This is the standard trade-off in robust communications systems.
 pub fn apply_rrc_filter(samples: &[f32], sample_rate: usize, symbol_rate: usize) -> Vec<f32> {
-    // CRITICAL: Higher rolloff (0.5 vs 0.25) for robust ISI performance.
-    // A low rolloff is spectrally efficient but has slowly-decaying tails.
-    // With an 8-symbol filter span, a higher rolloff is essential to avoid
-    // truncating the pulse while it still has significant energy.
-    let rolloff = 0.5;
+    // Use the spec-default rolloff of 0.25 for optimal spectral efficiency.
+    // The 8-symbol filter span provides sufficient time-domain support for
+    // the RRC pulse with this rolloff, while the sharper pulse shape may
+    // provide better symbol timing discrimination for the Gardner loop.
+    let rolloff = 0.25;
     let samples_per_symbol = sample_rate / symbol_rate;
     
     // Filter span: MATLAB default is 6-8 symbols for good ISI performance
@@ -43,28 +43,30 @@ pub fn apply_rrc_filter(samples: &[f32], sample_rate: usize, symbol_rate: usize)
     
     for i in 0..filter_len {
         let t = (i as f64 - (filter_len / 2) as f64) / sample_rate as f64;
-        let t_norm = t / ts;
+        let t_norm = t / ts; // Time in symbol periods
         
-        if t_norm.abs() < 1e-10 {
-            // t = 0 case
+        // Handle the two singularities with proper limit evaluation
+        if t_norm.abs() < 1e-9 {
+            // t = 0 case (center tap) - L'Hôpital's rule limit
             h[i] = 1.0 - rolloff + 4.0 * rolloff / PI;
-        } else if (t_norm.abs() - 1.0 / (4.0 * rolloff)).abs() < 1e-10 {
-            // t = ±Ts/(4α) singularity case
-            let sqrt2 = std::f64::consts::SQRT_2;
-            h[i] = rolloff / sqrt2 * 
-                   ((1.0 + 2.0/PI) * (PI/4.0).sin() +
-                    (1.0 - 2.0/PI) * (PI/4.0).cos());
+        } else if ((4.0 * rolloff * t_norm).abs() - 1.0).abs() < 1e-9 {
+            // t = ±Ts/(4α) singularity case - zeros in denominator
+            // Evaluate limit as 4αt → ±1
+            let term1 = (1.0 + 2.0 / PI) * (PI / (4.0 * rolloff)).sin();
+            let term2 = (1.0 - 2.0 / PI) * (PI / (4.0 * rolloff)).cos();
+            h[i] = (rolloff / 2.0_f64.sqrt()) * (term1 + term2);
         } else {
-            // General case
+            // General case - textbook formula (GNU Radio / MATLAB form)
+            // This form avoids numerical issues better than cos + sin/x form
             let pi_t = PI * t_norm;
             let four_alpha_t = 4.0 * rolloff * t_norm;
             
-            let numerator = (pi_t * rolloff).cos() + (pi_t).sin() / four_alpha_t;
-            let denominator = pi_t * (1.0 - four_alpha_t * four_alpha_t);
+            // Numerator: cos(πtα) + sin(πt(1-α)) / (4αt)
+            // Rewritten as: α·cos(πtα) + sin(πt(1-α))/(4αt)
+            let numerator = pi_t.cos() * rolloff + (pi_t * (1.0 - rolloff)).sin() / four_alpha_t;
+            let denominator = 1.0 - four_alpha_t * four_alpha_t;
             
-            if denominator.abs() > 1e-10 {
-                h[i] = numerator / denominator;
-            }
+            h[i] = numerator / denominator;
         }
     }
     
@@ -85,12 +87,22 @@ pub fn apply_rrc_filter(samples: &[f32], sample_rate: usize, symbol_rate: usize)
 }
 
 /// Convolution helper with proper boundary handling
+/// 
+/// For matched filtering, the receiver filter should be the time-reversed
+/// conjugate of the transmitter filter. Since the RRC filter is real-valued
+/// and symmetric (h[i] = h[-i]), it is its own matched filter - no time
+/// reversal needed. This implementation correctly handles the symmetric RRC
+/// kernel for both TX pulse shaping and RX matched filtering.
+/// 
+/// Standard convolution: y[n] = Σ x[n-k] * h[k] = Σ x[k] * h[n-k]
 fn convolve(signal: &[f32], kernel: &[f32]) -> Vec<f32> {
     let mut output = vec![0.0; signal.len()];
     let half_len = kernel.len() / 2;
     
     for i in 0..signal.len() {
         let mut acc = 0.0;
+        // Standard convolution: output[i] = Σ signal[i+j-half_len] * kernel[j]
+        // The kernel is centered at half_len, so j=half_len corresponds to t=0
         for (j, &k) in kernel.iter().enumerate() {
             let signal_idx = i as i32 + j as i32 - half_len as i32;
             if signal_idx >= 0 && (signal_idx as usize) < signal.len() {

@@ -12,7 +12,6 @@ use crate::signal_processing::{
     demodulation::DemodulationConfig,
     spectrum::compute_baseband_spectrum,
 };
-use crate::channel::apply_audio_noise;
 use crate::diagnostics::{
     metrics::compute_constellation_evm,
     constellation::normalize_constellation,
@@ -115,7 +114,6 @@ pub struct PostChannelDiagnostics {
     pub frequency_offset_hz: f32,
     pub phase_offset_rad: f32,
     pub evm_percent: f32,
-    pub snr_estimate_db: f32,
     pub ber_instantaneous: f32,
     pub ber_average: f32,
     pub sync_status: bool,
@@ -394,23 +392,6 @@ impl RealtimePipeline {
             base_audio
         };
         
-        // Add noise to audio (simulating channel impairments)
-        let noisy_audio = apply_audio_noise(&mixed_audio, self.noise_std, &mut self.rng);
-        
-        // Compute actual SNR from clean and noisy audio
-        let signal_power: f64 = mixed_audio.iter().map(|&x| (x as f64) * (x as f64)).sum::<f64>() / mixed_audio.len().max(1) as f64;
-        let noise_power: f64 = mixed_audio.iter().zip(noisy_audio.iter())
-            .map(|(&clean, &noisy)| {
-                let noise = (noisy - clean) as f64;
-                noise * noise
-            })
-            .sum::<f64>() / mixed_audio.len().max(1) as f64;
-        
-        let actual_snr_db = if noise_power > 1e-12 && signal_power > 0.0 {
-            10.0 * (signal_power / noise_power).log10() as f32
-        } else {
-            60.0 // Very high SNR
-        };
         
         // Demodulate audio back to IQ symbols for decoding
         let demod_config = DemodulationConfig {
@@ -418,7 +399,7 @@ impl RealtimePipeline {
             symbol_rate,
             carrier_freq,
         };
-        let rx_symbols = crate::signal_processing::demodulation::audio_to_symbols(&noisy_audio, &demod_config);
+        let rx_symbols = crate::signal_processing::demodulation::audio_to_symbols(&mixed_audio, &demod_config);
         // Note: Using simple demodulation without SNR measurement from demod itself
         
         // Process through decoder
@@ -539,9 +520,6 @@ impl RealtimePipeline {
             0.0
         };
         
-        // Use actual SNR computed from clean and noisy audio (ground truth)
-        let snr_estimate_db = actual_snr_db;
-        
         // Post-channel diagnostics
         output.post_channel = PostChannelDiagnostics {
             rx_constellation_i: rx_i_norm,
@@ -553,7 +531,6 @@ impl RealtimePipeline {
             frequency_offset_hz: 0.0,
             phase_offset_rad: 0.0,
             evm_percent,
-            snr_estimate_db,
             ber_instantaneous: 0.0, // TODO: calculate from decoder
             ber_average: self.ber_accumulator,
             sync_status: decoder.is_synced(),

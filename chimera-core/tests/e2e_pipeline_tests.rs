@@ -403,8 +403,6 @@ fn debug_full_pipeline_sync() {
         sample_rate,
         symbol_rate: protocol.qpsk_symbol_rate as usize,
         carrier_freq: protocol.carrier_freq_hz,
-        enable_qpsk: protocol.enable_qpsk,
-        enable_fsk: protocol.enable_fsk,
     };
     
     let audio = symbols_to_carrier_signal(&tx_symbols, &modulation_config);
@@ -422,7 +420,6 @@ fn debug_full_pipeline_sync() {
         sample_rate,
         symbol_rate: protocol.qpsk_symbol_rate as usize,
         carrier_freq: protocol.carrier_freq_hz,
-        enable_fsk: false, // TODO: Get from protocol config
     };
     
     let rx_symbols = audio_to_symbols(&noisy_audio, &demodulation_config);
@@ -437,7 +434,7 @@ fn debug_full_pipeline_sync() {
     
     // Check if FSK is interfering
     println!("\nEncoder FSK frequency: {:.2} Hz", encoder.get_current_fsk_frequency());
-    println!("Protocol enable_fsk: {}, enable_qpsk: {}", protocol.enable_fsk, protocol.enable_qpsk);
+    println!("Protocol: FSK and QPSK always enabled per spec");
     
     // Check symbol correlation
     println!("\n=== STEP 5: SYMBOL CORRELATION ===");

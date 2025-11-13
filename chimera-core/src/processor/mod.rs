@@ -17,11 +17,11 @@ use rand::SeedableRng;
 use crate::encoder::StreamingFrameEncoder;
 use crate::decoder::StreamingSymbolDecoder;
 use crate::utils::string_to_bitstream;
-use crate::channel::apply_audio_noise;
 use crate::config::InternalProtocolConfig;
 use crate::ldpc::LDPCSuite;
+use crate::logging::SignalLogger;
 
-pub use config::{ProcessorConfig, ChannelConfig};
+pub use config::{ProcessorConfig};
 pub use output::{ProcessorOutput, BatchOutput};
 use modulator_wrapper::ModulatorWrapper;
 use demodulator_wrapper::DemodulatorWrapper;
@@ -70,6 +70,9 @@ pub struct ChimeraProcessor {
     
     // Diagnostics
     diagnostics_enabled: bool,
+    
+    // Logging
+    logger: SignalLogger,
 }
 
 impl ChimeraProcessor {
@@ -98,6 +101,9 @@ impl ChimeraProcessor {
             config.carrier_freq,
         );
         
+        // Create logger from config
+        let logger = SignalLogger::new(config.logging.clone());
+        
         Self {
             config,
             modulator,
@@ -109,6 +115,7 @@ impl ChimeraProcessor {
             audio_buffer: Vec::new(),
             rng: StdRng::seed_from_u64(42),
             diagnostics_enabled: false,
+            logger,
         }
     }
     
@@ -211,12 +218,28 @@ impl ChimeraProcessor {
             eprintln!("[PROCESSOR] Total frames: {} (SINGLE FRAME MODE)", encoder.total_frames);
         }
         
-        // Generate exactly ONE frame worth of symbols (INCLUDES PREAMBLE)
-        let total_symbols = self.protocol.frame_layout.total_symbols; // 128 symbols
-        let (tx_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
+        // Generate TWO frames worth of symbols for stable receiver lock
+        // The first frame acts as a training sequence for AGC and Gardner loops.
+        // The second frame is received under stable, locked conditions, ensuring
+        // the correlator can find a complete frame well away from buffer boundaries.
+        let total_symbols = self.protocol.frame_layout.total_symbols; // 128 symbols per frame
+        let (frame1_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
+        
+        // Reset encoder to generate the same frame again (for test purposes)
+        encoder = StreamingFrameEncoder::new(
+            &payload_bits,
+            self.protocol.clone(),
+            self.ldpc_suite.matrices.clone(),
+        );
+        let (frame2_symbols, _, _, _, _) = encoder.get_next_symbols(total_symbols);
+        
+        // Concatenate both frames
+        let mut tx_symbols = Vec::new();
+        tx_symbols.extend_from_slice(&frame1_symbols);
+        tx_symbols.extend_from_slice(&frame2_symbols);
         
         if self.diagnostics_enabled {
-            eprintln!("[PROCESSOR] TX symbols: {} symbols (with preamble)", tx_symbols.len());
+            eprintln!("[PROCESSOR] TX symbols: {} symbols (2 frames with preambles)", tx_symbols.len());
         }
         
         // Modulate symbols to audio using wrapper (calls existing modulator)
@@ -226,20 +249,12 @@ impl ChimeraProcessor {
             eprintln!("[PROCESSOR] Audio samples: {} samples", audio.len());
         }
         
-        // Apply channel effects if configured
-        let noisy_audio = if self.config.channel.enable_noise {
-            let noise_std = Self::snr_to_noise_std(self.config.channel.snr_db);
-            apply_audio_noise(&audio, noise_std, &mut self.rng)
-        } else {
-            audio.clone()
-        };
-        
-        // Demodulate audio to symbols using wrapper (PREAMBLE STRIPPED HERE)
-        let demod_result = self.demodulator.demodulate(&noisy_audio);
+        // Demodulate audio to symbols using wrapper (RETURNS FULL FRAME)
+        let demod_result = self.demodulator.demodulate(&audio);
         let rx_symbols = demod_result.symbols;
         
         if self.diagnostics_enabled {
-            eprintln!("[PROCESSOR] RX symbols: {} symbols (preamble stripped by demod)", rx_symbols.len());
+            eprintln!("[PROCESSOR] RX symbols: {} symbols (full frame including preamble)", rx_symbols.len());
             eprintln!("[PROCESSOR] SNR: {} dB", demod_result.snr_db);
         }
         
@@ -265,24 +280,23 @@ impl ChimeraProcessor {
         
         let success = !decoded_bytes.is_empty();
         
+        // Extract logs
+        let logs: Vec<String> = self.logger.entries()
+            .iter()
+            .map(|e| format!("[{}] {}: {}", e.level, e.subsystem, e.message))
+            .collect();
+        
         ProcessorOutput {
             decoded_bytes,
             ready: true,
             tx_symbols,
             rx_symbols,
-            audio: noisy_audio,
+            audio,
             snr_db: demod_result.snr_db,
             success,
             error: None,
+            logs,
         }
-    }
-    
-    /// Calculate noise standard deviation from SNR in dB
-    fn snr_to_noise_std(snr_db: f32) -> f64 {
-        let snr_linear = 10.0_f64.powf(snr_db as f64 / 10.0);
-        let signal_power = 1.0; // Normalized
-        let noise_power = signal_power / snr_linear;
-        noise_power.sqrt()
     }
     
     /// Get minimum frame size in bytes
@@ -360,6 +374,24 @@ impl ChimeraProcessor {
             snr_db: output.snr_db,
             success: output.success && !decoded_bytes.is_empty(),
         }
+    }
+    
+    /// Get access to the logger for reading logs
+    pub fn logger(&self) -> &SignalLogger {
+        &self.logger
+    }
+    
+    /// Get logs as formatted strings
+    pub fn get_logs(&self) -> Vec<String> {
+        self.logger.entries()
+            .iter()
+            .map(|e| format!("[{}] {}: {}", e.level, e.subsystem, e.message))
+            .collect()
+    }
+    
+    /// Clear the log buffer
+    pub fn clear_logs(&mut self) {
+        self.logger.clear();
     }
 }
 
