@@ -288,6 +288,7 @@ dependencies = [
  "num-complex 0.4.6",
  "proptest",
  "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "rand_distr",
  "rayon",
  "rubato",
@@ -297,6 +298,7 @@ dependencies = [
  "sparse-bin-mat",
  "symphonia",
  "thiserror",
+ "toml",
  "wasm-bindgen",
 ]
 

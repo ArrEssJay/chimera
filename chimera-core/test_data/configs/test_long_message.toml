@@ -1,0 +1,23 @@
+# Test Configuration: Long message (multi-frame)
+# Tests frame assembly and multi-frame handling
+
+protocol = "whisper"
+
+[protocol_params]
+command = "send_data"
+target_id = "DEADBEEF"
+
+[simulation]
+# Frame data payload: 64 symbols = 128 bits = 16 bytes
+# This message spans multiple frames
+message = "This is a longer test message that will span multiple frames in the protocol. It tests the frame assembly, synchronization, and multi-frame decoding capabilities of the system."
+
+[channel]
+snr_db = 20.0
+link_loss_db = 0.0
+
+[signal_processing]
+enable_qpsk = true
+enable_fsk = true
+tx_gain = 1.0
+rx_gain = 1.0

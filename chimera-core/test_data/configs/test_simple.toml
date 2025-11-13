@@ -1,0 +1,21 @@
+# Test Configuration: Simple message
+# For basic roundtrip testing
+
+protocol = "whisper"
+
+[protocol_params]
+command = "send_data"
+target_id = "DEADBEEF"
+
+[simulation]
+message = "Hello from Chimera!"
+
+[channel]
+snr_db = 20.0
+link_loss_db = 0.0
+
+[signal_processing]
+enable_qpsk = true
+enable_fsk = true
+tx_gain = 1.0
+rx_gain = 1.0
