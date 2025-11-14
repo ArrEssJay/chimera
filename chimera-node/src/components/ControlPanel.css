@@ -12,6 +12,48 @@
   padding: 1rem;
 }
 
+.panel-section.transport-section {
+  padding: 1.5rem;
+  background: #2d2d2d;
+}
+
+.transport-btn-large {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #00c853 0%, #00e676 100%);
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.3);
+  text-transform: uppercase;
+}
+
+.transport-btn-large:hover {
+  background: linear-gradient(135deg, #00e676 0%, #00c853 100%);
+  box-shadow: 0 4px 12px rgba(0, 200, 83, 0.5);
+  transform: translateY(-1px);
+}
+
+.transport-btn-large:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 200, 83, 0.4);
+}
+
+.transport-btn-large.playing {
+  background: linear-gradient(135deg, #ff6d00 0%, #ff9100 100%);
+  box-shadow: 0 2px 8px rgba(255, 109, 0, 0.3);
+}
+
+.transport-btn-large.playing:hover {
+  background: linear-gradient(135deg, #ff9100 0%, #ff6d00 100%);
+  box-shadow: 0 4px 12px rgba(255, 109, 0, 0.5);
+}
+
 .panel-section:last-child {
   border-bottom: none;
 }

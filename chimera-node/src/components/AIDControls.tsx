@@ -79,28 +79,10 @@ const AIDControls: React.FC = () => {
         </div>
       </div>
 
-      <div className="control-group">
-        <div className="toggle-group">
-          <label htmlFor="aid-bypass">Bypass Mode (Validation)</label>
-          <label className="toggle-switch">
-            <input
-              id="aid-bypass"
-              type="checkbox"
-              checked={aid.bypassSimulation}
-              onChange={(e) => updateAIDConfig({ bypassSimulation: e.target.checked })}
-              disabled={!aid.enabled}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
       <div className="aid-info">
         <p className="info-text">
           {aid.enabled 
-            ? aid.bypassSimulation 
-              ? '⚠️ Bypass mode: Signal passes through unchanged'
-              : '✓ AID simulation active'
+            ? '✓ AID simulation active'
             : 'ℹ️ AID simulation disabled'}
         </p>
       </div>

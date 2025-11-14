@@ -41,54 +41,74 @@ const OscillatorMonitor: React.FC = () => {
   });
 
   useEffect(() => {
-    if (!isPlaying || !currentFrame || !currentFrame.lfoParams) {
+    if (!isPlaying || !currentFrame) {
       return;
     }
 
-    // Update state from current frame's LFO parameters
-    const { lfoParams } = currentFrame;
-    
-    setState({
-      carrier: {
-        frequency: 12000, // Fixed carrier
-        amplitude: isPlaying ? 0.5 : 0,
-        phase: (Date.now() % 1000) / 1000 * 360, // Simulate phase rotation
-      },
-      modulation: {
-        phaseModFreq: lfoParams.phase.frequency,
-        phaseModDepth: lfoParams.phase.depth,
-        freqModFreq: lfoParams.freqMod.frequency,
-        freqModDepth: lfoParams.freqMod.depth,
-        ampModFreq: lfoParams.ampMod.frequency,
-        ampModDepth: lfoParams.ampMod.depth,
-      },
-      fsk: {
-        state: Math.random() > 0.5 ? 1 : 0, // Simulate FSK state changes
-        pattern: lfoParams.fsk.pattern,
-        rate: lfoParams.fsk.rate,
-      },
-    });
-  }, [currentFrame, isPlaying]);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-
     const interval = setInterval(() => {
-      setState((prev) => ({
-        ...prev,
+      const frameData = currentFrame as any;
+      const gocs = audioState.gocs;
+      
+      // Calculate current position in frame
+      const frameProgress = 1 - (gocs.frameTimeRemaining / 8.0);
+      const symbolIndex = Math.floor(frameProgress * 128);
+      const clampedIndex = Math.min(127, Math.max(0, symbolIndex));
+      
+      // Get current values from frame arrays
+      const fskStates = frameData.fskStates || [];
+      const freqModulation = frameData.freqModulation || [];
+      const ampModulation = frameData.ampModulation || [];
+      const phaseRotation = frameData.phaseRotation || [];
+      
+      const currentFskState = fskStates[clampedIndex] || 0;
+      const currentFreqMod = freqModulation[clampedIndex] || 0;
+      const currentAmpMod = ampModulation[clampedIndex] || 0.9;
+      const currentPhase = phaseRotation[clampedIndex] || 0;
+      
+      // Calculate carrier frequency based on FSK state and freq modulation
+      const baseCarrier = 12000;
+      const fskOffset = currentFskState === 0 ? -1 : 1; // ±1 Hz for FSK
+      const actualFreq = baseCarrier + fskOffset + currentFreqMod;
+      
+      // Calculate modulation statistics
+      const avgFreqMod = freqModulation.length > 0 
+        ? freqModulation.reduce((a: number, b: number) => a + Math.abs(b), 0) / freqModulation.length 
+        : 0;
+      const maxFreqMod = freqModulation.length > 0 
+        ? Math.max(...freqModulation.map((v: number) => Math.abs(v)))
+        : 0;
+        
+      const avgAmpMod = ampModulation.length > 0
+        ? ampModulation.reduce((a: number, b: number) => a + b, 0) / ampModulation.length
+        : 0.9;
+      const ampModRange = ampModulation.length > 0
+        ? Math.max(...ampModulation) - Math.min(...ampModulation)
+        : 0;
+      
+      setState({
         carrier: {
-          ...prev.carrier,
-          phase: (prev.carrier.phase + 36) % 360, // 10 updates/sec
+          frequency: actualFreq,
+          amplitude: currentAmpMod,
+          phase: (currentPhase / 4) * 360, // Phase rotation is 0-3, convert to degrees
+        },
+        modulation: {
+          phaseModFreq: 2.0, // From frame structure
+          phaseModDepth: ampModRange > 0 ? 0.175 : 0,
+          freqModFreq: 2.0,
+          freqModDepth: maxFreqMod > 0 ? (maxFreqMod / 0.3) : 0,
+          ampModFreq: 2.0,
+          ampModDepth: ampModRange > 0 ? (ampModRange / 0.175) : 0,
         },
         fsk: {
-          ...prev.fsk,
-          state: Math.random() > 0.5 ? 1 : 0,
+          state: currentFskState,
+          pattern: clampedIndex < 32 ? 'low' : clampedIndex < 64 ? 'high' : clampedIndex < 96 ? 'low' : 'high',
+          rate: 16, // Symbol rate
         },
-      }));
-    }, 100);
+      });
+    }, 50); // Update 20 times per second
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [currentFrame, isPlaying, audioState.gocs]);
 
   const formatFreq = (freq: number) => {
     if (freq < 1) return `${(freq * 1000).toFixed(0)} mHz`;

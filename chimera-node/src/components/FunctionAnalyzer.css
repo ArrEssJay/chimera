@@ -1,0 +1,162 @@
+.function-analyzer {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 15px;
+  color: #e0e0e0;
+  font-family: monospace;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.function-analyzer .analyzer-header {
+  font-size: 14px;
+  font-weight: bold;
+  color: #00ff00;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.function-analyzer .no-function {
+  color: #888;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.function-analyzer .no-function .hint {
+  font-size: 12px;
+  margin-top: 10px;
+  color: #666;
+}
+
+.function-description {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #252525;
+  border-left: 3px solid #00c853;
+  border-radius: 2px;
+}
+
+.analysis-section {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.analysis-section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.param-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.param-name {
+  color: #888;
+}
+
+.param-value {
+  color: #00c853;
+  font-weight: bold;
+}
+
+.mapping-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  padding: 6px 8px;
+  background: #252525;
+  border-radius: 2px;
+}
+
+.mapping-label {
+  color: #888;
+  font-weight: bold;
+}
+
+.mapping-expected {
+  color: #ffd600;
+}
+
+.mapping-arrow {
+  color: #666;
+}
+
+.mapping-actual {
+  color: #00c853;
+  font-weight: bold;
+}
+
+.intensity-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.intensity-bar {
+  height: 24px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.intensity-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00c853, #00ff00);
+  transition: width 0.3s ease;
+}
+
+.intensity-impact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.impact-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #252525;
+  border-radius: 2px;
+}
+
+.impact-label {
+  color: #888;
+}
+
+.impact-value {
+  color: #ffd600;
+  font-weight: bold;
+}

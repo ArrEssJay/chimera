@@ -4,7 +4,9 @@ import Oscilloscope from './components/Oscilloscope';
 import SpectrumAnalyzer from './components/SpectrumAnalyzer';
 import OscillatorMonitor from './components/OscillatorMonitor';
 import FrameStructureViewer from './components/FrameStructureViewer';
-import TransportBar from './components/TransportBar';
+import ModulationPlots from './components/ModulationPlots';
+import FrameSequencer from './components/FrameSequencer';
+import FunctionAnalyzer from './components/FunctionAnalyzer';
 import './styles/App.css';
 
 function AppContent() {
@@ -23,23 +25,35 @@ function AppContent() {
         </div>
         
         <div className="center-panel">
-          <div className="visualization-grid">
-            <div className="viz-item">
+          <div className="visualization-row">
+            <div className="viz-compact">
               <Oscilloscope />
             </div>
-            <div className="viz-item">
+            <div className="viz-compact">
               <SpectrumAnalyzer />
+            </div>
+            <div className="viz-plots">
+              <ModulationPlots />
             </div>
           </div>
           
-          <div className="monitor-grid">
+          <div className="analysis-row">
+            <div className="analysis-panel">
+              <FrameStructureViewer effectName={audioState.gocs.currentFunction} />
+            </div>
+            <div className="analysis-panel">
+              <FrameSequencer />
+            </div>
+            <div className="analysis-panel">
+              <FunctionAnalyzer />
+            </div>
+          </div>
+          
+          <div className="monitor-row">
             <OscillatorMonitor />
-            <FrameStructureViewer effectName={audioState.gocs.currentFunction} />
           </div>
         </div>
       </div>
-      
-      <TransportBar />
     </div>
   );
 }
