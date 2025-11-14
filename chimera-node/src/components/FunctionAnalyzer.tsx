@@ -96,6 +96,9 @@ const FunctionAnalyzer: React.FC = () => {
   const freqMod = frameData?.freqModulation || [];
   const ampMod = frameData?.ampModulation || [];
   
+  console.log('FunctionAnalyzer - freqMod array:', freqMod.slice(0, 10));
+  console.log('FunctionAnalyzer - ampMod array:', ampMod.slice(0, 10));
+  
   const avgFreqMod = freqMod.length > 0 
     ? freqMod.reduce((a: number, b: number) => a + Math.abs(b), 0) / freqMod.length 
     : 0;

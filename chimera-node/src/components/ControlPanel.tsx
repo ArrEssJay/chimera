@@ -1,6 +1,7 @@
 import React from 'react';
 import GOCSControls from './GOCSControls';
 import AIDControls from './AIDControls';
+import AudioLoader from './AudioLoader';
 import { useAudio } from '../audio/AudioProvider';
 import './ControlPanel.css';
 
@@ -26,6 +27,11 @@ const ControlPanel: React.FC = () => {
       <div className="panel-section">
         <h2>AID Simulation</h2>
         <AIDControls />
+      </div>
+
+      <div className="panel-section">
+        <h2>External Audio</h2>
+        <AudioLoader />
       </div>
     </div>
   );

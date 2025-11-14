@@ -2,17 +2,18 @@
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 4px;
-  padding: 15px;
+  padding: 8px;
   color: #e0e0e0;
   font-family: monospace;
+  font-size: 10px;
 }
 
 .frame-sequencer .sequencer-header {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: bold;
   color: #00ff00;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
   border-bottom: 1px solid #333;
 }
 
@@ -26,14 +27,14 @@
 .sequence-info {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .info-label {
@@ -47,22 +48,22 @@
 
 .sequence-timeline {
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: 6px;
+  margin-bottom: 10px;
   overflow-x: auto;
 }
 
 .frame-indicator {
   flex: 1;
-  min-width: 60px;
+  min-width: 50px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .frame-number {
   text-align: center;
-  font-size: 12px;
+  font-size: 10px;
   color: #666;
   font-weight: bold;
 }
@@ -120,8 +121,8 @@
 
 .sequence-details {
   display: flex;
-  gap: 15px;
-  padding-top: 15px;
+  gap: 10px;
+  padding-top: 10px;
   border-top: 1px solid #333;
 }
 
@@ -130,14 +131,14 @@
 }
 
 .detail-label {
-  font-size: 11px;
+  font-size: 9px;
   color: #888;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .detail-value {
-  font-size: 12px;
+  font-size: 10px;
   color: #e0e0e0;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }

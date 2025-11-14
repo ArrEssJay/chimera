@@ -18,10 +18,12 @@ const FrameSequencer: React.FC = () => {
   const frameData = currentFrame as any;
   const commandType = frameData.commandType || {};
   
-  // Parse sequencing byte
-  const currentFrameNum = (commandType.sequencing >> 4) & 0x0F;
-  const totalFrames = commandType.sequencing & 0x0F;
+  // Parse sequencing byte: upper 4 bits = current frame, lower 4 bits = total frames
+  const currentFrameNum = (commandType.sequencing >> 4) & 0x0F || 1;
+  const totalFrames = (commandType.sequencing & 0x0F) || 1;
   const duration = commandType.duration || 1;
+
+  console.log('FrameSequencer - sequencing byte:', commandType.sequencing, 'current:', currentFrameNum, 'total:', totalFrames);
 
   // Calculate sequence info
   const sequenceLength = Math.max(totalFrames, duration);

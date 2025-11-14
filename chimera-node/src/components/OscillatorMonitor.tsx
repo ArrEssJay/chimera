@@ -121,85 +121,23 @@ const OscillatorMonitor: React.FC = () => {
   return (
     <div className="oscillator-monitor">
       <div className="monitor-header">OSCILLATOR STATE</div>
-
-      <div className="monitor-section">
-        <div className="section-label">CARRIER</div>
-        <div className="monitor-row">
-          <span className="param-name">Frequency:</span>
-          <span className="param-value">{formatFreq(state.carrier.frequency)}</span>
-          <div className="param-bar">
-            <div
-              className="param-fill"
-              style={{ width: `${((state.carrier.frequency - 11900) / 200) * 100}%` }}
-            ></div>
-          </div>
+      <div className="compact-monitor">
+        <div className="compact-row">
+          <span className="compact-label">Carrier:</span>
+          <span className="compact-value">{formatFreq(state.carrier.frequency)} | {formatPercent(state.carrier.amplitude)} | {state.carrier.phase.toFixed(0)}°</span>
         </div>
-        <div className="monitor-row">
-          <span className="param-name">Amplitude:</span>
-          <span className="param-value">{formatPercent(state.carrier.amplitude)}</span>
-          <div className="param-bar">
-            <div
-              className="param-fill"
-              style={{ width: `${state.carrier.amplitude * 100}%` }}
-            ></div>
-          </div>
+        <div className="compact-row">
+          <span className="compact-label">FSK:</span>
+          <span className="compact-value">{state.fsk.state === 0 ? 'LOW (11.999kHz)' : 'HIGH (12.001kHz)'} | {state.fsk.pattern} | {formatFreq(state.fsk.rate)}</span>
         </div>
-        <div className="monitor-row">
-          <span className="param-name">Phase:</span>
-          <span className="param-value">{state.carrier.phase.toFixed(0)}°</span>
-          <div className="param-bar">
-            <div
-              className="param-fill"
-              style={{ width: `${(state.carrier.phase / 360) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="monitor-section">
-        <div className="section-label">MODULATION</div>
-        {state.modulation.phaseModDepth > 0 ? (
-          <div className="monitor-row">
-            <span className="param-name">Phase LFO:</span>
-            <span className="param-value">{formatFreq(state.modulation.phaseModFreq)}</span>
-            <span className="param-depth">{formatPercent(state.modulation.phaseModDepth)}</span>
-          </div>
-        ) : null}
-        {state.modulation.freqModDepth > 0 ? (
-          <div className="monitor-row">
-            <span className="param-name">Freq LFO:</span>
-            <span className="param-value">{formatFreq(state.modulation.freqModFreq)}</span>
-            <span className="param-depth">{formatPercent(state.modulation.freqModDepth)}</span>
-          </div>
-        ) : null}
-        {state.modulation.ampModDepth > 0 ? (
-          <div className="monitor-row">
-            <span className="param-name">Amp LFO:</span>
-            <span className="param-value">{formatFreq(state.modulation.ampModFreq)}</span>
-            <span className="param-depth">{formatPercent(state.modulation.ampModDepth)}</span>
-          </div>
-        ) : null}
-        {state.modulation.phaseModDepth === 0 &&
-        state.modulation.freqModDepth === 0 &&
-        state.modulation.ampModDepth === 0 ? (
-          <div className="no-modulation">No active modulation</div>
-        ) : null}
-      </div>
-
-      <div className="monitor-section">
-        <div className="section-label">FSK SUBLIMINAL</div>
-        <div className="monitor-row">
-          <span className="param-name">State:</span>
-          <span className="param-value">{state.fsk.state === 0 ? 'LOW (11.999kHz)' : 'HIGH (12.001kHz)'}</span>
-          <div className="fsk-indicator" data-state={state.fsk.state}></div>
-        </div>
-        <div className="monitor-row">
-          <span className="param-name">Pattern:</span>
-          <span className="param-value">{state.fsk.pattern}</span>
-        </div>
-        <div className="monitor-row">
-          <span className="param-name">Rate:</span>
-          <span className="param-value">{formatFreq(state.fsk.rate)}</span>
+        <div className="compact-row">
+          <span className="compact-label">Modulation:</span>
+          <span className="compact-value">
+            {state.modulation.phaseModDepth > 0 && `Phase: ${formatPercent(state.modulation.phaseModDepth)} `}
+            {state.modulation.freqModDepth > 0 && `Freq: ${formatPercent(state.modulation.freqModDepth)} `}
+            {state.modulation.ampModDepth > 0 && `Amp: ${formatPercent(state.modulation.ampModDepth)}`}
+            {state.modulation.phaseModDepth === 0 && state.modulation.freqModDepth === 0 && state.modulation.ampModDepth === 0 && 'None'}
+          </span>
         </div>
       </div>
     </div>

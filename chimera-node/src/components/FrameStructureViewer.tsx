@@ -82,17 +82,29 @@ const FrameStructureViewer: React.FC<FrameStructureViewerProps> = ({ effectName 
   const freqModulation = frameData.freqModulation || [];
   const ampModulation = frameData.ampModulation || [];
   
+  // Debug: Log actual values
+  console.log('FrameStructureViewer - targetId:', targetId);
+  console.log('FrameStructureViewer - commandType:', commandType);
+  console.log('FrameStructureViewer - freqMod length:', freqModulation.length);
+  console.log('FrameStructureViewer - ampMod length:', ampModulation.length);
+  
   // Calculate FSK statistics
   const fskPattern = analyzeFSKPattern(fskStates);
   const fskOnes = fskStates.filter((s: number) => s === 1).length;
   const fskRatio = fskStates.length > 0 ? (fskOnes / fskStates.length) : 0;
   
-  // Calculate modulation averages
+  // Calculate modulation statistics
   const avgFreqMod = freqModulation.length > 0 
-    ? freqModulation.reduce((a: number, b: number) => a + b, 0) / freqModulation.length 
+    ? freqModulation.reduce((a: number, b: number) => a + Math.abs(b), 0) / freqModulation.length 
+    : 0;
+  const maxFreqMod = freqModulation.length > 0
+    ? Math.max(...freqModulation.map((v: number) => Math.abs(v)))
     : 0;
   const avgAmpMod = ampModulation.length > 0
     ? ampModulation.reduce((a: number, b: number) => a + b, 0) / ampModulation.length
+    : 0;
+  const ampModRange = ampModulation.length > 0
+    ? Math.max(...ampModulation) - Math.min(...ampModulation)
     : 0;
 
   // Parse sequencing for current/total frames
@@ -165,12 +177,18 @@ const FrameStructureViewer: React.FC<FrameStructureViewerProps> = ({ effectName 
         </div>
         <div className="frame-field">
           <span className="field-label">Avg Freq Mod:</span>
-          <span className="field-value">{avgFreqMod.toFixed(3)}</span>
-          <span className="field-hex">{gocs.intensity ? `(${(gocs.intensity * 100).toFixed(0)}% intensity)` : ''}</span>
+          <span className="field-value">{avgFreqMod.toFixed(3)} Hz</span>
+          <span className="field-hex">max: {maxFreqMod.toFixed(3)} Hz</span>
         </div>
         <div className="frame-field">
           <span className="field-label">Avg Amp Mod:</span>
           <span className="field-value">{avgAmpMod.toFixed(3)}</span>
+          <span className="field-hex">range: {ampModRange.toFixed(3)}</span>
+        </div>
+        <div className="frame-field">
+          <span className="field-label">Intensity:</span>
+          <span className="field-value">{((gocs.intensity || 0) * 100).toFixed(0)}%</span>
+          <span className="field-hex">× {(gocs.intensity || 0).toFixed(2)}</span>
         </div>
         <div className="frame-field">
           <span className="field-label">Symbol Rate:</span>

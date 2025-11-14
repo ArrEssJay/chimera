@@ -112,19 +112,11 @@ export class AudioEngine {
   }
 
   private extractFrameInfo(frame: any): FrameInfo {
-    // Extract relevant information from the frame for display
-    return {
-      commandType: frame.CommandType || 0,
-      targetId: frame.TargetID || 0,
-      gocsFunction: 'induceCalm', // Will be dynamic later
-      symbols: [], // Will populate with actual symbol data
-      lfoParams: {
-        phase: { waveform: 'sine', frequency: 0.1, depth: 1.0 },
-        freqMod: { waveform: 'sine', frequency: 0.1, depth: 1.0 },
-        ampMod: { waveform: 'sine', frequency: 0.1, depth: 1.0 },
-        fsk: { pattern: 'idle', rate: 16 }
-      }
-    };
+    // Pass through the actual frame data structure from ChimeraGOCS
+    console.log('AudioEngine - extractFrameInfo - raw frame:', frame);
+    
+    // Return the actual frame object with all its data
+    return frame;
   }
 
   executeGOCSFunction(functionName: string, intensity: number, duration: number): void {

@@ -1,0 +1,58 @@
+.audio-loader {
+  margin-top: 0.5rem;
+}
+
+.audio-loader .control-group {
+  margin-bottom: 0.75rem;
+}
+
+.audio-loader label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+.upload-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 2px;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-btn:hover {
+  background: #333;
+  border-color: #00c853;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.preset-btn {
+  padding: 0.4rem;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 2px;
+  color: #e0e0e0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover {
+  background: #333;
+  border-color: #00c853;
+}
+
+.preset-btn:active {
+  background: #1a1a1a;
+}

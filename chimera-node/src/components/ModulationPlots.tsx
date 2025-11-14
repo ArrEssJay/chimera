@@ -20,6 +20,13 @@ const ModulationPlots: React.FC = () => {
     const ampModulation = frameData.ampModulation || [];
     const phaseRotation = frameData.phaseRotation || [];
 
+    console.log('ModulationPlots updating with frame data:', {
+      fskLen: fskStates.length,
+      freqLen: freqModulation.length,
+      ampLen: ampModulation.length,
+      phaseLen: phaseRotation.length
+    });
+
     // Plot FSK states
     plotBinaryData(fskCanvasRef.current, fskStates, 'FSK STATES', '#00ff00');
     
