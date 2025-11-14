@@ -95,6 +95,112 @@ export class LFO {
 }
 
 /**
+ * Biquad bandpass filter
+ * Implements a second-order IIR filter for bandpass filtering
+ */
+class BiquadBandpass {
+  constructor(centerFreq, bandwidth, sampleRate) {
+    this.centerFreq = centerFreq;
+    this.bandwidth = bandwidth;
+    this.sampleRate = sampleRate;
+    
+    // Filter state variables
+    this.x1 = 0; // x[n-1]
+    this.x2 = 0; // x[n-2]
+    this.y1 = 0; // y[n-1]
+    this.y2 = 0; // y[n-2]
+    
+    // Calculate filter coefficients
+    this.updateCoefficients();
+  }
+  
+  /**
+   * Update filter coefficients based on center frequency and bandwidth
+   */
+  updateCoefficients() {
+    const omega = 2 * Math.PI * this.centerFreq / this.sampleRate;
+    const bw = 2 * Math.PI * this.bandwidth / this.sampleRate;
+    const alpha = Math.sin(bw) / 2;
+    
+    // Biquad coefficients for bandpass filter
+    const b0 = alpha;
+    const b1 = 0;
+    const b2 = -alpha;
+    const a0 = 1 + alpha;
+    const a1 = -2 * Math.cos(omega);
+    const a2 = 1 - alpha;
+    
+    // Normalize by a0
+    this.b0 = b0 / a0;
+    this.b1 = b1 / a0;
+    this.b2 = b2 / a0;
+    this.a1 = a1 / a0;
+    this.a2 = a2 / a0;
+  }
+  
+  /**
+   * Process a single sample through the filter
+   * @param {number} input - Input sample
+   * @returns {number} Filtered output sample
+   */
+  process(input) {
+    const output = this.b0 * input + this.b1 * this.x1 + this.b2 * this.x2
+                   - this.a1 * this.y1 - this.a2 * this.y2;
+    
+    // Update state variables
+    this.x2 = this.x1;
+    this.x1 = input;
+    this.y2 = this.y1;
+    this.y1 = output;
+    
+    return output;
+  }
+  
+  /**
+   * Process an array of samples
+   * @param {Float32Array} samples - Input samples
+   * @returns {Float32Array} Filtered output samples
+   */
+  processBlock(samples) {
+    const output = new Float32Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+      output[i] = this.process(samples[i]);
+    }
+    return output;
+  }
+  
+  /**
+   * Reset filter state
+   */
+  reset() {
+    this.x1 = 0;
+    this.x2 = 0;
+    this.y1 = 0;
+    this.y2 = 0;
+  }
+  
+  /**
+   * Update center frequency
+   * @param {number} freq - New center frequency in Hz
+   */
+  setCenterFrequency(freq) {
+    this.centerFreq = freq;
+    this.updateCoefficients();
+    this.reset();
+  }
+  
+  /**
+   * Update bandwidth
+   * @param {number} bw - New bandwidth in Hz
+   */
+  setBandwidth(bw) {
+    this.bandwidth = bw;
+    this.updateCoefficients();
+    this.reset();
+  }
+}
+
+/**
  * ChimeraOscillator class
  * Manages a sine wave oscillator with FSK control and LFO-driven modulation
  */
@@ -124,6 +230,10 @@ export class ChimeraOscillator {
     this.currentFrame = null;
     this.frameMode = false; // true = use frame data, false = use LFOs
     this.currentSymbolIndex = 0;
+    
+    // Bandpass filter (20 Hz bandwidth centered at 12 kHz)
+    this.bandpassFilter = null;
+    this.filterEnabled = true;
   }
 
   /**
@@ -238,6 +348,38 @@ export class ChimeraOscillator {
   }
 
   /**
+   * Enable or disable bandpass filtering
+   * @param {boolean} enabled - Whether to enable the filter
+   */
+  setFilterEnabled(enabled) {
+    this.filterEnabled = enabled;
+  }
+
+  /**
+   * Check if bandpass filter is enabled
+   * @returns {boolean}
+   */
+  isFilterEnabled() {
+    return this.filterEnabled;
+  }
+
+  /**
+   * Get filter parameters
+   * @returns {Object|null} Filter parameters or null if not initialized
+   */
+  getFilterParams() {
+    if (!this.bandpassFilter) {
+      return null;
+    }
+    return {
+      centerFreq: this.bandpassFilter.centerFreq,
+      bandwidth: this.bandpassFilter.bandwidth,
+      sampleRate: this.bandpassFilter.sampleRate,
+      enabled: this.filterEnabled
+    };
+  }
+
+  /**
    * Load a ChimeraFrame for playback
    * @param {ChimeraFrame} frame - Frame to load
    */
@@ -284,6 +426,14 @@ export class ChimeraOscillator {
    * @returns {Float32Array} Audio samples
    */
   generateSamples(numSamples, sampleRate = 48000, startTime = 0) {
+    // Initialize bandpass filter per PAL spec: 20 Hz bandwidth centered at 12 kHz carrier
+    if (!this.bandpassFilter) {
+      this.bandpassFilter = new BiquadBandpass(12000, 20, sampleRate);
+    } else if (this.bandpassFilter.sampleRate !== sampleRate) {
+      // Update filter if sample rate changed
+      this.bandpassFilter = new BiquadBandpass(12000, 20, sampleRate);
+    }
+    
     const samples = new Float32Array(numSamples);
     const phaseRadians = this.phase * 2 * Math.PI;
     const samplesPerSymbol = sampleRate / this.symbolRate; // 3000 samples at 48kHz
@@ -334,6 +484,11 @@ export class ChimeraOscillator {
       samples[i] = this.masterGain * instantAmp * Math.sin(2 * Math.PI * instantFreq * t + phaseRadians);
     }
     
+    // Apply bandpass filter if enabled
+    if (this.filterEnabled) {
+      return this.bandpassFilter.processBlock(samples);
+    }
+    
     return samples;
   }
 
@@ -371,7 +526,8 @@ export class ChimeraOscillator {
       phase: this.phase,
       symbolRate: this.symbolRate,
       freqLFO: this.lfoFreq.getParams(),
-      ampLFO: this.lfoAmp.getParams()
+      ampLFO: this.lfoAmp.getParams(),
+      filter: this.getFilterParams()
     };
   }
 }
