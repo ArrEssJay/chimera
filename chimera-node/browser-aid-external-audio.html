@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chimera AID - External Audio Demo</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #00ff00;
+    }
+    h1 {
+      text-align: center;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+    }
+    .section {
+      border: 1px solid #00ff00;
+      padding: 20px;
+      margin: 20px 0;
+      background: #111;
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #00ff00;
+    }
+    button {
+      background: #003300;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-family: inherit;
+      margin: 5px;
+    }
+    button:hover {
+      background: #004400;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    input[type="file"] {
+      color: #00ff00;
+      margin: 10px 0;
+    }
+    input[type="range"] {
+      width: 200px;
+      margin: 0 10px;
+    }
+    .control-group {
+      margin: 15px 0;
+    }
+    label {
+      display: inline-block;
+      width: 200px;
+    }
+    .status {
+      color: #ffff00;
+      font-style: italic;
+    }
+    .error {
+      color: #ff0000;
+    }
+    #audioVisualizer {
+      width: 100%;
+      height: 150px;
+      background: #000;
+      border: 1px solid #00ff00;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 Chimera AID - External Audio Intermodulation</h1>
+  
+  <div class="section">
+    <h2>1. Load External Audio</h2>
+    <input type="file" id="fileInput" accept="audio/*">
+    <p id="fileStatus" class="status">No file loaded</p>
+    <p>Supported: MP3, M4A, WAV, OGG, FLAC, and most audio formats</p>
+  </div>
+
+  <div class="section">
+    <h2>2. Configure AID Simulation</h2>
+    
+    <div class="control-group">
+      <label>Modulation Depth:</label>
+      <input type="range" id="modulationDepth" min="0" max="100" value="70">
+      <span id="modulationValue">70%</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Mixing Coefficient:</label>
+      <input type="range" id="mixingCoeff" min="0" max="100" value="70">
+      <span id="mixingValue">0.70</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Phase Noise:</label>
+      <input type="range" id="phaseNoise" min="0" max="100" value="20">
+      <span id="phaseNoiseValue">0.002</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>3. Configure Secondary Intermodulation</h2>
+    
+    <div class="control-group">
+      <label>AID Signal Gain:</label>
+      <input type="range" id="aidGain" min="0" max="200" value="15">
+      <span id="aidGainValue">0.15</span>
+    </div>
+    
+    <div class="control-group">
+      <label>External Audio Gain:</label>
+      <input type="range" id="extGain" min="0" max="400" value="250">
+      <span id="extGainValue">2.5</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Second-Order Coeff:</label>
+      <input type="range" id="secondOrder" min="0" max="50" value="8">
+      <span id="secondOrderValue">0.08</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Third-Order Coeff:</label>
+      <input type="range" id="thirdOrder" min="0" max="50" value="4">
+      <span id="thirdOrderValue">0.04</span>
+    </div>
+    
+    <div class="control-group">
+      <label>Cortical Coefficient:</label>
+      <input type="range" id="cortical" min="0" max="50" value="15">
+      <span id="corticalValue">0.15</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>4. Generate & Play</h2>
+    <button id="generateBtn" disabled>Generate AID + External Audio</button>
+    <button id="playBtn" disabled>Play Result</button>
+    <button id="stopBtn" disabled>Stop</button>
+    <button id="downloadBtn" disabled>Download WAV</button>
+    
+    <p id="generateStatus" class="status"></p>
+    
+    <canvas id="audioVisualizer"></canvas>
+  </div>
+
+  <script type="module">
+    import { ChimeraOscillator } from './chimera-oscillator.js';
+    import { ThzCarrierConfig, AudioMixingConfig } from './chimera-aid.js';
+    import { loadAudio } from './chimera-audio-loader.js';
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let externalAudioData = null;
+    let generatedAudio = null;
+    let audioSource = null;
+
+    // UI Elements
+    const fileInput = document.getElementById('fileInput');
+    const fileStatus = document.getElementById('fileStatus');
+    const generateBtn = document.getElementById('generateBtn');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const generateStatus = document.getElementById('generateStatus');
+    const canvas = document.getElementById('audioVisualizer');
+    const ctx = canvas.getContext('2d');
+
+    // Sliders
+    const modulationDepth = document.getElementById('modulationDepth');
+    const mixingCoeff = document.getElementById('mixingCoeff');
+    const phaseNoise = document.getElementById('phaseNoise');
+    const aidGain = document.getElementById('aidGain');
+    const extGain = document.getElementById('extGain');
+    const secondOrder = document.getElementById('secondOrder');
+    const thirdOrder = document.getElementById('thirdOrder');
+    const cortical = document.getElementById('cortical');
+
+    // Update slider values
+    modulationDepth.oninput = (e) => {
+      document.getElementById('modulationValue').textContent = e.target.value + '%';
+    };
+    mixingCoeff.oninput = (e) => {
+      document.getElementById('mixingValue').textContent = (e.target.value / 100).toFixed(2);
+    };
+    phaseNoise.oninput = (e) => {
+      document.getElementById('phaseNoiseValue').textContent = (e.target.value / 10000).toFixed(4);
+    };
+    aidGain.oninput = (e) => {
+      document.getElementById('aidGainValue').textContent = (e.target.value / 100).toFixed(2);
+    };
+    extGain.oninput = (e) => {
+      document.getElementById('extGainValue').textContent = (e.target.value / 100).toFixed(1);
+    };
+    secondOrder.oninput = (e) => {
+      document.getElementById('secondOrderValue').textContent = (e.target.value / 100).toFixed(2);
+    };
+    thirdOrder.oninput = (e) => {
+      document.getElementById('thirdOrderValue').textContent = (e.target.value / 100).toFixed(2);
+    };
+    cortical.oninput = (e) => {
+      document.getElementById('corticalValue').textContent = (e.target.value / 100).toFixed(2);
+    };
+
+    // Load external audio file
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        fileStatus.textContent = `Loading ${file.name}...`;
+        fileStatus.className = 'status';
+        
+        const audioData = await loadAudio(file, { audioContext });
+        externalAudioData = audioData;
+        
+        fileStatus.textContent = `✓ Loaded: ${file.name} (${audioData.duration.toFixed(2)}s, ${audioData.sampleRate} Hz)`;
+        generateBtn.disabled = false;
+        
+        visualizeAudio(audioData.samples, 'External Audio');
+      } catch (err) {
+        fileStatus.textContent = `Error: ${err.message}`;
+        fileStatus.className = 'error';
+      }
+    });
+
+    // Generate AID + External Audio
+    generateBtn.addEventListener('click', async () => {
+      if (!externalAudioData) return;
+
+      try {
+        generateStatus.textContent = 'Generating...';
+        generateStatus.className = 'status';
+        
+        const sampleRate = 48000;
+        const duration = Math.min(3.0, externalAudioData.duration); // Limit to 3 seconds
+        const numSamples = Math.floor(sampleRate * duration);
+
+        // Create oscillator
+        const osc = new ChimeraOscillator();
+        osc.setFSKState(1);
+        osc.setAmplitude(0.8);
+        osc.setFilterEnabled(true);
+        osc.setAidEnabled(true);
+
+        // Configure AID
+        const aidConfig = new ThzCarrierConfig();
+        aidConfig.modulationDepth = modulationDepth.value / 100;
+        aidConfig.mixingCoefficient = mixingCoeff.value / 100;
+        aidConfig.phaseNoiseStd = phaseNoise.value / 10000;
+        osc.setAidConfig(aidConfig);
+
+        // Generate initial AID signal
+        const aidSamples = osc.generateSamples(numSamples, sampleRate);
+
+        // Prepare external audio
+        let extAudio = externalAudioData.samples;
+        if (externalAudioData.sampleRate !== sampleRate) {
+          // Resample if needed (simple decimation/interpolation)
+          const ratio = externalAudioData.sampleRate / sampleRate;
+          extAudio = new Float32Array(numSamples);
+          for (let i = 0; i < numSamples; i++) {
+            const srcIdx = Math.floor(i * ratio);
+            extAudio[i] = externalAudioData.samples[Math.min(srcIdx, externalAudioData.samples.length - 1)];
+          }
+        } else {
+          extAudio = extAudio.slice(0, numSamples);
+        }
+
+        // Configure mixing
+        const mixingConfig = new AudioMixingConfig();
+        mixingConfig.aidSignalGain = aidGain.value / 100;
+        mixingConfig.externalAudioGain = extGain.value / 100;
+        mixingConfig.secondOrderCoefficient = secondOrder.value / 100;
+        mixingConfig.thirdOrderCoefficient = thirdOrder.value / 100;
+        mixingConfig.corticalCoefficient = cortical.value / 100;
+
+        osc.setAidExternalAudio(extAudio, mixingConfig);
+
+        // Regenerate with intermodulation
+        generatedAudio = osc.generateSamples(numSamples, sampleRate);
+
+        generateStatus.textContent = `✓ Generated ${numSamples} samples (${duration.toFixed(2)}s)`;
+        playBtn.disabled = false;
+        downloadBtn.disabled = false;
+
+        visualizeAudio(generatedAudio, 'AID + External Audio');
+      } catch (err) {
+        generateStatus.textContent = `Error: ${err.message}`;
+        generateStatus.className = 'error';
+        console.error(err);
+      }
+    });
+
+    // Play audio
+    playBtn.addEventListener('click', () => {
+      if (!generatedAudio) return;
+
+      const buffer = audioContext.createBuffer(1, generatedAudio.length, 48000);
+      buffer.copyToChannel(generatedAudio, 0);
+
+      audioSource = audioContext.createBufferSource();
+      audioSource.buffer = buffer;
+      audioSource.connect(audioContext.destination);
+      audioSource.start();
+
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      audioSource.onended = () => {
+        playBtn.disabled = false;
+        stopBtn.disabled = true;
+        audioSource = null;
+      };
+    });
+
+    // Stop audio
+    stopBtn.addEventListener('click', () => {
+      if (audioSource) {
+        audioSource.stop();
+        audioSource = null;
+        playBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+    });
+
+    // Download WAV
+    downloadBtn.addEventListener('click', () => {
+      if (!generatedAudio) return;
+
+      const wavBuffer = encodeWAV(generatedAudio, 48000);
+      const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chimera_aid_external.wav';
+      a.click();
+      
+      URL.revokeObjectURL(url);
+    });
+
+    // Visualize audio
+    function visualizeAudio(samples, title) {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+      
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      
+      const step = Math.ceil(samples.length / canvas.width);
+      const centerY = canvas.height / 2;
+      const scale = canvas.height / 2;
+      
+      for (let x = 0; x < canvas.width; x++) {
+        const idx = x * step;
+        const y = centerY - samples[idx] * scale;
+        
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      
+      ctx.stroke();
+      
+      // Draw title
+      ctx.fillStyle = '#00ff00';
+      ctx.font = '12px Courier New';
+      ctx.fillText(title, 10, 20);
+    }
+
+    // Encode WAV file
+    function encodeWAV(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+      
+      const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+      
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+      
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++) {
+        const sample = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, sample * 32767, true);
+        offset += 2;
+      }
+      
+      return buffer;
+    }
+  </script>
+</body>
+</html>

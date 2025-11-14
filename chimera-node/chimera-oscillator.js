@@ -10,9 +10,12 @@
  * - LFO_Freq for frequency modulation (vibrational texture)
  * - LFO_Amp for amplitude modulation (breathing/pulsing)
  * - Symbol rate: 16 Hz (62.5ms per symbol)
+ * - Optional AID (Auditory Intermodulation Distortion) simulation
  * 
  * Supports both Web Audio API (browser) and file output (Node.js)
  */
+
+import { ThzCarrierProcessor, ThzCarrierConfig, AudioMixingConfig } from './chimera-aid.js';
 
 /**
  * Low-Frequency Oscillator (LFO)
@@ -234,6 +237,11 @@ export class ChimeraOscillator {
     // Bandpass filter (20 Hz bandwidth centered at 12 kHz)
     this.bandpassFilter = null;
     this.filterEnabled = true;
+    
+    // AID (Auditory Intermodulation Distortion) simulation
+    this.aidProcessor = null;
+    this.aidEnabled = false;
+    this.aidConfig = new ThzCarrierConfig();
   }
 
   /**
@@ -380,6 +388,82 @@ export class ChimeraOscillator {
   }
 
   /**
+   * Enable or disable AID simulation
+   * @param {boolean} enabled - Whether to enable AID simulation
+   */
+  setAidEnabled(enabled) {
+    this.aidEnabled = enabled;
+  }
+
+  /**
+   * Check if AID simulation is enabled
+   * @returns {boolean}
+   */
+  isAidEnabled() {
+    return this.aidEnabled;
+  }
+
+  /**
+   * Configure AID simulation
+   * @param {ThzCarrierConfig} config - AID configuration
+   */
+  setAidConfig(config) {
+    this.aidConfig = config;
+    // Reinitialize processor if already created
+    if (this.aidProcessor) {
+      this.aidProcessor = null;
+    }
+  }
+
+  /**
+   * Get AID processor (creates if needed)
+   * @param {number} sampleRate - Sample rate
+   * @returns {ThzCarrierProcessor}
+   */
+  getAidProcessor(sampleRate) {
+    if (!this.aidProcessor) {
+      this.aidProcessor = new ThzCarrierProcessor(this.aidConfig, sampleRate);
+    }
+    return this.aidProcessor;
+  }
+
+  /**
+   * Set external audio for AID secondary intermodulation
+   * @param {Float32Array} audio - External audio buffer
+   * @param {AudioMixingConfig} mixingConfig - Mixing configuration
+   */
+  setAidExternalAudio(audio, mixingConfig) {
+    if (!this.aidProcessor) {
+      throw new Error('AID processor not initialized. Generate samples first.');
+    }
+    this.aidProcessor.setExternalAudio(audio, mixingConfig);
+  }
+
+  /**
+   * Clear external audio from AID processor
+   */
+  clearAidExternalAudio() {
+    if (this.aidProcessor) {
+      this.aidProcessor.clearExternalAudio();
+    }
+  }
+
+  /**
+   * Get AID configuration and status
+   * @returns {Object|null}
+   */
+  getAidParams() {
+    if (!this.aidEnabled) {
+      return { enabled: false };
+    }
+    return {
+      enabled: true,
+      config: this.aidConfig,
+      hasExternalAudio: this.aidProcessor && this.aidProcessor.externalAudio !== null
+    };
+  }
+
+  /**
    * Load a ChimeraFrame for playback
    * @param {ChimeraFrame} frame - Frame to load
    */
@@ -486,7 +570,21 @@ export class ChimeraOscillator {
     
     // Apply bandpass filter if enabled
     if (this.filterEnabled) {
-      return this.bandpassFilter.processBlock(samples);
+      const filtered = this.bandpassFilter.processBlock(samples);
+      
+      // Apply AID simulation if enabled
+      if (this.aidEnabled) {
+        const aidProcessor = this.getAidProcessor(sampleRate);
+        return aidProcessor.process(filtered);
+      }
+      
+      return filtered;
+    }
+    
+    // Apply AID simulation if enabled (without filter)
+    if (this.aidEnabled) {
+      const aidProcessor = this.getAidProcessor(sampleRate);
+      return aidProcessor.process(samples);
     }
     
     return samples;
@@ -527,7 +625,8 @@ export class ChimeraOscillator {
       symbolRate: this.symbolRate,
       freqLFO: this.lfoFreq.getParams(),
       ampLFO: this.lfoAmp.getParams(),
-      filter: this.getFilterParams()
+      filter: this.getFilterParams(),
+      aid: this.getAidParams()
     };
   }
 }
