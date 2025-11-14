@@ -1,20 +1,33 @@
 {
-  "name": "chimera-strudel",
+  "name": "chimera-node",
   "version": "1.0.0",
-  "description": "Chimera waveform generator using Strudel",
+  "description": "Chimera waveform generator with real-time GOCS UI",
   "type": "module",
-  "main": "chimera-oscillator.js",
+  "main": "lib/chimera-oscillator.js",
   "scripts": {
-    "start": "node example.js",
-    "patterns": "node example-patterns.js",
-    "test": "node example-test-coverage.js",
-    "gocs": "node example-gocs.js",
-    "inspect": "node example-frame-structure.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "example": "node examples/example.js",
+    "patterns": "node examples/example-patterns.js",
+    "test": "node examples/example-test-coverage.js",
+    "gocs": "node examples/example-gocs.js",
+    "inspect": "node examples/example-frame-structure.js"
   },
-  "keywords": ["strudel", "audio", "synthesis", "chimera"],
+  "keywords": ["audio", "synthesis", "chimera", "gocs", "aid", "webaudio", "react"],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "wavefile": "^11.0.0"
+    "wavefile": "^11.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
   }
 }

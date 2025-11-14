@@ -1,0 +1,127 @@
+.transport-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #242424;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #3a3a3a;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  height: 60px;
+}
+
+.transport-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transport-btn {
+  padding: 0.5rem 1rem;
+  background: #2d2d2d;
+  border: 1px solid #3a3a3a;
+  border-radius: 2px;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.transport-btn:hover:not(:disabled) {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.transport-btn:active:not(:disabled) {
+  background: #1a1a1a;
+}
+
+.transport-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.transport-btn.play-pause {
+  min-width: 90px;
+  font-weight: 600;
+}
+
+.transport-info {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  color: #e0e0e0;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: #555;
+  transition: all 0.2s;
+}
+
+.status-dot.playing {
+  background: #00c853;
+  box-shadow: 0 0 8px rgba(0, 200, 83, 0.5);
+}
+
+.status-dot.stopped {
+  background: #666;
+}
+
+.status-text {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.frame-counter {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.1s linear;
+}
+
+.timing-label {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.frame-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+
+.frame-details h4 {
+  color: #764ba2;
+  margin-bottom: 0.75rem;
+}
