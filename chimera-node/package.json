@@ -1,0 +1,20 @@
+{
+  "name": "chimera-strudel",
+  "version": "1.0.0",
+  "description": "Chimera waveform generator using Strudel",
+  "type": "module",
+  "main": "chimera-oscillator.js",
+  "scripts": {
+    "start": "node example.js",
+    "patterns": "node example-patterns.js",
+    "test": "node example-test-coverage.js",
+    "gocs": "node example-gocs.js",
+    "inspect": "node example-frame-structure.js"
+  },
+  "keywords": ["strudel", "audio", "synthesis", "chimera"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wavefile": "^11.0.0"
+  }
+}

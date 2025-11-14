@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chimera Waveform Generator - Browser Example</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Courier New', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #00ff00;
+        }
+        h1 {
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        .controls {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #00ff00;
+        }
+        button {
+            background: #00ff00;
+            color: #0a0a0a;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        button:active {
+            background: #009900;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            background: #0a0a0a;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #00ff00;
+            font-size: 14px;
+        }
+        .param {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            color: #00ff00;
+        }
+        input[type="range"] {
+            width: 300px;
+            vertical-align: middle;
+        }
+        .value {
+            display: inline-block;
+            width: 80px;
+            text-align: right;
+            color: #00ffff;
+        }
+        .info {
+            background: #1a1a1a;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌀 Chimera Waveform Generator</h1>
+    
+    <div class="info">
+        <strong>FSK Sine Oscillator</strong> - Chimera Modulation Protocol v4.2<br>
+        Dual-frequency sine wave generator for browser-based audio synthesis
+    </div>
+
+    <div class="controls">
+        <h3>FSK State Control</h3>
+        <button id="state0">State 0 (11,999 Hz)</button>
+        <button id="state1">State 1 (12,001 Hz)</button>
+        <button id="toggle">Play/Stop</button>
+    </div>
+
+    <div class="controls">
+        <h3>Amplitude & Phase</h3>
+        <div class="param">
+            <label for="amplitude">Amplitude:</label>
+            <input type="range" id="amplitude" min="0" max="1" step="0.01" value="0.3">
+            <span class="value" id="amplitudeValue">0.30</span>
+        </div>
+        <div class="param">
+            <label for="phase">Phase (radians):</label>
+            <input type="range" id="phase" min="0" max="1" step="0.01" value="0">
+            <span class="value" id="phaseValue">0.00</span>
+        </div>
+    </div>
+
+    <div class="status" id="status">
+        <strong>Status:</strong> Initializing...<br>
+        <strong>FSK State:</strong> <span id="fskState">-</span><br>
+        <strong>Frequency:</strong> <span id="frequency">-</span> Hz<br>
+        <strong>Amplitude:</strong> <span id="amplitudeDisplay">-</span><br>
+        <strong>Phase:</strong> <span id="phaseDisplay">-</span>
+    </div>
+
+    <script type="module">
+        // Inline the ChimeraOscillator class for browser use
+        class ChimeraOscillator {
+            constructor() {
+                this.fskState = 0;
+                this.frequency = 11999;
+                this.amplitude = 0.3;
+                this.phase = 0.0;
+                this.frequencies = {
+                    0: 11999,
+                    1: 12001
+                };
+            }
+
+            setFSKState(state) {
+                if (state !== 0 && state !== 1) {
+                    throw new Error('FSK state must be 0 or 1');
+                }
+                this.fskState = state;
+                this.frequency = this.frequencies[state];
+            }
+
+            getFrequency() { return this.frequency; }
+            getFSKState() { return this.fskState; }
+            setAmplitude(amp) { this.amplitude = Math.max(0, Math.min(1, amp)); }
+            getAmplitude() { return this.amplitude; }
+            setPhase(phase) { this.phase = phase; }
+            getPhase() { return this.phase; }
+
+            createWebAudioNode(audioContext) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = this.frequency;
+                gainNode.gain.value = this.amplitude;
+                
+                oscillator.connect(gainNode);
+                
+                return { oscillator, gainNode };
+            }
+
+            getParams() {
+                return {
+                    fskState: this.fskState,
+                    frequency: this.frequency,
+                    amplitude: this.amplitude,
+                    phase: this.phase
+                };
+            }
+        }
+
+        // Application state
+        let audioContext = null;
+        let oscillatorNode = null;
+        let gainNode = null;
+        let isPlaying = false;
+        const chimera = new ChimeraOscillator();
+
+        // UI Elements
+        const state0Btn = document.getElementById('state0');
+        const state1Btn = document.getElementById('state1');
+        const toggleBtn = document.getElementById('toggle');
+        const amplitudeSlider = document.getElementById('amplitude');
+        const phaseSlider = document.getElementById('phase');
+        const statusEl = document.getElementById('status');
+
+        // Update display
+        function updateDisplay() {
+            const params = chimera.getParams();
+            document.getElementById('fskState').textContent = params.fskState;
+            document.getElementById('frequency').textContent = params.frequency.toLocaleString();
+            document.getElementById('amplitudeDisplay').textContent = params.amplitude.toFixed(2);
+            document.getElementById('phaseDisplay').textContent = (params.phase * 2 * Math.PI).toFixed(2);
+            document.getElementById('amplitudeValue').textContent = params.amplitude.toFixed(2);
+            document.getElementById('phaseValue').textContent = params.phase.toFixed(2);
+        }
+
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                updateStatus('Audio context initialized');
+            }
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            const statusHTML = `
+                <strong>Status:</strong> ${message}<br>
+                <strong>FSK State:</strong> <span id="fskState">${chimera.getFSKState()}</span><br>
+                <strong>Frequency:</strong> <span id="frequency">${chimera.getFrequency().toLocaleString()}</span> Hz<br>
+                <strong>Amplitude:</strong> <span id="amplitudeDisplay">${chimera.getAmplitude().toFixed(2)}</span><br>
+                <strong>Phase:</strong> <span id="phaseDisplay">${(chimera.getPhase() * 2 * Math.PI).toFixed(2)}</span>
+            `;
+            statusEl.innerHTML = statusHTML;
+        }
+
+        // Start oscillator
+        function start() {
+            initAudio();
+            
+            if (oscillatorNode) {
+                oscillatorNode.stop();
+            }
+
+            const nodes = chimera.createWebAudioNode(audioContext);
+            oscillatorNode = nodes.oscillator;
+            gainNode = nodes.gainNode;
+            
+            gainNode.connect(audioContext.destination);
+            oscillatorNode.start();
+            
+            isPlaying = true;
+            toggleBtn.textContent = 'Stop';
+            updateStatus('Playing');
+        }
+
+        // Stop oscillator
+        function stop() {
+            if (oscillatorNode) {
+                oscillatorNode.stop();
+                oscillatorNode = null;
+                gainNode = null;
+            }
+            isPlaying = false;
+            toggleBtn.textContent = 'Play';
+            updateStatus('Stopped');
+        }
+
+        // Event handlers
+        state0Btn.addEventListener('click', () => {
+            chimera.setFSKState(0);
+            updateDisplay();
+            if (isPlaying) {
+                stop();
+                start();
+            } else {
+                updateStatus('FSK State 0 selected (not playing)');
+            }
+        });
+
+        state1Btn.addEventListener('click', () => {
+            chimera.setFSKState(1);
+            updateDisplay();
+            if (isPlaying) {
+                stop();
+                start();
+            } else {
+                updateStatus('FSK State 1 selected (not playing)');
+            }
+        });
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                stop();
+            } else {
+                start();
+            }
+        });
+
+        amplitudeSlider.addEventListener('input', (e) => {
+            chimera.setAmplitude(parseFloat(e.target.value));
+            if (gainNode) {
+                gainNode.gain.value = chimera.getAmplitude();
+            }
+            updateDisplay();
+        });
+
+        phaseSlider.addEventListener('input', (e) => {
+            chimera.setPhase(parseFloat(e.target.value));
+            updateDisplay();
+            // Note: Phase changes require restarting the oscillator
+            if (isPlaying) {
+                stop();
+                start();
+            }
+        });
+
+        // Initialize display
+        updateStatus('Ready');
+        updateDisplay();
+    </script>
+</body>
+</html>
