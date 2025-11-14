@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useAudio } from '../audio/AudioProvider';
 
-const SpectrumAnalyzer: React.FC = () => {
+const SpectrumAnalyzer = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { audioEngine, isPlaying } = useAudio();
   const animationFrameRef = useRef<number>();
@@ -13,8 +13,13 @@ const SpectrumAnalyzer: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     const analyser = audioEngine.getAnalyserNode();
     if (!analyser) return;
@@ -25,9 +30,9 @@ const SpectrumAnalyzer: React.FC = () => {
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    const sampleRate = 48000; // Assuming 48kHz
+    const sampleRate = 48000;
 
-    // Logarithmic frequency scale for better visualization
+    // Logarithmic frequency scale
     const minFreq = 20;
     const maxFreq = 20000;
     const minLog = Math.log10(minFreq);
@@ -35,36 +40,38 @@ const SpectrumAnalyzer: React.FC = () => {
 
     const draw = () => {
       if (!isPlaying) {
-        // Draw empty state
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawGrid();
+        drawFrequencyLabels();
+        
+        // Draw label
+        ctx.fillStyle = '#666';
+        ctx.font = '10px monospace';
+        ctx.fillText('SPECTRUM ANALYZER', 8, 15);
+        
         animationFrameRef.current = requestAnimationFrame(draw);
         return;
       }
 
       analyser.getByteFrequencyData(dataArray);
 
-      // Clear canvas
       ctx.fillStyle = '#1a1a1a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid
       drawGrid();
 
       // Draw frequency data with logarithmic scale
-      const numBars = Math.min(200, canvas.width / 3); // Adaptive bar count
+      const numBars = Math.min(150, canvas.width / 2);
       
       for (let i = 0; i < numBars; i++) {
         const t = i / numBars;
         const logFreq = minLog + t * (maxLog - minLog);
         const freq = Math.pow(10, logFreq);
         
-        // Map frequency to FFT bin
         const bin = Math.floor((freq / sampleRate) * bufferLength * 2);
         
         if (bin >= 0 && bin < bufferLength) {
-          // Average nearby bins for smoother display
           const avgBins = 3;
           let sum = 0;
           let count = 0;
@@ -77,15 +84,13 @@ const SpectrumAnalyzer: React.FC = () => {
           }
           const value = sum / count;
           
-          // Convert to dB scale (0-255 -> -60dB to 0dB)
           const db = (value / 255) * 60 - 60;
           const normalizedDb = Math.max(0, (db + 60) / 60);
-          const barHeight = normalizedDb * (canvas.height - 40);
+          const barHeight = normalizedDb * (canvas.height - 25);
 
           const x = (i / numBars) * canvas.width;
           const barWidth = (canvas.width / numBars) * 0.9;
 
-          // Pro-AV color scheme - green to yellow to red
           let color;
           if (normalizedDb < 0.5) {
             color = `rgba(0, ${Math.floor(normalizedDb * 400)}, 0, 0.9)`;
@@ -102,8 +107,12 @@ const SpectrumAnalyzer: React.FC = () => {
         }
       }
 
-      // Draw frequency labels
       drawFrequencyLabels();
+      
+      // Draw label
+      ctx.fillStyle = '#888';
+      ctx.font = '10px monospace';
+      ctx.fillText('SPECTRUM ANALYZER', 8, 15);
 
       animationFrameRef.current = requestAnimationFrame(draw);
     };
@@ -112,17 +121,17 @@ const SpectrumAnalyzer: React.FC = () => {
       ctx.strokeStyle = '#2d2d2d';
       ctx.lineWidth = 1;
 
-      // Horizontal grid lines (dB levels)
-      for (let i = 0; i <= 4; i++) {
-        const y = (i / 4) * (canvas.height - 20) + 10;
+      // Horizontal grid lines (3 lines)
+      for (let i = 1; i < 4; i++) {
+        const y = (i / 4) * (canvas.height - 20);
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
 
-      // Vertical grid lines (decade markers)
-      const decades = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000];
+      // Vertical grid lines (decade markers) - fewer for compact view
+      const decades = [100, 1000, 10000];
       decades.forEach(freq => {
         const logFreq = Math.log10(freq);
         const x = ((logFreq - minLog) / (maxLog - minLog)) * canvas.width;
@@ -134,16 +143,14 @@ const SpectrumAnalyzer: React.FC = () => {
     };
 
     const drawFrequencyLabels = () => {
-      ctx.fillStyle = '#888';
-      ctx.font = '11px monospace';
+      ctx.fillStyle = '#666';
+      ctx.font = '9px monospace';
       ctx.textAlign = 'center';
 
       const labels = [
-        { freq: 20, label: '20' },
         { freq: 100, label: '100' },
         { freq: 1000, label: '1K' },
-        { freq: 10000, label: '10K' },
-        { freq: 20000, label: '20K' }
+        { freq: 10000, label: '10K' }
       ];
 
       labels.forEach(({ freq, label }) => {
@@ -156,6 +163,7 @@ const SpectrumAnalyzer: React.FC = () => {
     draw();
 
     return () => {
+      window.removeEventListener('resize', resizeCanvas);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -163,9 +171,10 @@ const SpectrumAnalyzer: React.FC = () => {
   }, [audioEngine, isPlaying]);
 
   return (
-    <div className="canvas-container">
-      <canvas ref={canvasRef} />
-    </div>
+    <canvas 
+      ref={canvasRef}
+      style={{ width: '100%', height: '100%', display: 'block' }}
+    />
   );
 };
 

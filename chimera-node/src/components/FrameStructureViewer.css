@@ -1,0 +1,82 @@
+.frame-structure-viewer {
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 2px;
+  padding: 0.75rem;
+  font-size: 11px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.frame-header {
+  color: #888;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #3a3a3a;
+  font-weight: 600;
+}
+
+.no-frame {
+  color: #555;
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.frame-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #222;
+  border: 1px solid #2d2d2d;
+  border-radius: 2px;
+}
+
+.frame-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  color: #00c853;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.frame-field {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0;
+}
+
+.frame-field:last-child {
+  margin-bottom: 0;
+}
+
+.field-label {
+  color: #666;
+  width: 80px;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.field-value {
+  color: #e0e0e0;
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+.field-hex {
+  color: #666;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}

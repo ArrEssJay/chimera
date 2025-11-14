@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useAudio } from '../audio/AudioProvider';
 
-const Oscilloscope: React.FC = () => {
+const Oscilloscope = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { audioEngine, isPlaying } = useAudio();
   const animationFrameRef = useRef<number>();
@@ -13,9 +13,13 @@ const Oscilloscope: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     const analyser = audioEngine.getAnalyserNode();
     if (!analyser) return;
@@ -25,10 +29,15 @@ const Oscilloscope: React.FC = () => {
 
     const draw = () => {
       if (!isPlaying) {
-        // Draw empty state with grid
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         drawGrid();
+        
+        // Draw label
+        ctx.fillStyle = '#666';
+        ctx.font = '10px monospace';
+        ctx.fillText('OSCILLOSCOPE', 8, 15);
+        
         animationFrameRef.current = requestAnimationFrame(draw);
         return;
       }
@@ -64,6 +73,11 @@ const Oscilloscope: React.FC = () => {
 
       ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
+      
+      // Draw label
+      ctx.fillStyle = '#888';
+      ctx.font = '10px monospace';
+      ctx.fillText('OSCILLOSCOPE', 8, 15);
 
       animationFrameRef.current = requestAnimationFrame(draw);
     };
@@ -102,6 +116,7 @@ const Oscilloscope: React.FC = () => {
     draw();
 
     return () => {
+      window.removeEventListener('resize', resizeCanvas);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -109,9 +124,10 @@ const Oscilloscope: React.FC = () => {
   }, [audioEngine, isPlaying]);
 
   return (
-    <div className="canvas-container">
-      <canvas ref={canvasRef} />
-    </div>
+    <canvas 
+      ref={canvasRef}
+      style={{ width: '100%', height: '100%', display: 'block' }}
+    />
   );
 };
 

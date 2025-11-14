@@ -69,7 +69,11 @@ export class AudioEngine {
     try {
       const samples = this.oscillator.generateSamples(bufferSize, this.sampleRate);
       if (samples && samples.length === bufferSize) {
-        outputData.set(samples);
+        // Apply gain normalization to ensure audible output
+        const gain = 0.3; // Reduce volume to comfortable level
+        for (let i = 0; i < bufferSize; i++) {
+          outputData[i] = samples[i] * gain;
+        }
       } else {
         // Fill with silence if generation fails
         outputData.fill(0);
@@ -136,26 +140,49 @@ export class AudioEngine {
     }
 
     try {
+      // Store enabled state separately
       if (config.enabled !== undefined && typeof this.oscillator.setAidEnabled === 'function') {
         this.oscillator.setAidEnabled(config.enabled);
+        console.log('AID enabled set to:', config.enabled);
       }
       
+      // Always update config when any parameter changes
       if (config.modulationDepth !== undefined || 
           config.mixingCoefficient !== undefined ||
           config.phaseNoiseStd !== undefined ||
           config.bypassSimulation !== undefined) {
-        // Update AID configuration in real-time
-        const aidConfig = {
-          modulationDepth: config.modulationDepth ?? 0.05,
-          mixingCoefficient: config.mixingCoefficient ?? 0.7,
-          phaseNoiseStd: config.phaseNoiseStd ?? 0.001,
-          bypassSimulation: config.bypassSimulation ?? false
+        
+        // Get current config or create new one
+        const currentConfig = this.oscillator.aidConfig || {
+          pumpFrequency: 1.998e12,
+          dataFrequency: 1.875e12,
+          pumpPower: 1.0,
+          dataPower: 0.3,
+          modulationDepth: 0.05,
+          mixingCoefficient: 0.7,
+          phaseNoiseStd: 0.001,
+          bypassSimulation: false
         };
         
+        // Update only provided values
+        const updatedConfig = {
+          ...currentConfig,
+          modulationDepth: config.modulationDepth ?? currentConfig.modulationDepth,
+          mixingCoefficient: config.mixingCoefficient ?? currentConfig.mixingCoefficient,
+          phaseNoiseStd: config.phaseNoiseStd ?? currentConfig.phaseNoiseStd,
+          pumpPower: config.pumpPower ?? currentConfig.pumpPower,
+          dataPower: config.dataPower ?? currentConfig.dataPower,
+          bypassSimulation: config.bypassSimulation ?? currentConfig.bypassSimulation
+        };
+        
+        // Force recreation of AID processor by clearing it first
+        if (this.oscillator.aidProcessor) {
+          this.oscillator.aidProcessor = null;
+        }
+        
         if (typeof this.oscillator.setAidConfig === 'function') {
-          this.oscillator.setAidConfig(aidConfig);
-        } else if (typeof this.oscillator.updateAidConfig === 'function') {
-          this.oscillator.updateAidConfig(aidConfig);
+          this.oscillator.setAidConfig(updatedConfig);
+          console.log('AID config updated:', updatedConfig);
         }
       }
     } catch (error) {
